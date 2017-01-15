@@ -1,0 +1,84 @@
+.bill-wrap {
+	display:block; overflow:hidden;
+	padding: 2em 0;
+}
+.bill-title {
+	line-height: 1em;
+	border-bottom:3px double #000;
+	text-align: center;
+	letter-spacing: 1em;
+	margin-bottom:1em;
+	font-size:1.6em;
+}
+.bill-destination {
+	font-size:1.3em;
+	padding-bottom:0.1em;
+	border-bottom:1px solid #000;
+	margin-bottom:1em;
+}
+.bill-destination:after{
+	content:"様";
+	position: absolute;
+	right:1em;
+}
+.bill-total {
+	display: table;
+	border-bottom:1px solid #000;
+	width:100%;
+	dt,
+	dd { display: table-cell; }
+	dd { 
+		font-size:1.6em; 
+		text-align: center; 
+	}
+}
+
+.bill-info-table{
+	width:100%;
+	margin-bottom:3em;
+	th,
+	td {
+		padding-top: 0.5em;
+		border-bottom:1px solid #999;
+	}
+	td {
+		text-align: right;
+	}
+}
+
+.bill-address-own {
+	position: relative;
+	margin-bottom:2em;
+}
+.bill-seal {
+	position: absolute;
+	top:0;
+	right:0;
+	width:100px;
+	height:auto;
+}
+.bill-remarks {
+	dt {
+		float:left;
+		margin-right:2em;
+	}
+	dd {
+		display:block; overflow:hidden;
+	}
+}
+.bill-payee {
+	td { position: relative; }
+}
+.bill-payee-text {
+	float:left;
+	line-height: 1.5em;
+	margin:0;
+}
+.bill-payee-logo {
+	float:right;
+	bottom:0;
+	width:auto;
+	height:3.5em;
+	margin-top:1em;
+	margin-right:1em;
+}
