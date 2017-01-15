@@ -26,7 +26,7 @@ class Bill_Admin {
 
 	public static function setting_page()
 	{
-		delete_option('bill-setting');
+		// delete_option('bill-setting');
 		?>
 		<div class="wrap">
 		<h2>請求設定</h2>
