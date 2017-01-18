@@ -3,7 +3,7 @@
 	// 行を追加
 	jQuery('.row-control .add-row').click(function(){
 		var $master_html = '';
-		jQuery(this).closest('tr').parent().clone(true).insertAfter(jQuery(this).closest('tr').parent());
+		jQuery(this).closest('tr').clone(true).insertAfter(jQuery(this).closest('tr').parent());
 		row_count_reset();
 	});
 
