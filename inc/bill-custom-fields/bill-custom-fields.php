@@ -84,8 +84,8 @@ function bill_post_fields(){
 
 	$form_table = '<table class="table table-striped table-bordered row-control">';
 
-	$form_table .= '<thead><tr><th></th><th>品目</th><th>数量</th><th>単位</th><th>商品単価</th><th></th></tr></thead>';
-	$form_table .= '<tbody>';
+	$form_table .= '<thead><tr><th></th><th></th><th>品目</th><th>数量</th><th>単位</th><th>商品単価</th><th></th></tr></thead>';
+	$form_table .= '<tbody id="sortable">';
 
 	$bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
 
@@ -109,8 +109,9 @@ function bill_post_fields(){
 	// 行のループ
 	foreach ($bill_items as $key => $value) {
 		$form_table .= '<tr>';
-
-		$form_table .= '<td><input type="hidden" id="bill_items[0][total_row_count]" name="bill_items[0][total_row_count]" value="'.$bill_items[0]['total_row_count'].'"></td>';
+		$number = intval( $key ) + 1;
+		$form_table .= '<th><span class="icon-drag"></span></th>';
+		$form_table .= '<th><span class="cell-number">'.$number.'</span><input type="hidden" id="bill_items[0][total_row_count]" name="bill_items[0][total_row_count]" value="'.$bill_items[0]['total_row_count'].'"></th>';
 
 		// 列をループ
 		foreach ($bill_item_sub_fields as $sub_field) {
@@ -119,7 +120,7 @@ function bill_post_fields(){
 			$form_table .= '<td class="cell-'.$sub_field.'"><input class="bill-item-field" type="text" id="bill_items['.$key.']['.$sub_field.']" name="bill_items['.$key.']['.$sub_field.']" value="'.esc_attr($bill_item_value[$sub_field]).'"></td>';
 		}
 		$form_table .= '<td class="cell-control">
-		<input type="button" class="add-row button" value="行を追加" />
+		<input type="button" class="add-row button button-primary" value="行を追加" />
 		<input type="button" class="del-row button" value="行を削除" />
 		</td>';
 		$form_table .= '</tr>';

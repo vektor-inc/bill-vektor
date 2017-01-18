@@ -24,7 +24,7 @@ function bill_admin_scripts(){
   // 管理画面用のcss
   wp_enqueue_style( 'bill-admin-css', get_template_directory_uri() . '/assets/css/admin-style.css', array(), null );
   // 管理画面用のjs
-  wp_enqueue_script( 'bill-js-bootstrap', get_template_directory_uri() . '/assets/js/admin.js', array( 'jquery' ), null, true );
+  wp_enqueue_script( 'bill-js-bootstrap', get_template_directory_uri() . '/assets/js/admin.js', array( 'jquery','jquery-ui-sortable' ), null, true );
 }
 add_action( 'admin_enqueue_scripts', 'bill_admin_scripts' );
 
