@@ -15,6 +15,8 @@
 /*-------------------------------------------*/
 /*  Remove_post_editor_support
 /*-------------------------------------------*/
+/*  No login redirect
+/*-------------------------------------------*/
 
 
 $theme_opt = wp_get_theme(get_template());
@@ -109,7 +111,18 @@ function bill_add_post_type_client() {
 /*-------------------------------------------*/
 /*  Remove_post_editor_support
 /*-------------------------------------------*/
-add_action( 'init' , 'bill_remove_post_editor_support' );
 function bill_remove_post_editor_support() {
  remove_post_type_support( 'post', 'editor' );
 }
+add_action( 'init' , 'bill_remove_post_editor_support' );
+
+/*-------------------------------------------*/
+/*  No login redirect
+/*-------------------------------------------*/
+function bill_no_login_redirect( $content ) {
+  global $pagenow;
+  if( !is_user_logged_in() && !is_admin() && ( $pagenow != 'wp-login.php' ) && php_sapi_name() !== 'cli' ){
+    auth_redirect();
+  }
+}//bill_no_login_redirect
+add_action( 'init', 'bill_no_login_redirect' );
