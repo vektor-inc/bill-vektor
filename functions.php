@@ -11,6 +11,8 @@
 /*-------------------------------------------*/
 /*  WidgetArea initiate
 /*-------------------------------------------*/
+/*  Add Post Type Client
+/*-------------------------------------------*/
 
 
 $theme_opt = wp_get_theme(get_template());
@@ -79,3 +81,26 @@ function bill_widgets_init() {
   ) );
 }
 add_action( 'widgets_init', 'bill_widgets_init' );
+
+
+/*-------------------------------------------*/
+/*  Add Post Type Client
+/*-------------------------------------------*/
+add_action( 'init', 'bill_add_post_type_client', 0 );
+function bill_add_post_type_client() {
+    register_post_type( 'client', /* カスタム投稿タイプのスラッグ */
+        array(
+            'labels' => array(
+                'name' => '請求先',
+            ),
+        'public'             => false,
+        'publicly_queryable' => true,
+        'show_ui'            => true,
+        'show_in_menu'       => true,
+        'has_archive'        => false,
+        'supports'           => array('title'),
+        'menu_position'      => 5,
+        )
+    );
+}
+
