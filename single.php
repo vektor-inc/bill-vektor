@@ -43,7 +43,7 @@
 </table>
 
 <div class="bill-address-own">
-<?php $options = get_option('bill-setting', bill_options_default());?>
+<?php $options = get_option('bill-setting', Bill_Admin::options_default());?>
 <h4><?php echo esc_html( $options['own-name'] );?></h4>
 <div class="bill-address"><?php echo nl2br( esc_textarea($options['own-address']) );?></div>
 <?php

@@ -32,7 +32,7 @@ class Bill_Admin {
 		<h2>請求設定</h2>
 		<form id="bill-setting-form" method="post" action="">
 		<?php wp_nonce_field( 'bill-nonce-key', 'bill-setting-page' );?>
-		<?php $options = get_option('bill-setting', bill_options_default());?>
+		<?php $options = get_option('bill-setting', Bill_Admin::options_default());?>
 		<table class="form-table">
 		<tr>
 		<th>請求者名</th>
@@ -92,6 +92,23 @@ class Bill_Admin {
 		</form>
 		</div>
 		<?php
+	}
+
+	public static function options_default(){
+	$default = array(
+			'own-name'    => '株式会社ベクトル',
+			'own-address'   => '〒460-0008
+			名古屋市中区栄1-22-16
+			ミナミ栄ビル 302号
+			TEL : 000-000-0000',
+			'own-logo'    => '',
+			'own-seal'    => '',
+			'own-payee'   => '三菱東京UFJ銀行
+			尾張新川支店 普通 0040364
+			株式会社ベクトル',
+			'remarks'     => '恐れ入りますが、お振込手数料は御社でご負担いただけますようお願い申し上げます。',
+		);
+		return $default;
 	}
 
 	public static function admin_enqueue_scripts() {

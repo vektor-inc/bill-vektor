@@ -1,12 +1,43 @@
 <?php 
+
+/*-------------------------------------------*/
+/*  Load Module
+/*-------------------------------------------*/
+/*  Theme setup
+/*-------------------------------------------*/
+/*  Load Theme CSS & JS
+/*-------------------------------------------*/
+/*  Load Admin CSS & JS
+/*-------------------------------------------*/
+/*  WidgetArea initiate
+/*-------------------------------------------*/
+
+
 $theme_opt = wp_get_theme(get_template());
 define('BILLVEKTOR_THEME_VERSION', $theme_opt->Version);
 
+/*-------------------------------------------*/
+/*  Load Module
+/*-------------------------------------------*/
 require_once( 'inc/custom-field-builder-config.php' );
 require_once( 'inc/setting-page/setting-page.php' );
 require_once( 'inc/bill-custom-fields/bill-custom-fields.php' );
 get_template_part('inc/template-tags');
 
+/*-------------------------------------------*/
+/*  Theme setup
+/*-------------------------------------------*/
+function bill_theme_title() {
+    // title tag
+    add_theme_support( 'title-tag' );
+    // custom menu
+    register_nav_menus( array( 'Header Navigation' => 'Header Navigation', ) );
+}
+add_action( 'after_setup_theme', 'bill_theme_title' );
+
+/*-------------------------------------------*/
+/*  Load Theme CSS & JS
+/*-------------------------------------------*/
 function bill_theme_scripts(){
 
   // 静的HTMLで読み込んでいたCSSを読み込む
@@ -22,6 +53,9 @@ function bill_theme_scripts(){
 }
 add_action( 'wp_enqueue_scripts', 'bill_theme_scripts' );
 
+/*-------------------------------------------*/
+/*  Load Admin CSS & JS
+/*-------------------------------------------*/
 function bill_admin_scripts(){
   // 管理画面用のcss
   // CF Builder で読み込んでいる以外のCSSが無いため
@@ -31,11 +65,9 @@ function bill_admin_scripts(){
 }
 add_action( 'admin_enqueue_scripts', 'bill_admin_scripts' );
 
-function bill_theme_title() {
-    add_theme_support( 'title-tag' );
-}
-add_action( 'after_setup_theme', 'bill_theme_title' );
-
+/*-------------------------------------------*/
+/*  WidgetArea initiate
+/*-------------------------------------------*/
 function bill_widgets_init() {
   register_sidebar( array(
     'name' => 'Sidebar',
@@ -47,29 +79,3 @@ function bill_widgets_init() {
   ) );
 }
 add_action( 'widgets_init', 'bill_widgets_init' );
-
-function bill_theme_custom_menu() {
-    register_nav_menus( array( 'Header Navigation' => 'Header Navigation', ) );
-}
-add_action( 'after_setup_theme', 'bill_theme_custom_menu' );
-
-
-
-
-
-function bill_options_default(){
-      $default = array(
-      'own-name'    => '株式会社ベクトル',
-      'own-address'   => '〒460-0008
-名古屋市中区栄1-22-16
-ミナミ栄ビル 302号
-TEL : 000-000-0000',
-      'own-logo'    => '',
-      'own-seal'    => '',
-      'own-payee'   => '三菱東京UFJ銀行
-尾張新川支店 普通 0040364
-株式会社ベクトル',
-      'remarks'     => '恐れ入りますが、お振込手数料は御社でご負担いただけますようお願い申し上げます。',
-      );
-  return $default;
-}
