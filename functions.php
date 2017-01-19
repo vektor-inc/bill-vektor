@@ -13,6 +13,8 @@
 /*-------------------------------------------*/
 /*  Add Post Type Client
 /*-------------------------------------------*/
+/*  Remove_post_editor_support
+/*-------------------------------------------*/
 
 
 $theme_opt = wp_get_theme(get_template());
@@ -104,3 +106,10 @@ function bill_add_post_type_client() {
     );
 }
 
+/*-------------------------------------------*/
+/*  Remove_post_editor_support
+/*-------------------------------------------*/
+add_action( 'init' , 'bill_remove_post_editor_support' );
+function bill_remove_post_editor_support() {
+ remove_post_type_support( 'post', 'editor' );
+}
