@@ -29,7 +29,7 @@
 <div class="col-xs-5 col-xs-offset-1">
 <table class="bill-info-table">
 <tr>
-<th>No</th>
+<th>請求番号</th>
 <td><?php echo esc_html( $post->bill_id ); ?></td>
 </tr>
 <tr>
@@ -38,7 +38,7 @@
 </tr>
 <tr>
 <th>お支払期日</th>
-<td><?php echo esc_html( $post->bill_limit ); ?></td>
+<td><?php echo esc_html( date("Y年n月j", bill_raw_date( $post->bill_limit_date) ) ); ?></td>
 </tr>
 </table>
 
@@ -74,28 +74,38 @@ if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
 </tr>
 </thead>
 <tbody>
+<?php 
+$bill_items = get_post_meta( $post->ID, 'bill_items', true );
+$bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
+$item_total = 0;
+// 行のループ
+foreach ($bill_items as $key => $value) { ?>
 
-<?php if ( get_field('bill-items') ) : ?>
-<?php while ( has_sub_field('bill-items') ) : ?>
-<tr>
-<?php
-$item_count = intval( esc_html( get_sub_field('item-count') ) );
-$item_price = intval( esc_html( get_sub_field('item-price') ) );
+	<tr>
+	<?php
+	$item_count = intval( esc_html( $bill_items[$key]['count'] ) );
+	$item_price = intval( esc_html( $bill_items[$key]['price'] ) );
+	?>
+	<td><?php echo esc_html( $bill_items[$key]['name'] );?></td>
+	<td class="text-center"><?php echo $item_count ;?></td>
+	<td class="text-center"><?php echo esc_html( $bill_items[$key]['unit'] );?></td>
+	<td class="text-right yen"><?php echo number_format( $item_price );?></td>
+	<td class="text-right yen"><?php echo number_format( $item_count * $item_price );?></td>
+	</tr>
+
+	<?php 
+	$item_total += $item_count * $item_price;
+} // foreach ($bill_items as $key => $value) {
+
+
+$tax = round( $item_total * 0.08 );
+$bill_total = $item_total + $tax;
 ?>
-<td><?php echo esc_html( get_sub_field('item-name') );?></td>
-<td class="text-center"><?php echo $item_count ;?></td>
-<td class="text-center"><?php echo esc_html( get_sub_field('item-unit') );?></td>
-<td class="text-right yen"><?php echo number_format( $item_price );?></td>
-<td class="text-right yen"><?php echo number_format( $item_count * $item_price );?></td>
-</tr>
-<?php endwhile; ?>
-<?php endif; ?>
-
 </tbody>
 <tfoot>
-<tr><th colspan="4">小計</th><td class="text-right yen">29,000</td></tr>
-<tr><th colspan="4">消費税</th><td class="text-right yen">400</td></tr>
-<tr><th colspan="4">合計金額</th><td class="text-right yen">300,000</td></tr>
+<tr><th colspan="4">小計</th><td class="text-right yen"><?php echo number_format( $item_total );?></td></tr>
+<tr><th colspan="4">消費税</th><td class="text-right yen"><?php echo number_format( $tax );?></td></tr>
+<tr><th colspan="4">合計金額</th><td class="text-right yen"><?php echo number_format( $bill_total );?></td></tr>
 </tfoot>
 </table>
 
@@ -104,7 +114,16 @@ $item_price = intval( esc_html( get_sub_field('item-price') ) );
 
 <dl class="bill-remarks">
 <dt>備考</dt>
-<dd><?php echo apply_filters('the_content', $options['remarks'] );?></dd>
+<dd>
+<?php
+if ( $post->bill_remarks ){
+	// 請求書個別の備考
+	echo apply_filters('the_content', $post->bill_remarks );
+} else {
+	// 共通の備考
+	echo apply_filters('the_content', $options['remarks'] );
+} ?>
+</dd>
 </dl
 
 <div class="bill-payee">
