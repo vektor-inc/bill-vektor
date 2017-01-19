@@ -11,10 +11,12 @@
   <div class="container">
     <div class="row">
       <div class="col-md-12">
-      <h1 class="header-logo"><a href="<?php echo home_url( '/' ); ?>"><?php bloginfo( 'name' ); ?></a></h1>
-      <!--
-      <h2 class="header-description"></h2>
-      -->
+      <h1 class="header-logo">
+      <a href="<?php echo home_url( '/' ); ?>">
+      BillVektor 
+      <?php // bloginfo( 'name' ); ?>        
+      </a></h1>
+      <h2 class="header-description">請求書管理システム</h2>
       </div>
     </div>
 
