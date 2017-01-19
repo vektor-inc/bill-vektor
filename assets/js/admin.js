@@ -40,10 +40,6 @@
 	    row_count_reset();
 	    jQuery('#sortable').sortable();
 
-		    // var rows = jQuery('#sortable .cell-number');
-		    // for (var i = 0, rowTotal = rows.length; i < rowTotal; i += 1) {
-		    //     jQuery(jQuery('.cell-number')[i]).text(i + 1);
-		    // }
 	})
 
 

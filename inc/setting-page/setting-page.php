@@ -98,14 +98,14 @@ class Bill_Admin {
 	$default = array(
 			'own-name'    => '株式会社ベクトル',
 			'own-address'   => '〒460-0008
-			名古屋市中区栄1-22-16
-			ミナミ栄ビル 302号
-			TEL : 000-000-0000',
+名古屋市中区栄1-22-16
+ミナミ栄ビル 302号
+TEL : 000-000-0000',
 			'own-logo'    => '',
 			'own-seal'    => '',
 			'own-payee'   => '三菱東京UFJ銀行
-			尾張新川支店 普通 0040364
-			株式会社ベクトル',
+尾張新川支店 普通 0040364
+株式会社ベクトル',
 			'remarks'     => '恐れ入りますが、お振込手数料は御社でご負担いただけますようお願い申し上げます。',
 		);
 		return $default;
@@ -114,7 +114,7 @@ class Bill_Admin {
 	public static function admin_enqueue_scripts() {
 		wp_enqueue_script( 'jquery' );
 		wp_enqueue_media();
-		wp_enqueue_script( 'bill-setting-page-js', get_template_directory_uri().'/inc/setting-page/setting-page.js', array( 'jquery' ), self::$version );
+		wp_enqueue_script( 'vk_mediauploader', get_template_directory_uri().'/inc/setting-page/js/mediauploader.js', array( 'jquery' ), self::$version );
 		wp_enqueue_style( 'bill-setting-page-style', get_template_directory_uri().'/inc/setting-page/setting-page.css', array(), self::$version, 'all' );
 	}
 

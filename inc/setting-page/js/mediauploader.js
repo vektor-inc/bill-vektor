@@ -25,13 +25,13 @@ jQuery(document).ready(function($){
             return;
         }
         custom_uploader = wp.media({
-            title: 'Choose Image',
+            title: '画像を選択',
             // 以下のコメントアウトを解除すると画像のみに限定される。 → されないみたい
             library: {
                 type: 'image'
             },
             button: {
-                text: 'Choose Image'
+                text: '画像を選択'
             },
             multiple: false, // falseにすると画像を1つしか選択できなくなる
         });
