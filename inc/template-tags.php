@@ -15,3 +15,12 @@ function bill_form_post_value( $post_field, $type = false ){
         }
       return $value;
 }
+
+// 8桁の数字で保存されているデータを
+function bill_raw_date($date){
+    $year   = substr($date,0,4);
+    $month  = substr($date,4,2);
+    $day    = substr($date,6,2);
+    $raw_date = strtotime($year.'-'.$month.'-'.$day.' 00:00:00');
+    return $raw_date;
+}

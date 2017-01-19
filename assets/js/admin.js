@@ -17,7 +17,7 @@
 		jQuery('.row-control tbody tr').each(function(i){
 
 			jQuery(this).find( 'input.bill-item-field' ).each(function(){
-				console.log(i);
+
 				// 置換対象の文字列
 				var input_name = jQuery(this).attr("name");
 

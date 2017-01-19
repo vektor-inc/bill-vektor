@@ -29,7 +29,7 @@
 <div class="col-xs-5 col-xs-offset-1">
 <table class="bill-info-table">
 <tr>
-<th>No</th>
+<th>請求番号</th>
 <td><?php echo esc_html( $post->bill_id ); ?></td>
 </tr>
 <tr>
@@ -38,7 +38,7 @@
 </tr>
 <tr>
 <th>お支払期日</th>
-<td><?php echo esc_html( $post->bill_limit ); ?></td>
+<td><?php echo esc_html( date("Y年n月j", bill_raw_date( $post->bill_limit_date) ) ); ?></td>
 </tr>
 </table>
 
@@ -114,7 +114,16 @@ $bill_total = $item_total + $tax;
 
 <dl class="bill-remarks">
 <dt>備考</dt>
-<dd><?php echo apply_filters('the_content', $options['remarks'] );?></dd>
+<dd>
+<?php
+if ( $post->bill_remarks ){
+	// 請求書個別の備考
+	echo apply_filters('the_content', $post->bill_remarks );
+} else {
+	// 共通の備考
+	echo apply_filters('the_content', $options['remarks'] );
+} ?>
+</dd>
 </dl
 
 <div class="bill-payee">
