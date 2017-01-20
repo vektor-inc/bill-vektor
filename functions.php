@@ -28,6 +28,7 @@ define('BILLVEKTOR_THEME_VERSION', $theme_opt->Version);
 require_once( 'inc/custom-field-builder-config.php' );
 require_once( 'inc/setting-page/setting-page.php' );
 require_once( 'inc/bill-custom-fields/bill-custom-fields.php' );
+require_once( 'inc/estimate-custom-fields/estimate-custom-fields.php' );
 get_template_part('inc/template-tags');
 
 /*-------------------------------------------*/
@@ -107,6 +108,28 @@ function bill_add_post_type_client() {
         )
     );
 }
+/*-------------------------------------------*/
+/*  Add Post Type Estimate
+/*-------------------------------------------*/
+add_action( 'init', 'bill_add_post_type_estimate', 0 );
+function bill_add_post_type_estimate() {
+    register_post_type( 'estimate', /* カスタム投稿タイプのスラッグ */
+        array(
+            'labels' => array(
+                'name' => '見積書',
+            ),
+        'public'             => true,
+        'publicly_queryable' => true,
+        'show_ui'            => true,
+        'show_in_menu'       => true,
+        'has_archive'        => true,
+        'supports'           => array('title'),
+        'menu_position'      => 5,
+        )
+    );
+}
+
+
 
 /*-------------------------------------------*/
 /*  Remove_post_editor_support
