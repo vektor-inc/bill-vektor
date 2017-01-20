@@ -3,7 +3,7 @@
 * 請求品目のカスタムフィールド
 */
 
-class Bill_Item_Custom_Fields {
+class Estimate_Item_Custom_Fields {
 
 	public static $version = '0.0.0';
 
@@ -18,10 +18,10 @@ class Bill_Item_Custom_Fields {
 	public static function add_metabox() 
 	{
 
-		$id = 'meta_box_bill_items';
-		$title = __( '請求品目', '' );
+		$id = 'meta_box_estimate_items';
+		$title = __( '見積品目', '' );
 		$callback = array( __CLASS__, 'fields_form');
-		$screen = 'post';
+		$screen = 'estimate';
 		$context = 'advanced';
 		$priority = 'high';
 		$callback_args = '';
@@ -108,7 +108,7 @@ class Bill_Item_Custom_Fields {
 
 		// 配列の空の行を削除する
 		if ( is_array( $field_value ) ){
-			$field_value = Bill_Item_Custom_Fields::delete_null_row( $field_value );
+			$field_value = Estimate_Item_Custom_Fields::delete_null_row( $field_value );
 		}
 
 		// データが空だったら入れる
@@ -145,4 +145,4 @@ class Bill_Item_Custom_Fields {
 
 }
 
-Bill_Item_Custom_Fields::init();
+Estimate_Item_Custom_Fields::init();
