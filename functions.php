@@ -27,8 +27,8 @@ define('BILLVEKTOR_THEME_VERSION', $theme_opt->Version);
 /*-------------------------------------------*/
 require_once( 'inc/custom-field-builder-config.php' );
 require_once( 'inc/setting-page/setting-page.php' );
-require_once( 'inc/bill-custom-fields/bill-custom-fields.php' );
-require_once( 'inc/estimate-custom-fields/estimate-custom-fields.php' );
+require_once( 'inc/custom-fields-bill/custom-fields-bill.php' );
+require_once( 'inc/custom-fields-estimate/custom-fields-estimate.php' );
 get_template_part('inc/template-tags');
 
 /*-------------------------------------------*/
