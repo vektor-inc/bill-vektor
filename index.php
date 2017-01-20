@@ -55,7 +55,7 @@
 </tr>
 <?php while( have_posts() ) : the_post(); ?>
 <tr>
-<td><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></td>
+<td><a href="<?php the_permalink(); ?>" target="_blank"><?php the_title(); ?></a></td>
 <td><?php the_category(' , '); ?></td>
 </tr>
 <?php endwhile; ?>
