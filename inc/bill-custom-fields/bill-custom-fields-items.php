@@ -108,7 +108,7 @@ class Bill_Item_Custom_Fields {
 
 		// 配列の空の行を削除する
 		if ( is_array( $field_value ) ){
-			$field_value = Bill_Item_Custom_Fields::delete_null_row( $field_value );
+			// $field_value = Bill_Item_Custom_Fields::delete_null_row( $field_value );
 		}
 
 		// データが空だったら入れる
