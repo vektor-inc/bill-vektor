@@ -20,16 +20,6 @@
       </div>
     </div>
 
-<?php
-$args = array(
-    'theme_location' => 'Header Navigation',
-    'items_wrap'     => '<ul id="%1$s" class="%2$s nav navbar-nav nav">%3$s</ul>',
-    'fallback_cb'    => '',
-    'echo'           => false,
-);
-$menu = wp_nav_menu( $args ) ;
-if ( $menu ) :
-?>
     <div class="navbar navbar-inverse">
       <div class="navbar-header">
         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-ex-collapse">
@@ -40,10 +30,26 @@ if ( $menu ) :
         </button>
       </div>
       <div class="collapse navbar-collapse" id="navbar-ex-collapse">
-      <?php echo $menu; ?>
+      <?php
+      $args = array(
+          'theme_location' => 'Header Navigation',
+          'items_wrap'     => '<ul id="%1$s" class="%2$s nav navbar-nav nav">%3$s</ul>',
+          'fallback_cb'    => '',
+          'echo'           => false,
+      );
+      $menu = wp_nav_menu( $args ) ;?>
+      <?php if ( $menu ) : ?>
+        <?php echo $menu; ?>
+      <?php else : ?>
+        <div class="menu-menu-1-container">
+          <ul id="menu-menu-1" class="menu nav navbar-nav nav">
+          <li class="menu-item"><a href="<?php echo home_url('/');?>">ホーム</a></li>
+          <li class="menu-item"><a href="<?php echo home_url('/').'?post_type=estimate';?>">見積書</a></li>
+          <li class="menu-item"><a href="<?php echo home_url('/').'?post_type=post';?>">請求書</a></li>
+          </ul>
+          </div>
+      <?php endif; ?>
       </div>
     </div>
-<?php endif; ?>
-
   </div><!-- [ /.container ] -->
 </header>
