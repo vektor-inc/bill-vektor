@@ -61,6 +61,21 @@ body.single {
 	width:100px;
 	height:auto;
 }
+
+table.table-bill {
+	.price {
+		text-align: right;
+		width:8em;
+	}
+}
+table.table-bill-total {
+	width:auto;
+	float:right;
+	th {
+		width:8em;
+	}
+}
+
 .bill-remarks {
 	dt {
 		float:left;
@@ -70,6 +85,12 @@ body.single {
 		display:block; overflow:hidden;
 	}
 }
+
+
+
+
+
+
 .bill-payee {
 	td { position: relative; }
 }

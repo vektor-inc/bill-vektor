@@ -1,6 +1,3 @@
-
-
-
 <div class="container">
 <div class="row">
 <div class="col-xs-6">
@@ -53,51 +50,7 @@ if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
 
 <div class="container">
 
-<table class="table table-bordered bill-table">
-<thead>
-<tr class="active">
-<th class="text-center">商品名</th>
-<th class="text-center">数量</th>
-<th class="text-center">単位</th>
-<th class="text-center">商品単価</th>
-<th class="text-center">金額</th>
-</tr>
-</thead>
-<tbody>
-<?php 
-$bill_items = get_post_meta( $post->ID, 'bill_items', true );
-$bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
-$item_total = 0;
-// 行のループ
-foreach ($bill_items as $key => $value) { ?>
-
-	<tr>
-	<?php
-	$item_count = intval( esc_html( $bill_items[$key]['count'] ) );
-	$item_price = intval( esc_html( $bill_items[$key]['price'] ) );
-	?>
-	<td><?php echo esc_html( $bill_items[$key]['name'] );?></td>
-	<td class="text-center"><?php echo $item_count ;?></td>
-	<td class="text-center"><?php echo esc_html( $bill_items[$key]['unit'] );?></td>
-	<td class="text-right yen"><?php echo number_format( $item_price );?></td>
-	<td class="text-right yen"><?php echo number_format( $item_count * $item_price );?></td>
-	</tr>
-
-	<?php 
-	$item_total += $item_count * $item_price;
-} // foreach ($bill_items as $key => $value) {
-
-
-$tax = round( $item_total * 0.08 );
-$bill_total = $item_total + $tax;
-?>
-</tbody>
-<tfoot>
-<tr><th colspan="4">小計</th><td class="text-right yen"><?php echo number_format( $item_total );?></td></tr>
-<tr><th colspan="4">消費税</th><td class="text-right yen"><?php echo number_format( $tax );?></td></tr>
-<tr><th colspan="4">合計金額</th><td class="text-right yen"><?php echo number_format( $bill_total );?></td></tr>
-</tfoot>
-</table>
+<?php get_template_part('template-parts/bill/table-price');?>
 
 <dl class="bill-remarks">
 <dt>備考</dt>

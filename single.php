@@ -11,11 +11,10 @@
 <?php if ( have_posts() ) { ?>
 <?php while( have_posts() ) : the_post(); ?>
 <?php if ( get_post_type() == 'post' ) {
-	get_template_part('module-bill');
+	get_template_part('template-parts/bill/frame-bill');
 } else if ( get_post_type() == 'estimate' ){
-	get_template_part('module-estimate');
+	get_template_part('template-parts/bill/frame-estimate');
 } ?>
-
 <?php endwhile; ?>
 <?php } ?>
 
