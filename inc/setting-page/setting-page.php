@@ -83,10 +83,15 @@ class Bill_Admin {
 		<td><textarea name="bill-setting[own-payee]" rows="3"><?php echo esc_textarea( $options['own-payee'] ) ?></textarea></td>
 		</tr>
 		<tr>
-		<th>備考</th>
-		<td><textarea name="bill-setting[remarks]" rows="4"><?php echo esc_textarea( $options['remarks'] ) ?></textarea></td>
+		<th>備考（請求）</th>
+		<?php $remarks_bill  = ( isset( $options['remarks-bill'] ) )  ? $options['remarks-bill'] : '' ;?>
+		<td><textarea name="bill-setting[remarks-bill]" rows="4"><?php echo esc_textarea( $remarks_bill ) ?></textarea></td>
 		</tr>
-
+		<tr>
+		<th>備考（見積）</th>
+		<?php $remarks_estimate  = ( isset( $options['remarks-estimate'] ) )  ? $options['remarks-estimate'] : '' ;?>
+		<td><textarea name="bill-setting[remarks-estimate]" rows="4"><?php echo esc_textarea( $remarks_estimate ) ?></textarea></td>
+		</tr>
 		</table>
 		<p><input type="submit" value="設定を保存" class="button button-primary button-large"></p>
 		</form>
@@ -106,7 +111,8 @@ TEL : 000-000-0000',
 			'own-payee'   => '三菱東京UFJ銀行
 尾張新川支店 普通 0040364
 株式会社ベクトル',
-			'remarks'     => '恐れ入りますが、お振込手数料は御社でご負担いただけますようお願い申し上げます。',
+			'remarks-bill'     => '恐れ入りますがお振込手数料は御社でご負担いただけますようお願い申し上げます。',
+			'remarks-estimate' => '本見積もりの有効期限は3ヶ月となります。',
 		);
 		return $default;
 	}

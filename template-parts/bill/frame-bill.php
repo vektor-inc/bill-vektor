@@ -61,7 +61,9 @@ if ( $post->bill_remarks ){
 	echo apply_filters('the_content', $post->bill_remarks );
 } else {
 	// 共通の備考
-	echo apply_filters('the_content', $options['remarks'] );
+	if ( isset( $options['remarks-bill'] ) ){
+		echo apply_filters('the_content', $options['remarks-bill'] );
+	}
 } ?>
 </dd>
 </dl>
