@@ -29,6 +29,7 @@ require_once( 'inc/custom-field-builder-config.php' );
 require_once( 'inc/setting-page/setting-page.php' );
 require_once( 'inc/custom-field-bill/custom-field-bill.php' );
 require_once( 'inc/custom-field-estimate/custom-field-estimate.php' );
+require_once( 'inc/duplicate-bill/duplicate-bill.php' );
 get_template_part('inc/template-tags');
 
 /*-------------------------------------------*/
