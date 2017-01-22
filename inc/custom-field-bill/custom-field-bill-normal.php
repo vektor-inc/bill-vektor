@@ -63,7 +63,7 @@ class Bill_Normal_Custom_Fields {
 			'bill_client' => array(
 				'label' => __('取引先','bill-vektor'),
 				'type' => 'select',
-				'description' => '取引先は<a href="'.admin_url('/post-new.php?post_type=client').' target="_blank">こちら</a>から登録してください。',
+				'description' => '取引先は<a href="'.admin_url('/post-new.php?post_type=client').'" target="_blank">こちら</a>から登録してください。',
 				'required' => true,
 				'options' => $client,
 			),
