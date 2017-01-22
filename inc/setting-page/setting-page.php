@@ -51,10 +51,16 @@ class Bill_Admin {
 			'src'   => '',
 			'class' => 'input_thumb',
 		);
+		$no_image = '<img src="'.get_template_directory_uri().'/assets/images/no-image.png" id="thumb_own-logo" alt="" class="input_thumb" style="width:150px;height:auto;">';
 		if ( isset( $options['own-logo'] ) && $options['own-logo'] ){
-			echo wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr );
+			if ( wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr ) ) {
+				echo wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr );
+			} else {
+				// 画像自体がメディアかさ削除されてしまった場合
+				echo $no_image;
+			}
 		} else {
-			echo '<img src="'.get_template_directory_uri().'/assets/images/no-image.png" id="thumb_own-logo" alt="" class="input_thumb" style="width:150px;height:auto;">';
+			echo $no_image;
 		}
 		?>
 		<input type="hidden" name="bill-setting[own-logo]" id="own-logo" value="<?php echo esc_attr( $options['own-logo'] ) ?>" style="width:60%;" />  
@@ -69,10 +75,16 @@ class Bill_Admin {
 			'src'   => '',
 			'class' => 'input_thumb',
 		);
-		if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
-			echo wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr );
+		$no_image = '<img src="'.get_template_directory_uri().'/assets/images/no-image.png" id="thumb_own-logo" alt="" class="input_thumb" style="width:150px;height:auto;">';
+		if ( isset( $options['own-logo'] ) && $options['own-logo'] ){
+			if ( wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr ) ) {
+				echo wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr );
+			} else {
+				// 画像自体がメディアかさ削除されてしまった場合
+				echo $no_image;
+			}
 		} else {
-			echo '<img src="'.get_template_directory_uri().'/assets/images/no-image.png" id="thumb_own-seal" alt="" class="input_thumb" style="width:150px;height:auto;">';
+			echo $no_image;
 		}
 		?>
 		<input type="hidden" name="bill-setting[own-seal]" id="own-seal" value="<?php echo esc_attr( $options['own-seal'] ) ?>" style="width:60%;" />  
