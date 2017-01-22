@@ -161,3 +161,4 @@ function bill_no_login_redirect( $content ) {
   }
 }//bill_no_login_redirect
 add_action( 'init', 'bill_no_login_redirect' );
+

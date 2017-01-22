@@ -9,7 +9,7 @@
 
 <dl class="bill-total">
 <dt>合計金額</dt>
-<dd>￥ 2,000,000 <span class="caption">(消費税含)</span></dd>
+<dd>￥ <?php echo number_format( bill_total_add_tax() );?><span class="caption">(消費税含)</span></dd>
 </dl>
 </div>
 
