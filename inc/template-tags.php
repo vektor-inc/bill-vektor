@@ -24,3 +24,49 @@ function bill_raw_date($date){
     $raw_date = strtotime($year.'-'.$month.'-'.$day.' 00:00:00');
     return $raw_date;
 }
+
+function bill_total_add_tax() {
+  global $post;
+  $bill_items = get_post_meta( $post->ID, 'bill_items', true );
+  $bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
+  $bill_total = 0;
+
+  if ( is_array( $bill_items ) ) {
+
+  // 行のループ
+  foreach ($bill_items as $key => $value) { 
+    // $item_count
+    if ( $bill_items[$key]['count'] === '' ){
+      $item_count = '';
+    } else {
+      $item_count = intval( $bill_items[$key]['count'] );
+    }
+
+    // $item_price
+    if ( $bill_items[$key]['price'] === '' ) {
+      $item_price = '';
+      $item_price_print = '';
+    } else {
+      $item_price = intval( $bill_items[$key]['price'] );
+      $item_price_print = '¥ '.number_format( $item_price );
+    }
+
+    // $item_total
+    if ( $item_count && $item_price ) {
+      $item_price_total = $item_count * $item_price;
+      $item_price_total_print = '¥ '.number_format( $item_price_total );
+    } else {
+      $item_price_total = '';
+      $item_price_total_print = '';
+    }
+    // 小計
+    $bill_total += $item_price_total;
+
+  } // foreach ($bill_items as $key => $value) {
+
+  } // if ( is_array( $bill_items ) ) {
+
+  $tax = round( $bill_total * 0.08 );
+  $bill_total_add_tax = $bill_total + $tax;
+  return $bill_total_add_tax;
+}
