@@ -45,14 +45,16 @@ class Estimate_Item_Custom_Fields {
 
 		$bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
 
-		// 品目の登録がない場合には１行目用の配列を用意しておく
+		// 品目の登録がない場合には8行分の配列を用意しておく
 		if ( !$bill_items ){
-			$bill_items[0] = array(
-				'name' => '',
-				'count' => '',
-				'unit' => '',
-				'price' => '',
-			 );
+			for ( $i = 0; $i <= 7 ;$i++ ) {
+				$bill_items[$i] = array(
+					'name' => '',
+					'count' => '',
+					'unit' => '',
+					'price' => '',
+				 );
+			}
 		}
 
 		if ( isset( $bill_items[0]['total_row_count'] ) && $bill_items[0]['total_row_count'] ) {
