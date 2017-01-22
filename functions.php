@@ -96,7 +96,7 @@ function bill_add_post_type_client() {
     register_post_type( 'client', /* カスタム投稿タイプのスラッグ */
         array(
             'labels' => array(
-                'name' => '請求先',
+                'name' => '取引先',
             ),
         'public'             => false,
         'publicly_queryable' => true,
