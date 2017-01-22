@@ -13,6 +13,9 @@
 $bill_items = get_post_meta( $post->ID, 'bill_items', true );
 $bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
 $bill_total = 0;
+
+if ( is_array( $bill_items ) ) {
+
 // 行のループ
 foreach ($bill_items as $key => $value) { ?>
 
@@ -56,6 +59,7 @@ foreach ($bill_items as $key => $value) { ?>
 
 } // foreach ($bill_items as $key => $value) {
 
+} // if ( is_array( $bill_items ) ) {
 
 $tax = round( $bill_total * 0.08 );
 $bill_total_add_tax = $bill_total + $tax;

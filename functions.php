@@ -104,7 +104,8 @@ function bill_add_post_type_client() {
         'show_in_menu'       => true,
         'has_archive'        => false,
         'supports'           => array('title'),
-        'menu_position'      => 5,
+        'menu_icon'          => 'dashicons-building',
+        'menu_position'      => 3,
         )
     );
 }
@@ -124,6 +125,7 @@ function bill_add_post_type_estimate() {
         'show_in_menu'       => true,
         'has_archive'        => true,
         'supports'           => array('title'),
+        'menu_icon'          => 'dashicons-media-spreadsheet',
         'menu_position'      => 5,
         )
     );
