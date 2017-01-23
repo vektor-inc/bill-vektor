@@ -21,7 +21,7 @@
 				// 置換対象の文字列
 				var input_name = jQuery(this).attr("name");
 
-				var result = input_name.replace(/(.*\[)([0-9])(\].*)/, "$1" + i + "$3" );
+				var result = input_name.replace(/(.*\[)(\d+)(\].*)/, "$1" + i + "$3" );
 				jQuery(this).attr({"name":result}).attr({"id":result});
 
 			});
