@@ -1,5 +1,5 @@
 body.single {
-	font-size:12px;
+	font-size:11px;
 }
 
 .bill-wrap {
@@ -40,6 +40,10 @@ body.single {
 		font-size:1.6em; 
 		text-align: center; 
 	}
+}
+
+.bill-message {
+	margin-bottom:2em;
 }
 .bill-estimate-title {
 	border-bottom:1px solid #000;
@@ -85,11 +89,14 @@ table.table-bill {
 		text-align: right;
 		width:8em;
 	}
-	td { height:2.5em; }
+	th { 
+		white-space: nowrap;
+		}
 }
 table.table-bill-total {
 	width:auto;
 	float:right;
+	margin-left:3em;
 	th {
 		width:8em;
 	}

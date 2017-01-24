@@ -1,7 +1,7 @@
 <table class="table table-bordered table-bill">
 <thead>
 <tr class="active">
-<th class="text-center">商品名</th>
+<th class="text-center">品目</th>
 <th class="text-center">数量</th>
 <th class="text-center">単位</th>
 <th class="text-center">商品単価</th>
@@ -46,7 +46,12 @@ foreach ($bill_items as $key => $value) { ?>
 		$item_price_total_print = '';
 	}
 	?>
-	<td><?php echo esc_html( $bill_items[$key]['name'] );?></td>
+	<?php if ( $bill_items[$key]['name'] ){
+		$bill_item_name = $bill_items[$key]['name'];
+	} else {
+		$bill_item_name = '　';
+	} ?>
+	<td><?php echo esc_html( $bill_item_name );?></td>
 	<td class="text-center"><?php echo esc_html( $item_count) ;?></td>
 	<td class="text-center"><?php echo esc_html( $bill_items[$key]['unit'] );?></td>
 	<td class="price"><?php echo esc_html( $item_price_print );?></td>

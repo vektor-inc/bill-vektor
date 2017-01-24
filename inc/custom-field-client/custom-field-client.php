@@ -58,10 +58,16 @@ class Client_Custom_Fields {
 				'required' => false,
 				'options' => $honorific_options,
 			),
+			'client_short_name' => array(
+				'label' => __('短縮名','bill-vektor'),
+				'type' => 'text',
+				'description' => '本システム内での短縮表記名です。',
+				'required' => false,
+			),
 			'client_remarks' => array(
-				'label' => __('備考','bill-vektor'),
+				'label' => __('メモ','bill-vektor'),
 				'type' => 'textarea',
-				'description' => '',
+				'description' => '取引上の注意や担当者情報などを必要に応じてメモするためのものです。<br>この項目はどこにも反映されません。',
 				'required' => false,
 			),
 		);
