@@ -85,6 +85,12 @@ class Bill_Normal_Custom_Fields {
 				'description' => '共通の備考は<a href="'.menu_page_url( 'bill-setting-page', false ).'" target="_blank">'.'請求設定画面</a>から設定してください。<br>こちらの備考が記入されている場合は共通の備考は表示されません。',
 				'required' => false,
 			),
+			'bill_memo' => array(
+				'label' => __('メモ','bill-vektor'),
+				'type' => 'textarea',
+				'description' => 'この項目は請求書には印刷されません。',
+				'required' => false,
+			),
 		// 'event_image_main' => array(
 		//     'label' => __('メインイメージ','bill-vektor'),
 		//     'type' => 'image',
