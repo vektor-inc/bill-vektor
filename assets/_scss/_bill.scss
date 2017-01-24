@@ -19,12 +19,17 @@ body.single {
 	padding-bottom:0.1em;
 	border-bottom:1px solid #000;
 	margin-bottom:1em;
+	width:100%;
+	display: table;
 }
-.bill-destination:after{
-	content:"様";
-	position: absolute;
-	right:1em;
+.bill-destination-client {
+	display: table-cell;
 }
+.bill-destination-honorific {
+	display: table-cell;
+	text-align: right;
+}
+
 .bill-total {
 	display: table;
 	border-bottom:1px solid #000;
@@ -34,6 +39,19 @@ body.single {
 	dd { 
 		font-size:1.6em; 
 		text-align: center; 
+	}
+}
+.bill-estimate-title {
+	border-bottom:1px solid #000;
+	width:100%;
+	display: table;
+	dt,
+	dd { display: table-cell; }
+	dt { 
+		width:3em;
+	}
+	dd { 
+		font-size:1.4em;
 	}
 }
 
