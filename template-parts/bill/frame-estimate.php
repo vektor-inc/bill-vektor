@@ -2,7 +2,19 @@
 <div class="row">
 <div class="col-xs-6">
 <h1 class="bill-title">御見積書</h1>
-<h2 class="bill-destination"><?php echo esc_html( get_the_title( $post->bill_client ) );?></h2>
+<h2 class="bill-destination">
+<span class="bill-destination-client">
+<?php echo esc_html( get_the_title( $post->bill_client ) );?>
+</span>
+<span class="bill-destination-honorific">
+<?php $client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
+if ( $client_honorific ) {
+	echo $client_honorific;
+} else {
+	echo '御中';
+} ?>
+</span>
+</h2>
 
 <p>毎々格別のお引立てを賜りまして厚くお礼申し上げます。<br>
 御連絡いただきました件、下記の通り御見積申し上げます。<br>
