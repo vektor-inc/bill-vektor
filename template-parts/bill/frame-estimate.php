@@ -8,10 +8,8 @@
 御連絡いただきました件、下記の通り御見積申し上げます。<br>
 何卒ご用命下さいますようお願い申し上げます。</p>
 
-<dl class="bill-total">
-<dt>件名</dt>
-<dd><?php the_title();?></dd>
-</dl>
+<h2 class="bill-estimate-title">
+<small>件名</small> <?php the_title();?></h2>
 </div>
 
 <div class="col-xs-5 col-xs-offset-1">
