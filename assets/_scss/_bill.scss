@@ -39,11 +39,14 @@ body.single {
 .bill-estimate-title {
 	border-bottom:1px solid #000;
 	width:100%;
-	font-size:1.6em;
-	margin-bottom:1em;
-	small {
-		margin-right:1em;
-		white-space: nowrap;
+	display: table;
+	dt,
+	dd { display: table-cell; }
+	dt { 
+		width:3em;
+	}
+	dd { 
+		font-size:1.4em;
 	}
 }
 
