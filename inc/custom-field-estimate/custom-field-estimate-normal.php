@@ -73,12 +73,12 @@ class Estimate_Normal_Custom_Fields {
 			// 	'description' => '',
 			// 	'required' => false,
 			// ),
-			'bill_Issue_date' => array(
-				'label' => __('発行日','bill-vektor'),
-				'type' => 'datepicker',
-				'description' => '',
-				'required' => true,
-			),
+			// 'bill_Issue_date' => array(
+			// 	'label' => __('発行日','bill-vektor'),
+			// 	'type' => 'datepicker',
+			// 	'description' => '',
+			// 	'required' => true,
+			// ),
 			'bill_remarks' => array(
 				'label' => __('備考','bill-vektor'),
 				'type' => 'textarea',
