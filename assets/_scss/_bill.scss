@@ -1,5 +1,5 @@
 body.single {
-	font-size:12px;
+	font-size:11px;
 }
 
 .bill-wrap {
@@ -89,7 +89,9 @@ table.table-bill {
 		text-align: right;
 		width:8em;
 	}
-	td { height:2.5em; }
+	th { 
+		white-space: nowrap;
+		}
 }
 table.table-bill-total {
 	width:auto;
