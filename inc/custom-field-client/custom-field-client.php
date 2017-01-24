@@ -59,9 +59,9 @@ class Client_Custom_Fields {
 				'options' => $honorific_options,
 			),
 			'client_remarks' => array(
-				'label' => __('備考','bill-vektor'),
+				'label' => __('メモ','bill-vektor'),
 				'type' => 'textarea',
-				'description' => '',
+				'description' => '取引上の注意や担当者情報などを必要に応じてメモするためのものです。<br>この項目はどこにも反映されません。',
 				'required' => false,
 			),
 		);
