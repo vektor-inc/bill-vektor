@@ -16,7 +16,7 @@ if ( $client_honorific ) {
 </span>
 </h2>
 
-<p>平素は格別のご高配に賜り、誠にありがとう御座います。<br>
+<p class="bill-message">平素は格別のご高配に賜り、誠にありがとう御座います。<br>
 下記の通りご請求申し上げます。</p>
 
 <dl class="bill-total">
