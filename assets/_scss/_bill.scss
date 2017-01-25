@@ -1,3 +1,8 @@
+@mixin bill-th{
+	white-space: nowrap;
+	background-color: #f5f5f5 !important;
+	-webkit-print-color-adjust: exact;
+}
 body.single {
 	font-size:11px;
 }
@@ -89,9 +94,9 @@ table.table-bill {
 		text-align: right;
 		width:8em;
 	}
-	th { 
-		white-space: nowrap;
-		}
+	thead tr th { 
+		@include bill-th;
+	}
 }
 table.table-bill-total {
 	width:auto;
@@ -99,6 +104,7 @@ table.table-bill-total {
 	margin-left:3em;
 	th {
 		width:8em;
+		@include bill-th;
 	}
 }
 
