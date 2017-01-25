@@ -1,6 +1,6 @@
 <table class="table table-bordered table-bill">
 <thead>
-<tr class="active">
+<tr>
 <th class="text-center">品目</th>
 <th class="text-center">数量</th>
 <th class="text-center">単位</th>

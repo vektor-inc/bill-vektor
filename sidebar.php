@@ -1,5 +1,5 @@
 <!-- [ #sub ] -->
-<div id="sub" class="col-md-4">
+<div id="sub" class="col-md-3">
 <?php 
 // ウィジェットエリアid 'sidebar-widget-area' にウィジェットアイテムが何かセットされていた時
 if ( is_active_sidebar( 'sidebar-widget-area' ) ) {
