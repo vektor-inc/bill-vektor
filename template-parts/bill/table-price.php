@@ -4,7 +4,7 @@
 <th class="text-center">品目</th>
 <th class="text-center">数量</th>
 <th class="text-center">単位</th>
-<th class="text-center">商品単価</th>
+<th class="text-center">単価</th>
 <th class="text-center">金額</th>
 </tr>
 </thead>
