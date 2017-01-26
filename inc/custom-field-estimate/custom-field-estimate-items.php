@@ -32,10 +32,6 @@ class Estimate_Item_Custom_Fields {
 
 	public static function fields_form()
 	{
-		// global $post;
-  //   $metas = get_post_custom($post->ID);
-  //   print '<pre style="text-align:left">';print_r($metas);print '</pre>';
-
 
 		wp_nonce_field( wp_create_nonce(__FILE__), 'noncename__bill_fields' );
 
@@ -60,10 +56,6 @@ class Estimate_Item_Custom_Fields {
 				 );
 			}
 		}
-		// } else if ( !is_array($bill_items) ){
-		// 	// 複製の際にシリアライズされている場合に配列にする
-		// 	$bill_items = unserialize($bill_items);
-		// }
 
 		if ( isset( $bill_items[0]['total_row_count'] ) && $bill_items[0]['total_row_count'] ) {
 			$total_row_count = $bill_items[0]['total_row_count'];
