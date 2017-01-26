@@ -13,10 +13,10 @@
       <div class="col-md-12">
       <h1 class="header-logo">
       <a href="<?php echo home_url( '/' ); ?>">
-      BillVektor 
+      BillVektor <small>見積書・請求書管理システム</small>
       <?php // bloginfo( 'name' ); ?>        
       </a></h1>
-      <h2 class="header-description">請求書管理システム</h2>
+      <!-- <h2 class="header-description"></h2> -->
       </div>
     </div>
 

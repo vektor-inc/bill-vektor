@@ -51,10 +51,16 @@ class Bill_Admin {
 			'src'   => '',
 			'class' => 'input_thumb',
 		);
+		$no_image = '<img src="'.get_template_directory_uri().'/assets/images/no-image.png" id="thumb_own-logo" alt="" class="input_thumb" style="width:150px;height:auto;">';
 		if ( isset( $options['own-logo'] ) && $options['own-logo'] ){
-			echo wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr );
+			if ( wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr ) ) {
+				echo wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr );
+			} else {
+				// 画像自体がメディアかさ削除されてしまった場合
+				echo $no_image;
+			}
 		} else {
-			echo '<img src="'.get_template_directory_uri().'/assets/images/no-image.png" id="thumb_own-logo" alt="" class="input_thumb" style="width:150px;height:auto;">';
+			echo $no_image;
 		}
 		?>
 		<input type="hidden" name="bill-setting[own-logo]" id="own-logo" value="<?php echo esc_attr( $options['own-logo'] ) ?>" style="width:60%;" />  
@@ -69,10 +75,16 @@ class Bill_Admin {
 			'src'   => '',
 			'class' => 'input_thumb',
 		);
+		$no_image = '<img src="'.get_template_directory_uri().'/assets/images/no-image.png" id="thumb_own-seal" alt="" class="input_thumb" style="width:150px;height:auto;">';
 		if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
-			echo wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr );
+			if ( wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr ) ) {
+				echo wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr );
+			} else {
+				// 画像自体がメディアかさ削除されてしまった場合
+				echo $no_image;
+			}
 		} else {
-			echo '<img src="'.get_template_directory_uri().'/assets/images/no-image.png" id="thumb_own-seal" alt="" class="input_thumb" style="width:150px;height:auto;">';
+			echo $no_image;
 		}
 		?>
 		<input type="hidden" name="bill-setting[own-seal]" id="own-seal" value="<?php echo esc_attr( $options['own-seal'] ) ?>" style="width:60%;" />  
@@ -83,10 +95,15 @@ class Bill_Admin {
 		<td><textarea name="bill-setting[own-payee]" rows="3"><?php echo esc_textarea( $options['own-payee'] ) ?></textarea></td>
 		</tr>
 		<tr>
-		<th>備考</th>
-		<td><textarea name="bill-setting[remarks]" rows="4"><?php echo esc_textarea( $options['remarks'] ) ?></textarea></td>
+		<th>備考（請求）</th>
+		<?php $remarks_bill  = ( isset( $options['remarks-bill'] ) )  ? $options['remarks-bill'] : '' ;?>
+		<td><textarea name="bill-setting[remarks-bill]" rows="4"><?php echo esc_textarea( $remarks_bill ) ?></textarea></td>
 		</tr>
-
+		<tr>
+		<th>備考（見積）</th>
+		<?php $remarks_estimate  = ( isset( $options['remarks-estimate'] ) )  ? $options['remarks-estimate'] : '' ;?>
+		<td><textarea name="bill-setting[remarks-estimate]" rows="4"><?php echo esc_textarea( $remarks_estimate ) ?></textarea></td>
+		</tr>
 		</table>
 		<p><input type="submit" value="設定を保存" class="button button-primary button-large"></p>
 		</form>
@@ -106,7 +123,8 @@ TEL : 000-000-0000',
 			'own-payee'   => '三菱東京UFJ銀行
 尾張新川支店 普通 0040364
 株式会社ベクトル',
-			'remarks'     => '恐れ入りますが、お振込手数料は御社でご負担いただけますようお願い申し上げます。',
+			'remarks-bill'     => '恐れ入りますがお振込手数料は御社でご負担いただけますようお願い申し上げます。',
+			'remarks-estimate' => '本見積もりの有効期限は3ヶ月となります。',
 		);
 		return $default;
 	}

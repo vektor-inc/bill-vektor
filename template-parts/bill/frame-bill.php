@@ -2,14 +2,26 @@
 <div class="row">
 <div class="col-xs-6">
 <h1 class="bill-title">御請求書</h1>
-<h2 class="bill-destination"><?php echo esc_html( get_the_title( $post->bill_client ) );?></h2>
+<h2 class="bill-destination">
+<span class="bill-destination-client">
+<?php echo esc_html( get_the_title( $post->bill_client ) );?>
+</span>
+<span class="bill-destination-honorific">
+<?php $client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
+if ( $client_honorific ) {
+	echo $client_honorific;
+} else {
+	echo '御中';
+} ?>
+</span>
+</h2>
 
-<p>平素は格別のご高配に賜り、誠にありがとう御座います。<br>
+<p class="bill-message">平素は格別のご高配に賜り、誠にありがとう御座います。<br>
 下記の通りご請求申し上げます。</p>
 
 <dl class="bill-total">
 <dt>合計金額</dt>
-<dd>￥ 2,000,000 <span class="caption">(消費税含)</span></dd>
+<dd>￥ <?php echo number_format( bill_total_add_tax() );?><span class="caption">(消費税含)</span></dd>
 </dl>
 </div>
 
@@ -61,7 +73,9 @@ if ( $post->bill_remarks ){
 	echo apply_filters('the_content', $post->bill_remarks );
 } else {
 	// 共通の備考
-	echo apply_filters('the_content', $options['remarks'] );
+	if ( isset( $options['remarks-bill'] ) ){
+		echo apply_filters('the_content', $options['remarks-bill'] );
+	}
 } ?>
 </dd>
 </dl>

@@ -2,14 +2,26 @@
 <div class="row">
 <div class="col-xs-6">
 <h1 class="bill-title">御見積書</h1>
-<h2 class="bill-destination"><?php echo esc_html( get_the_title( $post->bill_client ) );?></h2>
+<h2 class="bill-destination">
+<span class="bill-destination-client">
+<?php echo esc_html( get_the_title( $post->bill_client ) );?>
+</span>
+<span class="bill-destination-honorific">
+<?php $client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
+if ( $client_honorific ) {
+	echo $client_honorific;
+} else {
+	echo '御中';
+} ?>
+</span>
+</h2>
 
-<p>毎々格別のお引立てを賜りまして厚くお礼申し上げます。<br>
+<p class="bill-message">毎々格別のお引立てを賜りまして厚くお礼申し上げます。<br>
 御連絡いただきました件、下記の通り御見積申し上げます。<br>
 何卒ご用命下さいますようお願い申し上げます。</p>
 
-<dl class="bill-total">
-<dt>件名</dt>
+<dl class="bill-estimate-title">
+<dt class="text-nowrap">件名</dt>
 <dd><?php the_title();?></dd>
 </dl>
 </div>
@@ -54,7 +66,9 @@ if ( $post->bill_remarks ){
 	echo apply_filters('the_content', $post->bill_remarks );
 } else {
 	// 共通の備考
-	echo apply_filters('the_content', $options['remarks'] );
+	if ( isset( $options['remarks-estimate'] ) ){
+		echo apply_filters('the_content', $options['remarks-estimate'] );
+	}
 } ?>
 </dd>
 </dl>

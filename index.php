@@ -21,7 +21,7 @@
     <div class="row">
 
       <!-- [ #main ] -->
-      <div id="main" class="col-md-8">
+      <div id="main" class="col-md-9">
       <!-- [ 記事のループ ] -->
 
 <?php if ( is_singular()) { ?>
@@ -50,11 +50,24 @@
 <?php if ( have_posts() ) { ?>
 <table class="table table-striped">
 <tr>
-<th class="text-center">件名</th>
-<th class="text-center">カテゴリー</th>
+<th>発行日</th>
+<th>取引先</th>
+<th>件名</th>
+<th>カテゴリー</th>
 </tr>
 <?php while( have_posts() ) : the_post(); ?>
 <tr>
+<td><?php echo esc_html(get_the_date("Y.m.d"));?></td>
+<td>
+<?php 
+$client_id = $post->bill_client;
+$client_name = get_post_meta( $client_id, 'client_short_name', true );
+if ( !$client_name ){
+  $client_name = get_the_title($client_id);
+}
+echo esc_html( $client_name );
+?>
+</td>
 <td><a href="<?php the_permalink(); ?>" target="_blank"><?php the_title(); ?></a></td>
 <td><?php the_category(' , '); ?></td>
 </tr>

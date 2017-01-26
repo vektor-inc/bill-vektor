@@ -29,7 +29,9 @@ require_once( 'inc/custom-field-builder-config.php' );
 require_once( 'inc/setting-page/setting-page.php' );
 require_once( 'inc/custom-field-bill/custom-field-bill.php' );
 require_once( 'inc/custom-field-estimate/custom-field-estimate.php' );
+require_once( 'inc/custom-field-client/custom-field-client.php' );
 require_once( 'inc/duplicate-bill/duplicate-bill.php' );
+
 get_template_part('inc/template-tags');
 
 /*-------------------------------------------*/
@@ -97,7 +99,7 @@ function bill_add_post_type_client() {
     register_post_type( 'client', /* カスタム投稿タイプのスラッグ */
         array(
             'labels' => array(
-                'name' => '請求先',
+                'name' => '取引先',
             ),
         'public'             => false,
         'publicly_queryable' => true,
@@ -105,7 +107,8 @@ function bill_add_post_type_client() {
         'show_in_menu'       => true,
         'has_archive'        => false,
         'supports'           => array('title'),
-        'menu_position'      => 5,
+        'menu_icon'          => 'dashicons-building',
+        'menu_position'      => 3,
         )
     );
 }
@@ -114,7 +117,7 @@ function bill_add_post_type_client() {
 /*-------------------------------------------*/
 add_action( 'init', 'bill_add_post_type_estimate', 0 );
 function bill_add_post_type_estimate() {
-    register_post_type( 'estimate', /* カスタム投稿タイプのスラッグ */
+    register_post_type( 'estimate',
         array(
             'labels' => array(
                 'name' => '見積書',
@@ -125,12 +128,23 @@ function bill_add_post_type_estimate() {
         'show_in_menu'       => true,
         'has_archive'        => true,
         'supports'           => array('title'),
+        'menu_icon'          => 'dashicons-media-spreadsheet',
         'menu_position'      => 5,
         )
     );
+    register_taxonomy(
+      'estimate-cat', 
+      'estimate',
+      array(
+        'hierarchical' => true,
+        'update_count_callback' => '_update_post_term_count',
+        'label' => '見積書カテゴリー',
+        'singular_label' => '見積書カテゴリー',
+        'public' => true,
+        'show_ui' => true,
+      )
+    );
 }
-
-
 
 /*-------------------------------------------*/
 /*  Remove_post_editor_support
@@ -150,3 +164,4 @@ function bill_no_login_redirect( $content ) {
   }
 }//bill_no_login_redirect
 add_action( 'init', 'bill_no_login_redirect' );
+

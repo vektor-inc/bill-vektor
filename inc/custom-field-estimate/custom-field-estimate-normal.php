@@ -61,34 +61,34 @@ class Estimate_Normal_Custom_Fields {
 
 		$custom_fields_array = array(
 			'bill_client' => array(
-				'label' => __('クライアント','bill-vektor'),
+				'label' => __('取引先','bill-vektor'),
 				'type' => 'select',
-				'description' => '',
+				'description' => '取引先は<a href="'.admin_url('/post-new.php?post_type=client').'" target="_blank">こちら</a>から登録してください。',
 				'required' => true,
 				'options' => $client,
 			),
-			// 'bill_id' => array(
-			// 	'label' => __('請求番号','bill-vektor'),
-			// 	'type' => 'text',
-			// 	'description' => '',
-			// 	'required' => false,
-			// ),
 			// 'bill_id' => array(
 			// 	'label' => __('受け渡し期間','bill-vektor'),
 			// 	'type' => 'text',
 			// 	'description' => '',
 			// 	'required' => false,
 			// ),
-			'bill_Issue_date' => array(
-				'label' => __('発行日','bill-vektor'),
-				'type' => 'datepicker',
-				'description' => '',
-				'required' => true,
-			),
+			// 'bill_Issue_date' => array(
+			// 	'label' => __('発行日','bill-vektor'),
+			// 	'type' => 'datepicker',
+			// 	'description' => '',
+			// 	'required' => true,
+			// ),
 			'bill_remarks' => array(
 				'label' => __('備考','bill-vektor'),
 				'type' => 'textarea',
-				'description' => '共通の備考は請求設定画面から設定ください。<br>こちらの備考が記入されている場合は共通の備考は表示されません。',
+				'description' => '共通の備考は<a href="'.menu_page_url( 'bill-setting-page', false ).'" target="_blank">'.'請求設定画面</a>から設定してください。<br>こちらの備考が記入されている場合は共通の備考は表示されません。',
+				'required' => false,
+			),
+			'bill_memo' => array(
+				'label' => __('メモ','bill-vektor'),
+				'type' => 'textarea',
+				'description' => 'この項目は見積書には印刷されません。',
 				'required' => false,
 			),
 		// 'event_image_main' => array(

@@ -1,5 +1,10 @@
+@mixin bill-th{
+	white-space: nowrap;
+	background-color: #f5f5f5 !important;
+	-webkit-print-color-adjust: exact;
+}
 body.single {
-	font-size:12px;
+	font-size:11px;
 }
 
 .bill-wrap {
@@ -19,12 +24,17 @@ body.single {
 	padding-bottom:0.1em;
 	border-bottom:1px solid #000;
 	margin-bottom:1em;
+	width:100%;
+	display: table;
 }
-.bill-destination:after{
-	content:"様";
-	position: absolute;
-	right:1em;
+.bill-destination-client {
+	display: table-cell;
 }
+.bill-destination-honorific {
+	display: table-cell;
+	text-align: right;
+}
+
 .bill-total {
 	display: table;
 	border-bottom:1px solid #000;
@@ -34,6 +44,23 @@ body.single {
 	dd { 
 		font-size:1.6em; 
 		text-align: center; 
+	}
+}
+
+.bill-message {
+	margin-bottom:2em;
+}
+.bill-estimate-title {
+	border-bottom:1px solid #000;
+	width:100%;
+	display: table;
+	dt,
+	dd { display: table-cell; }
+	dt { 
+		width:3em;
+	}
+	dd { 
+		font-size:1.4em;
 	}
 }
 
@@ -67,13 +94,17 @@ table.table-bill {
 		text-align: right;
 		width:8em;
 	}
-	td { height:2.5em; }
+	thead tr th { 
+		@include bill-th;
+	}
 }
 table.table-bill-total {
 	width:auto;
 	float:right;
+	margin-left:3em;
 	th {
 		width:8em;
+		@include bill-th;
 	}
 }
 
