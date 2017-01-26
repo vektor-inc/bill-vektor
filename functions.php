@@ -30,7 +30,7 @@ require_once( 'inc/setting-page/setting-page.php' );
 require_once( 'inc/custom-field-bill/custom-field-bill.php' );
 require_once( 'inc/custom-field-estimate/custom-field-estimate.php' );
 require_once( 'inc/custom-field-client/custom-field-client.php' );
-require_once( 'inc/duplicate-bill/duplicate-bill.php' );
+require_once( 'inc/duplicate-doc/duplicate-doc.php' );
 
 get_template_part('inc/template-tags');
 
@@ -68,8 +68,7 @@ add_action( 'wp_enqueue_scripts', 'bill_theme_scripts' );
 /*-------------------------------------------*/
 function bill_admin_scripts(){
   // 管理画面用のcss
-  // CF Builder で読み込んでいる以外のCSSが無いため
-  // wp_enqueue_style( 'bill-admin-css', get_template_directory_uri() . '/assets/css/admin-style.css', BILLVEKTOR_THEME_VERSION, null );
+  wp_enqueue_style( 'bill-admin-css', get_template_directory_uri() . '/assets/css/admin-style.css', BILLVEKTOR_THEME_VERSION, null );
   // 管理画面用のjs
   wp_enqueue_script( 'bill-js-bootstrap', get_template_directory_uri() . '/assets/js/admin.js', array( 'jquery','jquery-ui-sortable' ), BILLVEKTOR_THEME_VERSION, true );
 }
