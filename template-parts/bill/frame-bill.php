@@ -56,7 +56,8 @@ if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
 	echo wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr );
 } ?>
 </div><!-- [ /.address-own ] -->
-
+</div><!-- [ /.col-xs-5 col-xs-offset-1 ] -->
+</div><!-- [ /.row ] -->
 </div><!-- [ /.container ] -->
 
 

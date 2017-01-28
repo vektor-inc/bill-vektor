@@ -24,7 +24,7 @@ if ( $client_honorific ) {
 <dt class="text-nowrap">件名</dt>
 <dd><?php the_title();?></dd>
 </dl>
-</div>
+</div><!-- [ /.col-xs-6 ] -->
 
 <div class="col-xs-5 col-xs-offset-1">
 <table class="bill-info-table">
@@ -49,7 +49,8 @@ if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
 	echo wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr );
 } ?>
 </div><!-- [ /.address-own ] -->
-
+</div><!-- [ /.col-xs-5 col-xs-offset-1 ] -->
+</div><!-- [ /.row ] -->
 </div><!-- [ /.container ] -->
 
 
@@ -72,5 +73,4 @@ if ( $post->bill_remarks ){
 } ?>
 </dd>
 </dl>
-
 </div><!-- [ /.container ] -->

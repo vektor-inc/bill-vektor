@@ -1,21 +1,6 @@
 <?php get_header();?>
 
-<!-- [ パンくずリスト ] -->
-<div class="container breadcrumb-section">
-<ol class="breadcrumb">
-  <li><a href="<?php echo home_url( '/' ); ?>"><span class="glyphicon glyphicon-home" aria-hidden="true"></span> HOME</a></li>
-
-<?php if ( is_archive() ) { ?>
-<li><?php the_archive_title(); ?></li>
-
-<?php } else if ( is_single() ) { ?>
-
-<li><?php the_category(','); ?></li>
-<li><?php the_title();?></li>
-<?php } ?>
-</ol>
-</div>
-<!-- [ /パンくずリスト ] -->
+<?php get_template_part('template-parts/breadcrumb');?>
 
   <div class="container">
     <div class="row">
@@ -52,7 +37,7 @@ if ( !$client_name ){
 echo esc_html( $client_name );
 ?>
 </td>
-<td><a href="<?php the_permalink(); ?>" target="_blank"><?php the_title(); ?></a></td>
+<td><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></td>
 <td><?php echo bill_get_terms(); ?></td>
 </tr>
 <?php endwhile; ?>

@@ -55,6 +55,7 @@ table.table {
 
 #main { z-index: 0;position: relative; }
 
+.breadcrumb { border:$border; }
 .breadcrumb .glyphicon { margin-right:7px; }
 
 .section { display:block; overflow:hidden; padding: 25px;margin-bottom:20px; border:$border; border-radius: $radius;background-color: #fff;
