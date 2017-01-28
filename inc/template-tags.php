@@ -99,3 +99,23 @@ function bill_get_post_type() {
 
   return $post_type;
 }
+
+function bill_get_terms(){
+  global $post;
+  $postType = get_post_type();
+  if ($postType == 'post') {
+    $taxonomySlug = 'category';
+  } else {
+    $taxonomies = get_the_taxonomies();
+    // print '<pre style="text-align:left">';print_r($taxonomies);print '</pre>';
+    if ($taxonomies) {
+      foreach ( $taxonomies as $taxonomySlug => $taxonomy ) {}
+    } else {
+      $taxonomySlug = '';
+    }
+  }
+
+  $taxo_catelist = get_the_term_list( $post->ID, $taxonomySlug, ' ', ', ' ,'' );
+  return $taxo_catelist;
+}
+
