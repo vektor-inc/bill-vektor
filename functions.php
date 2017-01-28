@@ -17,6 +17,8 @@
 /*-------------------------------------------*/
 /*  No login redirect
 /*-------------------------------------------*/
+/*  Replace Post Label
+/*-------------------------------------------*/
 
 
 $theme_opt = wp_get_theme(get_template());
@@ -164,3 +166,14 @@ function bill_no_login_redirect( $content ) {
 }//bill_no_login_redirect
 add_action( 'init', 'bill_no_login_redirect' );
 
+/*-------------------------------------------*/
+/*  Replace Post Label
+/*-------------------------------------------*/
+add_filter( 'register_post_type_args', 'bill_change_post_type_args_post' );
+function bill_change_post_type_args_post($args){
+  if ( isset( $args['rest_base'] ) && $args['rest_base'] == 'posts' ) {
+    $args['labels']['name_admin_bar'] = '請求書';
+    $args['labels']['name'] = '請求書';
+  }
+  return $args;
+}
