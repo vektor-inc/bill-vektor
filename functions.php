@@ -121,7 +121,9 @@ function bill_add_post_type_estimate() {
     register_post_type( 'estimate',
         array(
             'labels' => array(
-                'name' => '見積書',
+                'name'         => '見積書',
+                'edit_item'    => '見積書の編集',
+                'add_new_item' => '見積書の作成',
             ),
         'public'             => true,
         'publicly_queryable' => true,
@@ -171,13 +173,14 @@ add_action( 'init', 'bill_no_login_redirect' );
 /*-------------------------------------------*/
 function bill_change_post_type_args_post($args){
   if ( isset( $args['rest_base'] ) && $args['rest_base'] == 'posts' ) {
-    $args['labels']['name_admin_bar'] = '請求書';
-    $args['labels']['name'] = '請求書';
+    $args['labels']['name_admin_bar']  = '請求書';
+    $args['labels']['name']            = '請求書';
+    $args['labels']['edit_item']       = '請求書の編集';
+    $args['labels']['add_new_item']    = '請求書の作成';
   }
   return $args;
 }
 add_filter( 'register_post_type_args', 'bill_change_post_type_args_post' );
-
 
 // function bill_custom_home_post_type($query){
 //     if ( $query->is_front_page() && $query->is_main_query() ) {
