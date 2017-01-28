@@ -70,3 +70,32 @@ function bill_total_add_tax() {
   $bill_total_add_tax = $bill_total + $tax;
   return $bill_total_add_tax;
 }
+
+/*-------------------------------------------*/
+/*  Chack post type info
+/*-------------------------------------------*/
+function bill_get_post_type() {
+
+  // Get post type slug
+  /*-------------------------------------------*/
+  $post_type['slug'] = get_post_type();
+  if ( ! $post_type['slug'] ) {
+    global $wp_query;
+    if ( $wp_query->query_vars['post_type'] ) {
+      $post_type['slug'] = $wp_query->query_vars['post_type'];
+    } else {
+      // Case of tax archive and no posts
+      $taxonomy = get_queried_object()->taxonomy;
+      $post_type['slug'] = get_taxonomy( $taxonomy )->object_type[0];
+    }
+  }
+
+  // Get post type name
+  /*-------------------------------------------*/
+  $post_type_object = get_post_type_object( $post_type['slug'] );
+
+  $post_type['name'] = esc_html( $post_type_object->labels->name );
+  $post_type['url'] = home_url().'/?post_type='.$post_type['slug'];
+
+  return $post_type;
+}

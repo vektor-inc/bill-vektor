@@ -4,7 +4,7 @@ $border : 1px solid #cfcfcf;
 $color_key : #222;
 body {
 	font-family: "Avenir Next", Verdana, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "游ゴシック", "Yu Gothic", "メイリオ", Meiryo, Osaka, sans-serif;background-color: #fcfcfc;
-	font-size:14px;
+	font-size:12px;
 }
 
 .screen-reader-text { display: none; }
@@ -23,6 +23,10 @@ body {
 	dd { display: inline; }
 	dt { margin-right:1em; }
 }
+table.table {
+	th { font-weight: lighter; }
+}
+
 
 /*-------------------*/
 
