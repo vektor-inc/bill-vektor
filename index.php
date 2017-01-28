@@ -24,27 +24,7 @@
       <div id="main" class="col-md-9">
       <!-- [ 記事のループ ] -->
 
-<?php if ( is_singular()) { ?>
-    <?php if ( have_posts() ) { ?>
-    <?php while( have_posts() ) : the_post(); ?>
-     <article class="section">
-      <header class="page-header">
-      <h1><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h1>
-      <div class="wck_post_meta">
-      <span class="glyphicon glyphicon-time" aria-hidden="true"></span> <?php the_date(); ?>　 
-      <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span> <?php the_category(','); ?>
-      </div>
-      </header>
-      <div>
-      <!-- [ 記事の本文 ] -->
-      <?php the_content(); ?>
-      <!-- [ /記事の本文 ] -->
-      </div>
-    </article>
-    <?php endwhile; ?>
-    <?php the_posts_pagination(); ?>
-    <?php } // if ( have_posts() ) { ?>
-<?php } else { ?>
+<?php if ( is_front_page() || is_archive() || is_tax() ) { ?>
 
 <div class="section">
 <?php if ( have_posts() ) { ?>
@@ -80,9 +60,29 @@ echo esc_html( $client_name );
 <?php } // if ( have_posts() ) { ?>
 </div>
 
+<?php } else { ?>
+
+    <?php if ( have_posts() ) { ?>
+    <?php while( have_posts() ) : the_post(); ?>
+     <article class="section">
+      <header class="page-header">
+      <h1><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h1>
+      <div class="wck_post_meta">
+      <span class="glyphicon glyphicon-time" aria-hidden="true"></span> <?php the_date(); ?>　 
+      <span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span> <?php the_category(','); ?>
+      </div>
+      </header>
+      <div>
+      <!-- [ 記事の本文 ] -->
+      <?php the_content(); ?>
+      <!-- [ /記事の本文 ] -->
+      </div>
+    </article>
+    <?php endwhile; ?>
+    <?php the_posts_pagination(); ?>
+    <?php } // if ( have_posts() ) { ?>
+
 <?php } ?>
-
-
 
       <!-- [ /記事のループ ] -->
       </div>

@@ -169,7 +169,6 @@ add_action( 'init', 'bill_no_login_redirect' );
 /*-------------------------------------------*/
 /*  Replace Post Label
 /*-------------------------------------------*/
-add_filter( 'register_post_type_args', 'bill_change_post_type_args_post' );
 function bill_change_post_type_args_post($args){
   if ( isset( $args['rest_base'] ) && $args['rest_base'] == 'posts' ) {
     $args['labels']['name_admin_bar'] = '請求書';
@@ -177,3 +176,12 @@ function bill_change_post_type_args_post($args){
   }
   return $args;
 }
+add_filter( 'register_post_type_args', 'bill_change_post_type_args_post' );
+
+
+// function bill_custom_home_post_type($query){
+//     if ( $query->is_front_page() && $query->is_main_query() ) {
+//         $query->set( 'post_type', array( 'post', 'estimate' ) );
+//     }
+// }
+// add_action( 'pre_get_posts', 'bill_custom_home_post_type' );
