@@ -1,10 +1,10 @@
 
 $radius : 5px;
-$border : 1px solid #cfcfcf; 
+$border : 1px solid #e5e5e5; 
 $color_key : #222;
 body {
 	font-family: "Avenir Next", Verdana, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "游ゴシック", "Yu Gothic", "メイリオ", Meiryo, Osaka, sans-serif;background-color: #fcfcfc;
-	font-size:14px;
+	font-size:12px;
 }
 
 .screen-reader-text { display: none; }
@@ -23,6 +23,10 @@ body {
 	dd { display: inline; }
 	dt { margin-right:1em; }
 }
+table.table {
+	th { font-weight: lighter; }
+}
+
 
 /*-------------------*/
 
@@ -51,6 +55,7 @@ body {
 
 #main { z-index: 0;position: relative; }
 
+.breadcrumb { border:$border; }
 .breadcrumb .glyphicon { margin-right:7px; }
 
 .section { display:block; overflow:hidden; padding: 25px;margin-bottom:20px; border:$border; border-radius: $radius;background-color: #fff;
@@ -63,7 +68,7 @@ body {
 .sub-section {
 	.sub-section-title { font-size:16px; background-color: $color_key;color:#fff;padding:10px 15px 8px;margin:0 0 20px;border-radius: $radius; }
 	ul { padding: 0; }
-	li { margin:8px 20px;font-size:16px; }
+	li { margin:8px 20px;}
 }
 
 .footer .container { padding-top:20px; padding-bottom:20px;margin-top:20px; border-top:$border; }

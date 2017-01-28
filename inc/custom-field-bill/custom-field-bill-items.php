@@ -40,7 +40,7 @@ class Bill_Item_Custom_Fields {
 
 		$form_table = '<table class="table table-striped table-bordered row-control">';
 
-		$form_table .= '<thead><tr><th></th><th></th><th>品目</th><th>数量</th><th>単位</th><th>商品単価</th><th></th></tr></thead>';
+		$form_table .= '<thead><tr><th></th><th></th><th>品目</th><th>数量</th><th>単位</th><th>単価</th><th></th></tr></thead>';
 		$form_table .= '<tbody id="sortable">';
 
 		$bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );

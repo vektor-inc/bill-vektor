@@ -3,6 +3,7 @@
 	background-color: #f5f5f5 !important;
 	-webkit-print-color-adjust: exact;
 }
+
 body.single {
 	font-size:11px;
 }
@@ -118,11 +119,6 @@ table.table-bill-total {
 	}
 }
 
-
-
-
-
-
 .bill-payee {
 	td { position: relative; }
 }
@@ -139,3 +135,14 @@ table.table-bill-total {
 	margin-top:1em;
 	margin-right:1em;
 }
+
+.bill-no-print {
+	background-color: #f5f5f5;
+	padding:2em 0;
+}
+
+@media print {
+.bill-no-print {
+	display: none;
+}
+} // @media print {
