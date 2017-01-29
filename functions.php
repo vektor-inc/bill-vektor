@@ -46,6 +46,38 @@ function bill_theme_title() {
 }
 add_action( 'after_setup_theme', 'bill_theme_title' );
 
+
+function bill_title_custom($title){
+  $target_post_types = array( 'post', 'estimate' );
+
+  if ( is_single() ){
+    global $post;
+    setup_postdata($post);
+    $post_type = bill_get_post_type();
+    if ( in_array( $post_type['slug'], $target_post_types ) ){
+      // 書類種別
+      $title = $post_type['name'].'_';
+      // 取引先名
+      $title .= get_the_title( $post->bill_client );
+      // 敬称
+      $client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
+      if ( $client_honorific ) {
+        $title .= $client_honorific.'_';
+      } else {
+        $title .= '御中_';
+      }
+      // 件名
+      $title .= get_the_title().'_';
+      // 
+      $title .= get_the_date("Ynj");
+    }
+  }
+  return strip_tags( $title );
+}
+add_filter( 'wp_title', 'bill_title_custom', 11 );
+//WordPress 4.4 ->
+add_filter( 'pre_get_document_title', 'bill_title_custom', 11 );
+
 /*-------------------------------------------*/
 /*  Load Theme CSS & JS
 /*-------------------------------------------*/
