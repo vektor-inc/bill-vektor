@@ -7,6 +7,8 @@
 /*-------------------------------------------*/
 /*  Load Theme CSS & JS
 /*-------------------------------------------*/
+/*  wp_head _ add noindex, nofollow
+/*-------------------------------------------*/
 /*  Load Admin CSS & JS
 /*-------------------------------------------*/
 /*  WidgetArea initiate
@@ -64,6 +66,14 @@ function bill_theme_scripts(){
 
 }
 add_action( 'wp_enqueue_scripts', 'bill_theme_scripts' );
+
+/*-------------------------------------------*/
+/*  wp_head _ add noindex, nofollow
+/*-------------------------------------------*/
+function bill_add_nofollow(){
+  echo '<meta name="robots" content="noindex, nofollow">';
+}
+add_action( 'wp_head', 'bill_add_nofollow' );
 
 /*-------------------------------------------*/
 /*  Load Admin CSS & JS
