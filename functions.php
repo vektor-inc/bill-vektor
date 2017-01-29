@@ -7,8 +7,6 @@
 /*-------------------------------------------*/
 /*  Load Theme CSS & JS
 /*-------------------------------------------*/
-/*  wp_head _ add noindex, nofollow
-/*-------------------------------------------*/
 /*  Load Admin CSS & JS
 /*-------------------------------------------*/
 /*  WidgetArea initiate
@@ -16,8 +14,6 @@
 /*  Add Post Type Client
 /*-------------------------------------------*/
 /*  Remove_post_editor_support
-/*-------------------------------------------*/
-/*  No login redirect
 /*-------------------------------------------*/
 /*  Replace Post Label
 /*-------------------------------------------*/
@@ -37,6 +33,7 @@ require_once( 'inc/custom-field-client/custom-field-client.php' );
 require_once( 'inc/duplicate-doc/duplicate-doc.php' );
 
 get_template_part('inc/template-tags');
+get_template_part('inc/functions-limit-view');
 
 /*-------------------------------------------*/
 /*  Theme setup
@@ -66,14 +63,6 @@ function bill_theme_scripts(){
 
 }
 add_action( 'wp_enqueue_scripts', 'bill_theme_scripts' );
-
-/*-------------------------------------------*/
-/*  wp_head _ add noindex, nofollow
-/*-------------------------------------------*/
-function bill_add_nofollow(){
-  echo '<meta name="robots" content="noindex, nofollow">';
-}
-add_action( 'wp_head', 'bill_add_nofollow' );
 
 /*-------------------------------------------*/
 /*  Load Admin CSS & JS
@@ -167,16 +156,6 @@ function bill_remove_post_editor_support() {
 }
 add_action( 'init' , 'bill_remove_post_editor_support' );
 
-/*-------------------------------------------*/
-/*  No login redirect
-/*-------------------------------------------*/
-function bill_no_login_redirect( $content ) {
-  global $pagenow;
-  if( !is_user_logged_in() && !is_admin() && ( $pagenow != 'wp-login.php' ) && php_sapi_name() !== 'cli' ){
-    auth_redirect();
-  }
-}//bill_no_login_redirect
-add_action( 'init', 'bill_no_login_redirect' );
 
 /*-------------------------------------------*/
 /*  Replace Post Label
