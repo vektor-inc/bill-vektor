@@ -21,7 +21,7 @@
 
 <div class="bill-no-print">
 <div class="container">
-<p>以このエリアは印刷されません。</p>
+<p>このエリアは印刷されません。</p>
 <div class="row">
 <?php get_template_part('template-parts/breadcrumb');?>
 </div>
