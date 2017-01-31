@@ -23,7 +23,7 @@
 </tr>
 <?php while( have_posts() ) : the_post(); ?>
 <tr>
-<td><?php $post_type = bill_get_post_type();
+<td class="text-nowrap"><?php $post_type = bill_get_post_type();
 echo '<a href="'.esc_url($post_type['url']).'">'.$post_type['name'].'</a>';
 ?></td>
 <td><?php echo esc_html( get_the_date("Y.m.d") );?></td>
