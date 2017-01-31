@@ -47,7 +47,7 @@ class Estimate_Normal_Custom_Fields {
 
 		$args = array(
 			'post_type' => 'client',
-			'post_per_pages' => -1,
+			'posts_per_page' => -1,
 			);
 
 		$client_posts = get_posts($args);
