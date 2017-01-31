@@ -170,7 +170,7 @@ add_action( 'admin_init', 'bill_post_list_add_filter' );
 
 function bill_row_actions_add_duplicate_link( $actions, $post ) {
 	$post_type = get_post_type();
-	$links = admin_url().'post-new.php?post_type='.$post_type.'&master_id='.$post->ID;
+	$links = admin_url().'post-new.php?post_type='.$post_type.'&master_id='.$post->ID.'&duplicate_type=full';
 	$actions['newlink'] =  '<a href="'.$links.'">複製</a>';
 	return $actions;
 }
