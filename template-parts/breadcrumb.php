@@ -181,7 +181,7 @@ if ( is_home() ){
 
 	}
 
-	$panListHtml .= '<li><span>' . get_the_title() . '</span></li>';
+	$panListHtml .= '<li><span>' . strip_tags( get_the_title() ). '</span></li>';
 
 } else if ( is_page() ) {
 
