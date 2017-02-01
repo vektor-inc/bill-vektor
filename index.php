@@ -5,6 +5,8 @@
   <div class="container">
     <div class="row">
 
+      <?php get_sidebar();?>
+
       <!-- [ #main ] -->
       <div id="main" class="col-md-9">
       <!-- [ 記事のループ ] -->
@@ -23,7 +25,7 @@
 </tr>
 <?php while( have_posts() ) : the_post(); ?>
 <tr>
-<td><?php $post_type = bill_get_post_type();
+<td class="text-nowrap"><?php $post_type = bill_get_post_type();
 echo '<a href="'.esc_url($post_type['url']).'">'.$post_type['name'].'</a>';
 ?></td>
 <td><?php echo esc_html( get_the_date("Y.m.d") );?></td>
@@ -42,6 +44,7 @@ echo esc_html( $client_name );
 </tr>
 <?php endwhile; ?>
 </table>
+<?php the_posts_pagination(); ?>
 <?php } // if ( have_posts() ) { ?>
 </div>
 
@@ -64,7 +67,6 @@ echo esc_html( $client_name );
       </div>
     </article>
     <?php endwhile; ?>
-    <?php the_posts_pagination(); ?>
     <?php } // if ( have_posts() ) { ?>
 
 <?php } ?>
@@ -72,8 +74,6 @@ echo esc_html( $client_name );
       <!-- [ /記事のループ ] -->
       </div>
       <!-- [ /#main ] -->
-
-      <?php get_sidebar();?>
 
     </div>
 </div>

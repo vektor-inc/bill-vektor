@@ -66,9 +66,25 @@ table.table {
 }
 
 .sub-section {
-	.sub-section-title { font-size:16px; background-color: $color_key;color:#fff;padding:10px 15px 8px;margin:0 0 20px;border-radius: $radius; }
+	.sub-section-title { font-size:14px; background-color: $color_key;color:#fff;padding:10px 15px 8px;margin:0 0 15px;border-radius: $radius; }
+	.sub-section-title a { color:#fff; }
 	ul { padding: 0; }
-	li { margin:8px 20px;}
+	li { padding:8px 15px;font-size:12px;}
+}
+nav.sub-section {
+	.sub-section-title { margin-bottom:2px; }
+	ul { 
+		margin-bottom:15px;
+		padding: 0;
+	}
+	li { 
+		list-style: none;padding:0;
+		a { 
+			padding:8px 15px;
+			border-bottom:$border; 
+		}
+	}
+	a { display:block; overflow:hidden;}
 }
 
 .footer .container { padding-top:20px; padding-bottom:20px;margin-top:20px; border-top:$border; }

@@ -104,7 +104,7 @@ function bill_add_post_type_client() {
                 'name' => '取引先',
             ),
         'public'             => false,
-        'publicly_queryable' => true,
+        'publicly_queryable' => false,
         'show_ui'            => true,
         'show_in_menu'       => true,
         'has_archive'        => false,
@@ -205,6 +205,29 @@ function bill_title_custom($title){
 }
 add_filter( 'wp_title', 'bill_title_custom', 11 );
 add_filter( 'pre_get_document_title', 'bill_title_custom', 11 );
+
+/*-------------------------------------------*/
+/*  未来の投稿の公開
+/*-------------------------------------------*/
+//予約投稿機能を無効化
+add_action('save_post', 'bill_future_publish', 99);
+add_action('edit_post', 'bill_future_publish', 99);
+function bill_future_publish()
+{
+global $wpdb;
+$sql = 'UPDATE `'.$wpdb->prefix.'posts` ';
+$sql .= 'SET post_status = "publish" ';
+$sql .= 'WHERE post_status = "future"';
+$wpdb->get_results($sql);
+}
+
+function bill_immediately_publish($id)
+{
+    global $wpdb;
+    $q = "UPDATE " . $wpdb->posts . " SET post_status = 'publish' WHERE ID = " . (int)$id;
+    $wpdb->get_results($q);
+}
+add_action('future_event', 'bill_immediately_publish');
 
 
 // function bill_custom_home_post_type($query){
