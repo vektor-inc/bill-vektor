@@ -5,6 +5,8 @@
   <div class="container">
     <div class="row">
 
+      <?php get_sidebar();?>
+
       <!-- [ #main ] -->
       <div id="main" class="col-md-9">
       <!-- [ 記事のループ ] -->
@@ -72,8 +74,6 @@ echo esc_html( $client_name );
       <!-- [ /記事のループ ] -->
       </div>
       <!-- [ /#main ] -->
-
-      <?php get_sidebar();?>
 
     </div>
 </div>

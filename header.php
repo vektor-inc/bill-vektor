@@ -19,7 +19,7 @@
       <!-- <h2 class="header-description"></h2> -->
       </div>
     </div>
-
+<?php /*
     <div class="navbar navbar-inverse">
       <div class="navbar-header">
         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-ex-collapse">
@@ -50,6 +50,7 @@
           </div>
       <?php endif; ?>
       </div>
+      */?>
     </div>
   </div><!-- [ /.container ] -->
 </header>
