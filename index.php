@@ -42,6 +42,7 @@ echo esc_html( $client_name );
 </tr>
 <?php endwhile; ?>
 </table>
+<?php the_posts_pagination(); ?>
 <?php } // if ( have_posts() ) { ?>
 </div>
 
@@ -64,7 +65,6 @@ echo esc_html( $client_name );
       </div>
     </article>
     <?php endwhile; ?>
-    <?php the_posts_pagination(); ?>
     <?php } // if ( have_posts() ) { ?>
 
 <?php } ?>
