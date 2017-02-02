@@ -1,3 +1,7 @@
+@charset "utf-8";
+@import "compass";
+@import "jquery-ui-1.11.4.custom/_jquery-ui.min.scss";
+@import "jquery-ui-1.11.4.custom/_jquery-ui.theme.min.scss";
 
 $radius : 5px;
 $border : 1px solid #e5e5e5; 
@@ -5,7 +9,8 @@ $color_key : #00a0c6;
 $color_key_dark : #008fc4;
 
 body {
-	font-family: "Avenir Next", Verdana, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "游ゴシック", "Yu Gothic", "メイリオ", Meiryo, Osaka, sans-serif;background-color: #fcfcfc;
+	font-family: "Avenir Next", Verdana, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "游ゴシック", "Yu Gothic", "メイリオ", Meiryo, Osaka, sans-serif;
+	background-color: #f9f9f9;
 	font-size:12px;
 }
 a {
@@ -18,6 +23,13 @@ a:hover {
 
 /* common */
 /*-------------------*/
+
+.btn-primary {
+	background-color: $color_key_dark;
+}
+.btn-primary:hover {
+	background-color: $color_key;
+}
 .caption {
 	font-size: 0.7em;
 	margin-left:1em;
@@ -41,7 +53,7 @@ table.table {
 .header { 
 	padding-top:20px;
 	padding-bottom:15px;
-	z-index:1000;
+	// z-index:1000;
 	position: relative;
 	}
 .header-logo { 
@@ -75,7 +87,7 @@ table.table {
 
 #main { z-index: 0;position: relative; }
 
-.breadcrumb { border:$border; }
+.breadcrumb { border:$border; background-color: #fff; }
 .breadcrumb .glyphicon { margin-right:7px; }
 
 .section { display:block; overflow:hidden; padding: 25px;margin-bottom:20px; border:$border; border-radius: $radius;background-color: #fff;
@@ -122,6 +134,49 @@ nav.sub-section {
 /*-------------------------------------------*/
 .navigation.pagination {
 	.page-numbers { padding:10px; border:$border;border-radius: $radius;margin-right:5px; background-color: #fff; }
+}
+
+
+.search-box {
+	form {
+	display: -webkit-flex; /* Safari */
+	display: flex;
+	-webkit-flex-wrap: wrap; /* Safari */
+	flex-wrap:         wrap;
+	-webkit-justify-content: space-between; /* Safari */
+	justify-content:         space-between;
+	}
+	label {
+		// font-weight: lighter;
+	}
+	dl { 
+		width:48%;
+		// display: -webkit-flex; /* Safari */
+		display: table;
+		margin-bottom:1em;
+		dt { 
+		// font-weight: lighter;
+			display:table-cell;
+			// line-height: 2em;
+			width:5em;
+		}
+		dd {
+			display: table-cell;
+		}
+	}
+	.search-radio {
+		padding-top:0.5em;
+	}
+	.search-date {
+		input.form-control {
+			display: inline-block;
+			width:7em;
+		}
+		margin-bottom:0;
+	}
+	input[type="submit"] {
+		width:48%;
+	}
 }
 
 @import "bill";
