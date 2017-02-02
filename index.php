@@ -25,10 +25,13 @@
 </tr>
 <?php while( have_posts() ) : the_post(); ?>
 <tr>
+<!-- [ 書類 ] -->
 <td class="text-nowrap"><?php $post_type = bill_get_post_type();
 echo '<a href="'.esc_url($post_type['url']).'">'.$post_type['name'].'</a>';
 ?></td>
+<!-- [ 発行日 ] -->
 <td><?php echo esc_html( get_the_date("Y.m.d") );?></td>
+<!-- [ 取引先 ] -->
 <td>
 <?php 
 $client_id = $post->bill_client;
@@ -36,10 +39,12 @@ $client_name = get_post_meta( $client_id, 'client_short_name', true );
 if ( !$client_name ){
   $client_name = get_the_title($client_id);
 }
-echo esc_html( $client_name );
+echo '<a href="'.home_url('/').'?post_type='.$post_type['slug'].'&client='.$client_id.'">'.esc_html( $client_name ).'</a>';
 ?>
 </td>
+<!-- [ 件名 ] -->
 <td><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></td>
+<!-- [ カテゴリー ] -->
 <td><?php echo bill_get_terms(); ?></td>
 </tr>
 <?php endwhile; ?>
