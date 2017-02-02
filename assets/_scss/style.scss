@@ -67,24 +67,25 @@ table.table {
 
 .sub-section {
 	.sub-section-title { font-size:14px; background-color: $color_key;color:#fff;padding:10px 15px 8px;margin:0 0 15px;border-radius: $radius; }
-	.sub-section-title a { color:#fff; }
-	ul { padding: 0; }
-	li { padding:8px 15px;font-size:12px;}
-}
-nav.sub-section {
-	.sub-section-title { margin-bottom:2px; }
-	ul { 
-		margin-bottom:15px;
-		padding: 0;
+	.sub-section-title a { 
+		color:#fff;
+		display:block;
+		overflow:hidden;
 	}
+	ul { padding: 0;margin-bottom:15px; }
 	li { 
+		padding:8px 15px;
+		font-size:12px;
 		list-style: none;padding:0;
 		a { 
 			padding:8px 15px;
-			border-bottom:$border; 
+			border-bottom:$border;
+			display:block; overflow:hidden;
 		}
 	}
-	a { display:block; overflow:hidden;}
+}
+nav.sub-section {
+	.sub-section-title { margin-bottom:2px; }
 }
 
 .footer .container { padding-top:20px; padding-bottom:20px;margin-top:20px; border-top:$border; }
