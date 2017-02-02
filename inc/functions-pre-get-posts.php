@@ -11,6 +11,24 @@ function bill_custom_home_post_type($query){
 			$query->set( 'meta_query', $meta_query );
 		}
 
+		/*	期間の絞り込み
+		/*-------------------------------------------*/
+		$start_date = ( isset( $_GET['start_date'] ) && $_GET['start_date'] ) ? $_GET['start_date'] : '';
+		$end_date = ( isset( $_GET['end_date'] ) && $_GET['end_date'] ) ? $_GET['end_date'] : '';
+		if ( $start_date && $end_date ){
+			// $start_date = $start_date.' 00:00:00';
+			$end_date = $end_date.' 23:59:59';
+			$date_query = array(
+				array(
+					'compare'=>'BETWEEN',
+					// 'inclusive'=>ture,
+					'after'=> $start_date,
+					'before'=> $end_date
+					)
+				);
+			$query->set( 'date_query', $date_query );
+		}
+
         return;
     }
 }
