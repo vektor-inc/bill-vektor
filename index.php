@@ -14,6 +14,10 @@
 <?php if ( is_front_page() || is_archive() || is_tax() ) { ?>
 
 <div class="section">
+<?php get_template_part('template-parts/search-box');?>
+</div>
+
+<div class="section">
 <?php if ( have_posts() ) { ?>
 <table class="table table-striped table-borderd">
 <tr>
