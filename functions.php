@@ -63,6 +63,8 @@ function bill_theme_scripts(){
 
 	// テーマ用のjsを読み込む
 	wp_enqueue_script( 'bill-js-bootstrap', get_template_directory_uri() . '/assets/js/bootstrap.min.js', array( 'jquery' ), BILLVEKTOR_THEME_VERSION, true );
+  wp_register_script( 'datepicker', get_template_directory_uri().'/inc/custom-field-builder/js/datepicker.js', array('jquery','jquery-ui-datepicker'), BILLVEKTOR_THEME_VERSION, true );
+  wp_enqueue_script( 'datepicker' );
 
 }
 add_action( 'wp_enqueue_scripts', 'bill_theme_scripts' );
