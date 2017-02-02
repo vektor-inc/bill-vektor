@@ -32,7 +32,7 @@ echo '<a href="'.esc_url($post_type['url']).'">'.$post_type['name'].'</a>';
 <!-- [ 発行日 ] -->
 <td><?php echo esc_html( get_the_date("Y.m.d") );?></td>
 <!-- [ 取引先 ] -->
-<td>
+<td class="text-nowrap">
 <?php 
 $client_id = $post->bill_client;
 $client_name = get_post_meta( $client_id, 'client_short_name', true );
