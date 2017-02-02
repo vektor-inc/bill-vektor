@@ -36,6 +36,7 @@ require_once( 'inc/duplicate-doc/duplicate-doc.php' );
 
 get_template_part('inc/template-tags');
 get_template_part('inc/functions-limit-view');
+get_template_part('inc/functions-pre-get-posts');
 
 /*-------------------------------------------*/
 /*  Theme setup
@@ -228,11 +229,3 @@ function bill_immediately_publish($id)
     $wpdb->get_results($q);
 }
 add_action('future_event', 'bill_immediately_publish');
-
-
-// function bill_custom_home_post_type($query){
-//     if ( $query->is_front_page() && $query->is_main_query() ) {
-//         $query->set( 'post_type', array( 'post', 'estimate' ) );
-//     }
-// }
-// add_action( 'pre_get_posts', 'bill_custom_home_post_type' );
