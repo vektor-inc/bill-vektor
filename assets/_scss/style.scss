@@ -31,9 +31,22 @@ table.table {
 /*-------------------*/
 
 
-.header { padding-top:20px; z-index:1000;position: relative;  }
-.header-logo { margin:0 0 10px;font-size:1.6em; }
-.header-description { margin:0 0 20px;font-size:14px;  }
+.header { 
+	padding-top:20px;
+	padding-bottom:15px;
+	z-index:1000;
+	position: relative;
+	}
+.header-logo { 
+	margin:0 0 20px;
+	font-size:1.6em;
+	display: inline;
+	img {
+		max-height:40px;
+	}
+}
+.header-description { display: inline; position: relative;bottom:0;
+	margin:0 1em 0px;font-size:14px; vertical-align: bottom;  }
 
 @media (min-width: 768px){
 .nav { z-index: 1000;
