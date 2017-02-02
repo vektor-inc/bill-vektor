@@ -1,12 +1,19 @@
 
 $radius : 5px;
 $border : 1px solid #e5e5e5; 
-$color_key : #222;
+$color_key : #00a0c6;
+$color_key_dark : #008fc4;
+
 body {
 	font-family: "Avenir Next", Verdana, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "游ゴシック", "Yu Gothic", "メイリオ", Meiryo, Osaka, sans-serif;background-color: #fcfcfc;
 	font-size:12px;
 }
-
+a {
+	color:$color_key_dark;
+}
+a:hover {
+	color:$color_key;
+}
 .screen-reader-text { display: none; }
 
 /* common */
@@ -79,7 +86,14 @@ table.table {
 }
 
 .sub-section {
-	.sub-section-title { font-size:14px; background-color: $color_key;color:#fff;padding:10px 15px 8px;margin:0 0 15px;border-radius: $radius; }
+	.sub-section-title { 
+		font-size:14px; 
+		background-color: $color_key_dark;
+		color:#fff;
+		padding:10px 15px 8px;
+		margin:0 0 15px;
+		border-radius: $radius;
+	}
 	.sub-section-title a { 
 		color:#fff;
 		display:block;
