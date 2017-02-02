@@ -1,6 +1,6 @@
 <?php
 function bill_custom_home_post_type($query){
-    if ( !is_admin() && $query->is_main_query() ) {
+    if ( !is_admin() && !is_singular() && $query->is_main_query() ) {
 
 		$client_id = ( isset( $_GET['client'] ) && $_GET['client'] ) ? esc_attr( $_GET['client'] ) : "";
 		$post_type = ( isset( $_GET['post_type'] ) && $_GET['post_type'] ) ? esc_attr( $_GET['post_type'] ) : "";
