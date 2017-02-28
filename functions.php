@@ -201,7 +201,7 @@ function bill_title_custom($title){
       // 件名
       $title .= get_the_title().'_';
       // 
-      $title .= get_the_date("Ynj");
+      $title .= get_the_date("Ymd");
     }
   }
   return strip_tags( $title );

@@ -37,7 +37,7 @@ if ( $client_honorific ) {
 </tr>
 <tr>
 <th>お支払期日</th>
-<td><?php echo esc_html( date("Y年n月j", bill_raw_date( $post->bill_limit_date) ) ); ?></td>
+<td><?php echo esc_html( date("Y年n月j日", bill_raw_date( $post->bill_limit_date) ) ); ?></td>
 </tr>
 </table>
 
