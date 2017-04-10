@@ -3,84 +3,97 @@
 @import "jquery-ui-1.11.4.custom/_jquery-ui.min.scss";
 @import "jquery-ui-1.11.4.custom/_jquery-ui.theme.min.scss";
 
-.table {
-	width:100%;
-	border-collapse: collapse;
-	border-spacing: 0;
-	th,
-	td { padding:7px; }
-	th { 
-		font-weight: lighter;
-		background-color: #f5f5f5;
-	}
-	input[type="text"]{
-		width: 100%;
-		padding: 5px;
-	}
-}
-.table-striped {
+.vk-custom-field-builder {
 
-}
+	.table {
+		width:100%;
+		border-collapse: collapse;
+		border-spacing: 0;
+		th,
+		td { padding:7px; }
+		th { 
+			font-weight: lighter;
+			background-color: #f5f5f5;
+			text-align: left;
+			padding-right:10px;
+			vertical-align: top; 
+		}
+		td {
+			background-color: #fff;
+		}
 
-.table-bordered {
-	border:1px solid #e5e5e5;
-	td,
-	th {
-		border:1px solid #e5e5e5;
-	}
-}
-table.row-control {
-	tbody tr:first-child .del-row { display: none; }
-	.cell-count,
-	.cell-unit{ 
-		width:50px;
-	}
-	.cell-price{
-		width:7em;
-	}
-	.cell-control {
-		width:14em;
-	}
-	.icon-drag {
-		position: relative;
-	    font: 400 20px/1 dashicons;
-	    speak: none;
-	    padding: 4px 0;
-	    -webkit-font-smoothing: antialiased;
-	    -moz-osx-font-smoothing: grayscale;
-	    background-image: none!important;
-	    margin-right: 6px;
-	}
-	.icon-drag:before{
-		position: relative;
-		content: "\f228";
-    	top: 2px;
-	}
-	.icon-drag:hover{
-		cursor: move;
-	}
-}
+		input[type="text"]{
+			width: 100%;
+			padding: 5px;
+		}
+		input[type=text],
+		input[type=mail],
+		textarea { border-radius: 3px; padding: 2px;width:90%;margin-bottom:3px; }
+		input[type=text],
+		input[type=mail] { height:28px; }
+		input[type=text].datepicker { width:90px;margin-right:5px; }
 
-table.table-custom-field-builder {
-	.required { 
-		display: inline-block;
-		margin:0 4px;
-		border-radius: 4px;
-		padding: 1px 5px;
-		background-color: #c00; 
-		color:#fff;
-		font-size:10px;
-	}
-	.description p {
-		margin:0;
-	}
-	th { 
-		text-align: left;font-weight: lighter;padding-right:10px;vertical-align: top; 
-	}
-}
-input[type=text],
-input[type=mail],
-textarea { border-radius: 3px; padding: 2px;width:90%;margin-bottom:3px; }
-input[type=text],
-input[type=mail] { height:28px; }
-input[type=text].datepicker { width:90px;margin-right:5px; }
+		.text-center {
+			text-align: center;
+		}
+		.vertical-middle {
+			vertical-align: middle;
+		}
+
+		&.table-striped {
+
+		}
+		&.table-bordered {
+			border:1px solid #e5e5e5;
+			td,
+			th {
+				border:1px solid #e5e5e5;
+			}
+		}
+		&.row-control {
+			tbody tr:first-child .del-row { display: none; }
+			.cell-count,
+			.cell-unit{ 
+				width:50px;
+			}
+			.cell-price{
+				width:7em;
+			}
+			.cell-control {
+				width:14em;
+			}
+			.icon-drag {
+				position: relative;
+			    font: 400 20px/1 dashicons;
+			    speak: none;
+			    padding: 4px 0;
+			    -webkit-font-smoothing: antialiased;
+			    -moz-osx-font-smoothing: grayscale;
+			    background-image: none!important;
+			    margin-right: 6px;
+			}
+			.icon-drag:before{
+				position: relative;
+				content: "\f228";
+		    	top: 2px;
+			}
+			.icon-drag:hover{
+				cursor: move;
+			}
+		}
+
+		.required { 
+			display: inline-block;
+			margin:0 4px;
+			border-radius: 4px;
+			padding: 1px 5px;
+			background-color: #c00; 
+			color:#fff;
+			font-size:10px;
+		}
+		.description p {
+			margin:0;
+		}
+	} // .table
+
+} // .table-custom-field-builder

@@ -71,7 +71,8 @@ class VK_Custom_Field_Builder {
 
       $form_html = '';
 
-      $form_html .= '<table class="table-custom-field-builder table-striped table table-bordered">';
+      $form_html .= '<div class="vk-custom-field-builder">';
+      $form_html .= '<table class="table table-striped table-bordered">';
 
       $form_html .= $befor_items;
 
@@ -126,6 +127,7 @@ class VK_Custom_Field_Builder {
           $form_html .= '</td></tr>';
       }
       $form_html .= '</table>';
+      $form_html .= '</div>';
       if ( $echo ) {
         wp_enqueue_media();
         echo $form_html;
