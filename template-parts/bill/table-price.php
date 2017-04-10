@@ -25,7 +25,8 @@ foreach ($bill_items as $key => $value) { ?>
 	if ( $bill_items[$key]['count'] === '' ){
 		$item_count = '';
 	} else {
-		$item_count = intval( $bill_items[$key]['count'] );
+		// intvalだと小数点が切り捨てられるので使用していない
+		$item_count = $bill_items[$key]['count'];
 	}
 
 	// $item_price
