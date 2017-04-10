@@ -38,7 +38,8 @@ class Bill_Item_Custom_Fields {
 		global $post;
 		$bill_items = get_post_meta( $post->ID, 'bill_items', true );
 
-		$form_table = '<table class="table table-striped table-bordered row-control">';
+		$form_table = '<div class="vk-custom-field-builder">';
+		$form_table .= '<table class="table table-striped table-bordered row-control">';
 
 		$form_table .= '<thead><tr><th></th><th></th><th>品目</th><th>数量</th><th>単位</th><th>単価</th><th></th></tr></thead>';
 		$form_table .= '<tbody id="sortable">';
@@ -67,8 +68,8 @@ class Bill_Item_Custom_Fields {
 		foreach ($bill_items as $key => $value) {
 			$form_table .= '<tr>';
 			$number = intval( $key ) + 1;
-			$form_table .= '<th><span class="icon-drag"></span></th>';
-			$form_table .= '<th><span class="cell-number">'.$number.'</span></th>';
+			$form_table .= '<th class="text-center vertical-middle"><span class="icon-drag"></span></th>';
+			$form_table .= '<th class="text-center vertical-middle"><span class="cell-number">'.$number.'</span></th>';
 
 			// 列をループ
 			foreach ($bill_item_sub_fields as $sub_field) {
@@ -85,6 +86,7 @@ class Bill_Item_Custom_Fields {
 
 		$form_table .= '</tbody>';
 		$form_table .= '</table>';
+		$form_table .= '</div>';
 		echo $form_table;
 	}
 
