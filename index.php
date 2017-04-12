@@ -67,24 +67,24 @@ echo '<a href="'.home_url('/').'?post_type='.$post_type['slug'].'&client='.$clie
 $rss = 'https://billvektor.com/feed/';
 $content = wp_safe_remote_get( $rss );
 if ( !isset( $content->errors ) ) {
-$count = 0;
-if( $content['response']['code'] != 200 ) return;
-$xml = @simplexml_load_string( $content['body'] );
-foreach($xml->channel->item as $entry){
-  $rss_date = $entry->pubDate; 
-  date_default_timezone_set('Asia/Tokyo');
-  $post_date = strtotime($rss_date); 
-  echo '<li>';
-  echo '<span class="post-date">'.date( "Y.m.d",$post_date ).'</span>';
-  echo '<span class="post-cate">'.esc_html( $entry->category ).'</span>';
-  echo '<span class="post-title"><a href="'.esc_url( $entry->link ).'?rel=rss" target="_blank">'.esc_html( $entry->title ).'</a></span>';
-  echo '</li>';
-  $count++;
-  if ($count > 4){ break; }
-}
+  $count = 0;
+  if( $content['response']['code'] != 200 ) return;
+  $xml = @simplexml_load_string( $content['body'] );
+  foreach($xml->channel->item as $entry){
+    $rss_date = $entry->pubDate; 
+    date_default_timezone_set('Asia/Tokyo');
+    $post_date = strtotime($rss_date); 
+    echo '<li>';
+    echo '<span class="post-date">'.date( "Y.m.d",$post_date ).'</span>';
+    echo '<span class="post-cate">'.esc_html( $entry->category ).'</span>';
+    echo '<span class="post-title"><a href="'.esc_url( $entry->link ).'?rel=rss" target="_blank">'.esc_html( $entry->title ).'</a></span>';
+    echo '</li>';
+    $count++;
+    if ($count > 4){ break; }
+  }
 } else {
   echo '<p>お知らせの取得に失敗しました。</p>';
-}// if ( !$content->errors ) {
+}// if ( !isset( $content->errors ) ) {
 ?>
 </ul>
 </div>
