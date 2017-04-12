@@ -25,8 +25,8 @@ function bill_raw_date($date){
     return $raw_date;
 }
 
-function bill_total_add_tax() {
-  global $post;
+function bill_total_add_tax($post) {
+  // global $post;
   $bill_items = get_post_meta( $post->ID, 'bill_items', true );
   $bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
   $bill_total = 0;

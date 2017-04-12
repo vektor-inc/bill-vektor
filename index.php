@@ -13,6 +13,8 @@
 
 <?php if ( is_front_page() || is_archive() || is_tax() ) { ?>
 
+<form action="" method="get">
+
 <div class="section">
 <?php get_template_part('template-parts/search-box');?>
 </div>
@@ -56,6 +58,12 @@ echo '<a href="'.home_url('/').'?post_type='.$post_type['slug'].'&client='.$clie
 <?php the_posts_pagination(); ?>
 <?php } // if ( have_posts() ) { ?>
 </div>
+
+<div class="section">
+<?php get_template_part('template-parts/export-box');?>
+</div>
+
+</form>
 
 <?php } else { ?>
 
