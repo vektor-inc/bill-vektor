@@ -54,7 +54,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 			$posts = get_posts( $args );
 
 			// 売掛金
-			$number = ( isset( $_GET['number_start'] ) && $_GET['number_start'] ) ? esc_html( $_GET['number_start'] ) : '10000' ;
+			$number = ( isset( $_GET['number_start'] ) && $_GET['number_start'] ) ? esc_html( $_GET['number_start'] ) : '' ;
 			foreach ( $posts as $key => $post ) { 
 				$date = date_i18n( "Y/n/j", strtotime( $post->post_date ) );
 				$bill_total_add_tax = bill_total_add_tax($post);
@@ -83,7 +83,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 				$c[] = '""';					// 最終更新日時
 				// 配列を , 区切りで格納
 				$csv[] = implode(',', $c);
-				$number ++;
+				if ( $number ) $number ++;		
 			}
 
 			// 売掛金の入金用レコード
@@ -116,7 +116,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 				$c[] = '""';					// 最終更新日時
 				// 配列を , 区切りで格納
 				$csv[] = implode(',', $c);
-				$number ++;
+				if ( $number ) $number ++;
 			}
 
 			// CSVで出力実行
