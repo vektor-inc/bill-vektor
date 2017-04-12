@@ -28,6 +28,8 @@ foreach ($post_type_array as $key => $label) {
 $args = array(
 	'post_type' => 'client',
 	'posts_per_page' => -1,
+	'order' => 'ASC',
+	'orderby' => 'title',
 	);
 $client_posts = get_posts($args);
 $client_id = ( isset( $_GET['client'] ) && $_GET['client'] ) ? esc_attr( $_GET['client'] ) : "";
@@ -39,10 +41,7 @@ if ( $client_posts ) {
 		if ( $client_id == $post->ID ) {
 			$selected = ' selected';
 		}
-		$client_name = get_post_meta( $post->ID, 'client_short_name', true );
-		if ( !$client_name ){
-		  $client_name = get_the_title( $post->ID );
-		}
+		$client_name = get_the_title( $post->ID );
 		echo '<option value="'.$post->ID.'"'.$selected.'>'.esc_attr( $client_name ).'</option>';
 	}	
 }
