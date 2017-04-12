@@ -1,5 +1,4 @@
 <div class="search-box">
-<form action="" method="get">
 <dl class="search-radio">
 <dt><label for="client">書類種別</label></dt>
 <dd>
@@ -60,9 +59,6 @@ $end_date = ( isset( $_GET['end_date'] ) && $_GET['end_date'] ) ? $_GET['end_dat
 </dd>
 </dl>
 
+<button type="submit" name="action" value="send" class="search-submit btn btn-block btn-primary">絞り込み</button>
 
-
-
-<input type="submit" value="絞り込み" class="btn btn-block btn-primary" />
-</form>
 </div>
