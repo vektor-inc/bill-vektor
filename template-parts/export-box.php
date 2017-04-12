@@ -12,4 +12,5 @@
 <button type="submit" name="action" value="csv_mf" class="search-submit btn btn-block btn-primary">MFクラウド会計用CSVエクスポート　<span class="glyphicon glyphicon-download-alt"></span></button>
 </div>
 </div>
+<p>MFクラウド会計でのインポートは「<a href="https://biz.moneyforward.com/books/" target="_blank">会計帳簿 > 仕訳帳</a>」より行います。</p>
 </div><!-- /.export-box -->
