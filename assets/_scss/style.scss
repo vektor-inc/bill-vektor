@@ -31,7 +31,7 @@ h3 {
 	font-size:16px;
 	line-height: 1.2em;
 	padding: 0.7em 1em 0.5em;
-	margin-bottom:1.5em;
+	margin-bottom:1.3em;
 }
 h3:first-child {
 	margin-top:0;
@@ -206,5 +206,30 @@ form {
 		width:100%;
 	}
 }
+
+ul.post-list {
+	margin:0;
+	padding: 0 1em;
+	li {
+		margin-bottom:5px;
+		list-style: none;
+		display: -webkit-inline-flex; /* Safari */
+		display: inline-flex;
+		span {
+			margin-right:1em;
+			// border:1px solid #ff0000;
+		}
+		.post-date {
+			width:6em;
+		}
+		.post-cate {
+			width:10em;
+		}
+		.post-title {
+			width:calc( 100% - 19em );
+		}
+	}
+}
+
 
 @import "bill";
