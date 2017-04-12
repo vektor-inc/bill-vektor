@@ -24,6 +24,19 @@ a:hover {
 /* common */
 /*-------------------*/
 
+h3 {
+	display:block; overflow:hidden;
+	background-color: #e5e5e5;
+	border-radius: $radius;
+	font-size:16px;
+	line-height: 1.2em;
+	padding: 0.7em 1em 0.5em;
+	margin-bottom:1.5em;
+}
+h3:first-child {
+	margin-top:0;
+}
+
 .btn-primary {
 	background-color: $color_key_dark;
 }
@@ -41,6 +54,9 @@ a:hover {
 	dt,
 	dd { display: inline; }
 	dt { margin-right:1em; }
+}
+.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
+	border-top:none;
 }
 table.table {
 	th { font-weight: lighter; }
@@ -169,6 +185,7 @@ form {
 	}
 	.search-submit {
 		width:48%;
+		line-height: 1.1em;
 	}
 
 }

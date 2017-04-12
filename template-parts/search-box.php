@@ -63,6 +63,6 @@ $end_date = ( isset( $_GET['end_date'] ) && $_GET['end_date'] ) ? $_GET['end_dat
 </dd>
 </dl>
 
-<button type="submit" name="action" value="send" class="search-submit btn btn-block btn-primary">絞り込み</button>
+<button type="submit" name="action" value="send" class="search-submit btn btn-block btn-primary">絞り込み　<span class="glyphicon glyphicon-search"></span></button>
 
 </div>
