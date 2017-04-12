@@ -66,6 +66,7 @@ echo '<a href="'.home_url('/').'?post_type='.$post_type['slug'].'&client='.$clie
 <?php
 $rss = 'https://billvektor.com/feed/';
 $content = wp_safe_remote_get( $rss );
+if ( !isset( $content->errors ) ) {
 $count = 0;
 if( $content['response']['code'] != 200 ) return;
 $xml = @simplexml_load_string( $content['body'] );
@@ -81,6 +82,9 @@ foreach($xml->channel->item as $entry){
   $count++;
   if ($count > 4){ break; }
 }
+} else {
+  echo '<p>お知らせの取得に失敗しました。</p>';
+}// if ( !$content->errors ) {
 ?>
 </ul>
 </div>
