@@ -58,7 +58,13 @@ if ( ! class_exists( 'CsvExport' ) ) {
 			foreach ( $posts as $key => $post ) { 
 				$date = date_i18n( "Y/n/j", strtotime( $post->post_date ) );
 				$bill_total_add_tax = bill_total_add_tax($post);
-				$bill_client = get_the_title( $post->bill_client );
+
+				// 取引先名（省略名があれば省略名で表示）
+				$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
+				if ( !$client_name ){
+				  $client_name = get_the_title( $post->bill_client );
+				}
+
 				$c = '';
 				$c[] = '"'.$number.'"';			// 取引No
 				$c[] = '"'.$date.'"';			// 取引日
@@ -74,9 +80,9 @@ if ( ! class_exists( 'CsvExport' ) ) {
 				$c[] = '""';					// 貸方部門
 				$c[] = '"'.$bill_total_add_tax.'"';	// 貸方金額(円)
 				$c[] = '""';					// 貸方税額
-				$c[] = '"[ '. $bill_client .' ] '.$post->post_title.'"';	// 摘要
+				$c[] = '"[ '.esc_html( $client_name ).' ] '.esc_html( $post->post_title ).'"';	// 摘要
 				$c[] = '""';					// 仕訳メモ
-				$c[] = '"billvektor"';					// タグ
+				$c[] = '"BillVektor"';					// タグ
 				$c[] = '""';					// MF仕訳タイプ
 				$c[] = '""';					// 決算整理仕訳
 				$c[] = '"'.date("Y/n/j H:i:s").'"';	// 作成日時
@@ -91,7 +97,13 @@ if ( ! class_exists( 'CsvExport' ) ) {
 				$bill_limit_date = get_post_meta( $post->ID, 'bill_limit_date', true );
 				$date_pay = date("Y/n/j", bill_raw_date( $bill_limit_date ) );
 				$bill_total_add_tax = bill_total_add_tax($post);
-				$bill_client = get_the_title( $post->bill_client );
+
+				// 取引先名（省略名があれば省略名で表示）
+				$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
+				if ( !$client_name ){
+				  $client_name = get_the_title( $post->bill_client );
+				}
+
 				$c = '';
 				$c[] = '"'.$number.'"';			// 取引No
 				$c[] = '"'.$date_pay.'"';		// 取引日
@@ -107,9 +119,9 @@ if ( ! class_exists( 'CsvExport' ) ) {
 				$c[] = '""';					// 貸方部門
 				$c[] = '"'.$bill_total_add_tax.'"';	// 貸方金額(円)
 				$c[] = '""';					// 貸方税額
-				$c[] = '"[ '. $bill_client .' ] '.$post->post_title.'"';	// 摘要
+				$c[] = '"[ '.esc_html( $client_name ).' ] '.esc_html( $post->post_title ).'"';	// 摘要
 				$c[] = '""';					// 仕訳メモ
-				$c[] = '"billvektor"';			// タグ
+				$c[] = '"BillVektor"';			// タグ
 				$c[] = '"未実現"';				// MF仕訳タイプ
 				$c[] = '""';					// 決算整理仕訳
 				$c[] = '"'.date("Y/n/j H:i:s").'"';	// 作成日時
