@@ -39,7 +39,11 @@ if ( $client_posts ) {
 		if ( $client_id == $post->ID ) {
 			$selected = ' selected';
 		}
-		echo '<option value="'.$post->ID.'"'.$selected.'>'.esc_attr( $post->post_title ).'</option>';
+		$client_name = get_post_meta( $post->ID, 'client_short_name', true );
+		if ( !$client_name ){
+		  $client_name = get_the_title( $post->ID );
+		}
+		echo '<option value="'.$post->ID.'"'.$selected.'>'.esc_attr( $client_name ).'</option>';
 	}	
 }
 echo '</select>';
