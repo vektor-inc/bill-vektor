@@ -81,12 +81,16 @@ function bill_get_post_type() {
   $post_type['slug'] = get_post_type();
   if ( ! $post_type['slug'] ) {
     global $wp_query;
-    if ( $wp_query->query_vars['post_type'] ) {
+    if ( is_front_page() ) {
+      $post_type['slug'] = 'post';
+    } elseif ( $wp_query->query_vars['post_type'] ) {
       $post_type['slug'] = $wp_query->query_vars['post_type'];
     } else {
       // Case of tax archive and no posts
       $taxonomy = get_queried_object()->taxonomy;
-      $post_type['slug'] = get_taxonomy( $taxonomy )->object_type[0];
+      if ( $taxonomy ){
+        $post_type['slug'] = get_taxonomy( $taxonomy )->object_type[0];
+      }
     }
   }
 

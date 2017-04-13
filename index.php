@@ -56,7 +56,9 @@ echo '<a href="'.home_url('/').'?post_type='.$post_type['slug'].'&client='.$clie
 <?php endwhile; ?>
 </table>
 <?php the_posts_pagination(); ?>
-<?php } // if ( have_posts() ) { ?>
+<?php } else {
+  echo '<p>該当の書類はありません。</p>';
+} // if ( have_posts() ) { ?>
 </div>
 
 <div id="news" class="section">
