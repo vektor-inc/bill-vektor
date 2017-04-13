@@ -1,5 +1,4 @@
 <div class="search-box">
-<form action="" method="get">
 <dl class="search-radio">
 <dt><label for="client">書類種別</label></dt>
 <dd>
@@ -29,6 +28,8 @@ foreach ($post_type_array as $key => $label) {
 $args = array(
 	'post_type' => 'client',
 	'posts_per_page' => -1,
+	'order' => 'ASC',
+	'orderby' => 'title',
 	);
 $client_posts = get_posts($args);
 $client_id = ( isset( $_GET['client'] ) && $_GET['client'] ) ? esc_attr( $_GET['client'] ) : "";
@@ -40,7 +41,8 @@ if ( $client_posts ) {
 		if ( $client_id == $post->ID ) {
 			$selected = ' selected';
 		}
-		echo '<option value="'.$post->ID.'"'.$selected.'>'.esc_attr( $post->post_title ).'</option>';
+		$client_name = get_the_title( $post->ID );
+		echo '<option value="'.$post->ID.'"'.$selected.'>'.esc_attr( $client_name ).'</option>';
 	}	
 }
 echo '</select>';
@@ -60,9 +62,6 @@ $end_date = ( isset( $_GET['end_date'] ) && $_GET['end_date'] ) ? $_GET['end_dat
 </dd>
 </dl>
 
+<button type="submit" name="action" value="send" class="search-submit btn btn-block btn-primary">絞り込み　<span class="glyphicon glyphicon-search"></span></button>
 
-
-
-<input type="submit" value="絞り込み" class="btn btn-block btn-primary" />
-</form>
 </div>

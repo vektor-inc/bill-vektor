@@ -48,6 +48,8 @@ class Estimate_Normal_Custom_Fields {
 		$args = array(
 			'post_type' => 'client',
 			'posts_per_page' => -1,
+			'order' => 'ASC',
+			'orderby' => 'title',
 			);
 
 		$client_posts = get_posts($args);
