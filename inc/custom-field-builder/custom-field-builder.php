@@ -107,7 +107,6 @@ class VK_Custom_Field_Builder {
           } else if ( $value['type'] == 'image' ){
               $attr = array(
                 'id'    => 'thumb_'.$key,
-                'src'   => '',
                 'class' => 'input_thumb',
                 );
               if ( isset( $_POST[$key] ) && $_POST[$key] ){

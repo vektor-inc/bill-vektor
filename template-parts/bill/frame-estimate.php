@@ -42,7 +42,6 @@ if ( $client_honorific ) {
 if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
 	$attr = array(
 		'id'    => 'bill-seal',
-		'src'   => '',
 		'class' => 'bill-seal',
 		'alt'   => trim( strip_tags( get_post_meta( $options['own-seal'], '_wp_attachment_image_alt', true ) ) ),
 	);

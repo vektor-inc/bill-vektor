@@ -49,7 +49,6 @@ if ( $client_honorific ) {
 if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
 	$attr = array(
 		'id'    => 'bill-seal',
-		'src'   => '',
 		'class' => 'bill-seal',
 		'alt'   => trim( strip_tags( get_post_meta( $options['own-seal'], '_wp_attachment_image_alt', true ) ) ),
 	);
@@ -93,7 +92,6 @@ if ( $post->bill_remarks ){
 if ( isset( $options['own-logo'] ) && $options['own-logo'] ){
 	$attr = array(
 		'id'    => 'bill-payee-logo',
-		'src'   => '',
 		'class' => 'bill-payee-logo',
 		'alt'   => trim( strip_tags( get_post_meta( $options['own-logo'], '_wp_attachment_image_alt', true ) ) ),
 	);
