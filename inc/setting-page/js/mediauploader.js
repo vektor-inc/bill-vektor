@@ -45,11 +45,12 @@ jQuery(document).ready(function($){
         custom_uploader.on('select', function() {
             var images = custom_uploader.state().get('selection');
             images.each(function(file){
+                // console.log(file.toJSON());
                 // urlを返す場合
                 jQuery(media_target_src).attr('value', file.toJSON().url );
                 // idを返す場合
                 jQuery(media_target).attr('value', file.toJSON().id );
-                jQuery(thumb_src).attr('src', file.toJSON().url );
+                jQuery(thumb_src).attr('src', file.toJSON().url ).attr('srcset', file.toJSON().url );
             });
         });
         custom_uploader.open();
