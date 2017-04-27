@@ -49,11 +49,10 @@ if ( $client_honorific ) {
 if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
 	$attr = array(
 		'id'    => 'bill-seal',
-		'src'   => '',
 		'class' => 'bill-seal',
 		'alt'   => trim( strip_tags( get_post_meta( $options['own-seal'], '_wp_attachment_image_alt', true ) ) ),
 	);
-	echo wp_get_attachment_image( $options['own-seal'], 'full', false, $attr );
+	echo wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr );
 } ?>
 </div><!-- [ /.address-own ] -->
 </div><!-- [ /.col-xs-5 col-xs-offset-1 ] -->
@@ -93,11 +92,10 @@ if ( $post->bill_remarks ){
 if ( isset( $options['own-logo'] ) && $options['own-logo'] ){
 	$attr = array(
 		'id'    => 'bill-payee-logo',
-		'src'   => '',
 		'class' => 'bill-payee-logo',
 		'alt'   => trim( strip_tags( get_post_meta( $options['own-logo'], '_wp_attachment_image_alt', true ) ) ),
 	);
-	echo wp_get_attachment_image( $options['own-logo'], 'full', false, $attr );
+	echo wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr );
 } ?>
 </td>
 </tr>

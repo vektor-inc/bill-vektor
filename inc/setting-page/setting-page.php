@@ -48,14 +48,13 @@ class Bill_Admin {
 		<?php
 		$attr = array(
 			'id'    => 'thumb_own-logo',
-			'src'   => '',
 			'class' => 'input_thumb',
 		);
 		// no image 画像
 		$no_image = '<img src="'.get_template_directory_uri().'/assets/images/no-image.png" id="thumb_own-logo" alt="" class="input_thumb" style="width:150px;height:auto;">';
 		if ( isset( $options['own-logo'] ) && $options['own-logo'] ){
-			if ( wp_get_attachment_image( $options['own-logo'], 'full', false, $attr ) ) {
-				echo wp_get_attachment_image( $options['own-logo'], 'full', false, $attr );
+			if ( wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr ) ) {
+				echo wp_get_attachment_image( $options['own-logo'], 'medium', false, $attr );
 			} else {
 				// 画像自体がメディアかさ削除されてしまった場合
 				echo $no_image;
@@ -73,13 +72,12 @@ class Bill_Admin {
 		<?php
 		$attr = array(
 			'id'    => 'thumb_own-seal',
-			'src'   => '',
 			'class' => 'input_thumb',
 		);
 		$no_image = '<img src="'.get_template_directory_uri().'/assets/images/no-image.png" id="thumb_own-seal" alt="" class="input_thumb" style="width:150px;height:auto;">';
 		if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
-			if ( wp_get_attachment_image( $options['own-seal'], 'full', false, $attr ) ) {
-				echo wp_get_attachment_image( $options['own-seal'], 'full', false, $attr );
+			if ( wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr ) ) {
+				echo wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr );
 			} else {
 				// 画像自体がメディアかさ削除されてしまった場合
 				echo $no_image;
