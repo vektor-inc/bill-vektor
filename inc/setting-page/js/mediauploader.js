@@ -11,13 +11,20 @@ jQuery(document).ready(function($){
 
     // var media_btn = '#media_' + media_id[i];
     // var media_target = '#' + media_id[i];
+
+    // 画像参照ボタンが押された時
     jQuery('.media_btn').click(function(e) {
 
         // 画像URLで値を返す場合
         media_target_src    = jQuery(this).attr('id').replace(/media_src_/g,'#');
-        // id で値を返す場合
-        media_target    = jQuery(this).attr('id').replace(/media_/g,'#');
-        thumb_src       = jQuery(this).attr('id').replace(/media_/g,'#thumb_');
+
+        // 画像id を返す場合
+            // ボタンのID名から media_ を削除し、画像を変更した時に反映させる対象要素のIDを設定
+
+            // hiddenで送るinpt要素用
+            media_target    = jQuery(this).attr('id').replace(/media_/g,'#');
+            // プレビュー用
+            thumb_src       = jQuery(this).attr('id').replace(/media_/g,'#thumb_');
 
         e.preventDefault();
         if (custom_uploader) {

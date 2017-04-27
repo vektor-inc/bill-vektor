@@ -111,9 +111,9 @@ class VK_Custom_Field_Builder {
                 'class' => 'input_thumb',
                 );
               if ( isset( $_POST[$key] ) && $_POST[$key] ){
-                $form_html .= wp_get_attachment_image( $_POST[$key], 'medium', false, $attr );
+                $form_html .= wp_get_attachment_image( $_POST[$key], 'thumbnail', false, $attr );
               } else if ( $post->$key ){
-                $form_html .= wp_get_attachment_image( $post->$key, 'medium', false, $attr );
+                $form_html .= wp_get_attachment_image( $post->$key, 'thumbnail', false, $attr );
               } else {
                 $form_html .= '<img src="'.VK_PORTAL_URL.'/images/no_image.png" id="thumb_'.$key.'" alt="" class="input_thumb" style="width:200px;height:auto;">';
               }

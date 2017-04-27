@@ -46,7 +46,7 @@ if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
 		'class' => 'bill-seal',
 		'alt'   => trim( strip_tags( get_post_meta( $options['own-seal'], '_wp_attachment_image_alt', true ) ) ),
 	);
-	echo wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr );
+	echo wp_get_attachment_image( $options['own-seal'], 'full', false, $attr );
 } ?>
 </div><!-- [ /.address-own ] -->
 </div><!-- [ /.col-xs-5 col-xs-offset-1 ] -->
