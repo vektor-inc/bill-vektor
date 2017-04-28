@@ -39,7 +39,8 @@ function bill_total_no_tax($post) {
     if ( $bill_items[$key]['count'] === '' ){
       $item_count = '';
     } else {
-      $item_count = intval( $bill_items[$key]['count'] );
+      // intvalは小数点が切り捨てられるので使用していない
+      $item_count = $bill_items[$key]['count'];
     }
 
     // $item_price
