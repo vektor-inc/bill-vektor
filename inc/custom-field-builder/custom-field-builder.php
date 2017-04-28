@@ -39,20 +39,19 @@ class VK_Custom_Field_Builder {
     wp_enqueue_style( 'cf-builder-style', self::admin_directory_url().'css/cf-builder.css', array(), self::$version, 'all' );
   }
 
-  public static function form_post_value( $post_field, $type = false )
+  public static function form_post_value( $post_field = '', $type = false )
   {
         $value = '';
         global $post;
-          if ( isset( $_POST[$post_field] ) && $_POST[$post_field] ) {
-            if ( isset( $type ) && $type == 'textarea' ) {
-              // n2brはフォームにbrがそのまま入ってしまうので入れない
-                $value = esc_textarea( $_POST[$post_field] );
-            } else {
-                $value = esc_attr( $_POST[$post_field] );
-            } 
-          } else if ( isset( $post->$post_field ) && $post->$post_field ) {
-            $value = $post->$post_field;
+        $value = esc_attr( get_post_meta( $post->ID, $post_field, true ) );
+        if ( isset( $_POST[$post_field] ) && $_POST[$post_field] ) {
+          if ( isset( $type ) && $type == 'textarea' ) {
+            // n2brはフォームにbrがそのまま入ってしまうので入れない
+              $value = esc_textarea( $_POST[$post_field] );
+          } else {
+              $value = esc_attr( $_POST[$post_field] );
           }
+        }
         return $value;
   }
 
@@ -104,9 +103,46 @@ class VK_Custom_Field_Builder {
               }
               $form_html .= '</select>';
 
+          } else if ( $value['type'] == 'checbox' || $value['type'] == 'radio' ){
+            $field_value = get_post_meta( $post->ID, $key, true );
+            $form_html .= '<ul>';
+            foreach ($value['options'] as $option_value => $option_label) {
+              $selected = '';
+
+              // チェックボックス
+              if ( $value['type'] == 'checbox'){
+
+                if ( is_array( $field_value ) && in_array( $option_value, $field_value ) ){
+                  $selected = ' checked';
+                }
+
+                $form_html .= '<li><label><input type="checkbox" name="'.esc_attr( $key ).'[]" id="'.esc_attr( $key ).'" value="'.esc_attr( $option_value ).'"'.$selected.'  /><span>'.esc_html( $option_label ).'</span></label></li>';
+
+              // ラジオボタン
+              } else if ( $value['type'] == 'radio' ){
+                if ( $option_value == $field_value ) $selected = ' checked';
+                $form_html .= '<li><label><input type="radio" name="'.esc_attr( $key ).'" id="'.esc_attr( $key ).'" value="'.esc_attr( $option_value ).'"'.$selected.'  /><span>'.esc_html( $option_label ).'</span></label></li>';
+              }
+            } // foreach ($value['options'] as $option_value => $option_label) {
+
+            $form_html .= '</ul>';
+
+          } else if ( $value['type'] == 'radio' ){
+              $form_html .= '<ul>';
+              foreach ($value['options'] as $option_value => $option_label) {
+                  if ( VK_Custom_Field_Builder::form_post_value($key) == $option_value ){
+                      $selected = ' checked';
+                  } else {
+                      $selected = '';
+                  }
+                  $form_html .= '<li><label><input type="checkbox" name="'.esc_attr( $key ).'[]" id="'.esc_attr( $key ).'" value="'.esc_attr( $option_value ).'"'.$selected.'  /><span>'.esc_html( $option_label ).'</span></label></li>';
+              }
+              $form_html .= '</ul>';
+
           } else if ( $value['type'] == 'image' ){
               $attr = array(
                 'id'    => 'thumb_'.$key,
+                'src'   => '',
                 'class' => 'input_thumb',
                 );
               if ( isset( $_POST[$key] ) && $_POST[$key] ){

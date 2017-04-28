@@ -74,7 +74,13 @@ $bill_total_add_tax = $bill_total + $tax;
 </table>
 
 <table class="table table-bordered table-bill table-bill-total">
+<?php 
+global $post;
+if ( isset( $post->bill_tax_type ) && $post->bill_tax_type == 'tax_not_auto' ) : ?>
+<tr><th colspan="4">合計金額</th><td class="price">¥ <?php echo number_format( $bill_total );?></td></tr>
+<?php else : ?>
 <tr><th colspan="4">小計</th><td class="price">¥ <?php echo number_format( $bill_total );?></td></tr>
 <tr><th colspan="4">消費税</th><td class="price">¥ <?php echo number_format( $tax );?></td></tr>
 <tr><th colspan="4">合計金額</th><td class="price">¥ <?php echo number_format( $bill_total_add_tax );?></td></tr>
+<?php endif;?>
 </table>
