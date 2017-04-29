@@ -2,11 +2,11 @@
 <div id="sub" class="col-md-3">
 
   <nav class="sub-section section"">
-  <h4 class="sub-section-title"><a href="<?php echo home_url('/').'?post_type=estimate';?>">見積書</a></h4>
+  <h3 class="sub-section-title"><a href="<?php echo home_url('/').'?post_type=estimate';?>">見積書</a></h3>
   <ul>
   <?php wp_list_categories('title_li=&taxonomy=estimate-cat'); ?>
   </ul>
-  <h4 class="sub-section-title"><a href="<?php echo home_url('/').'?post_type=post';?>">請求書<i class="fa fa-angle-right" aria-hidden="true"></i></a></h4>
+  <h3 class="sub-section-title"><a href="<?php echo home_url('/').'?post_type=post';?>">請求書<i class="fa fa-angle-right" aria-hidden="true"></i></a></h3>
   <ul>
   <?php wp_list_categories('title_li='); ?>
   </ul>
