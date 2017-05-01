@@ -73,8 +73,8 @@ class Estimate_Item_Custom_Fields {
 
 			// 列をループ
 			foreach ($bill_item_sub_fields as $sub_field) {
-				// php noindex 用に isset
-				$bill_item_value[$sub_field] = ( isset( $value[$sub_field] ) && $value[$sub_field] ) ? $value[$sub_field] : '';
+				// php noindex 用に isset （ isset( $value[$sub_field] ) && $value[$sub_field] にすると 0円の時に0が表示されなくなる ）
+				$bill_item_value[$sub_field] = ( isset( $value[$sub_field] ) ) ? $value[$sub_field] : '';
 				$form_table .= '<td class="cell-'.$sub_field.'"><input class="bill-item-field" type="text" id="bill_items['.$key.']['.$sub_field.']" name="bill_items['.$key.']['.$sub_field.']" value="'.esc_attr($bill_item_value[$sub_field]).'"></td>';
 			}
 			$form_table .= '<td class="cell-control">
