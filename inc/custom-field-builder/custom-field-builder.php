@@ -103,14 +103,14 @@ class VK_Custom_Field_Builder {
               }
               $form_html .= '</select>';
 
-          } else if ( $value['type'] == 'checbox' || $value['type'] == 'radio' ){
+          } else if ( $value['type'] == 'checkbox' || $value['type'] == 'radio' ){
             $field_value = get_post_meta( $post->ID, $key, true );
             $form_html .= '<ul>';
             foreach ($value['options'] as $option_value => $option_label) {
               $selected = '';
 
               // チェックボックス
-              if ( $value['type'] == 'checbox'){
+              if ( $value['type'] == 'checkbox'){
 
                 if ( is_array( $field_value ) && in_array( $option_value, $field_value ) ){
                   $selected = ' checked';

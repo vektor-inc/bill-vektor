@@ -72,6 +72,9 @@ $bill_total_add_tax = $bill_total + $tax;
 ?>
 </tbody>
 </table>
+<?php 
+global $post;
+if ( $post->bill_total_price_display[0] != 'hidden' ) { ?>
 
 <table class="table table-bordered table-bill table-bill-total">
 <?php 
@@ -84,3 +87,5 @@ if ( isset( $post->bill_tax_type ) && $post->bill_tax_type == 'tax_not_auto' ) :
 <tr><th colspan="4">合計金額</th><td class="price">¥ <?php echo number_format( $bill_total_add_tax );?></td></tr>
 <?php endif;?>
 </table>
+
+<?php } // if ( $post->bill_total_price_display[0] != 'hidden' ) {  ?>
