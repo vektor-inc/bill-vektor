@@ -39,7 +39,7 @@ foreach ($bill_items as $key => $value) { ?>
 	}
 
 	// $item_total
-	if ( $item_count && $item_price ) {
+	if ( is_numeric( $item_count ) && is_numeric( $item_price ) ) {
 		$item_price_total = $item_count * $item_price;
 		$item_price_total_print = '¥ '.number_format( $item_price_total );
 	} else {
