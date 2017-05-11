@@ -183,18 +183,18 @@ class VK_Custom_Field_Builder {
 
           foreach ($custom_fields_array as $key => $value) {
 
-                  $field_value = ( isset( $_POST[$key] ) ) ? $_POST[$key] : '';
+            $field_value = ( isset( $_POST[$key] ) ) ? $_POST[$key] : '';
 
-                      // データが空だったら入れる
-                      if( get_post_meta($post->ID, $key ) == ""){
-                          add_post_meta($post->ID, $key , $field_value, true);
-                      // 今入ってる値と違ってたらアップデートする
-                      } elseif($field_value != get_post_meta($post->ID, $key , true)){
-                          update_post_meta($post->ID, $key , $field_value);
-                      // 入力がなかったら消す
-                      } elseif($field_value == ""){
-                          delete_post_meta($post->ID, $key , get_post_meta($post->ID, $key , true));
-                      }
+            // データが空だったら入れる
+            if( get_post_meta($post->ID, $key ) == ""){
+                add_post_meta($post->ID, $key , $field_value, true);
+            // 今入ってる値と違ってたらアップデートする
+            } elseif($field_value != get_post_meta($post->ID, $key , true)){
+                update_post_meta($post->ID, $key , $field_value);
+            // 入力がなかったら消す
+            } elseif($field_value == ""){
+                delete_post_meta($post->ID, $key , get_post_meta($post->ID, $key , true));
+            }
 
           } // foreach ($custom_fields_all_array as $key => $value) {
   }
