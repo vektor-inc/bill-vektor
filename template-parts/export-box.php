@@ -18,7 +18,7 @@
 </div>
 
 <h4>freee</h4>
-<p>freeeでのインポートは「<a href="https://secure.freee.co.jp/deals/import/" target="_blank">取引 > 取引のインポート</a>」より行います。</p>
+<p>freeeでのインポートは「<a href="https://secure.freee.co.jp/hub_pages/deals" target="_blank">取引 > 取引のインポート</a>」より行います。</p>
 
 <div class="row">
 <div class="col-sm-9 col-sm-offset-3">
