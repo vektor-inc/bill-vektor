@@ -39,7 +39,7 @@ foreach ($bill_items as $key => $value) { ?>
 	}
 
 	// $item_total
-	if ( $item_count && $item_price ) {
+	if ( is_numeric( $item_count ) && is_numeric( $item_price ) ) {
 		$item_price_total = $item_count * $item_price;
 		$item_price_total_print = '¥ '.number_format( $item_price_total );
 	} else {
@@ -72,7 +72,10 @@ $bill_total_add_tax = $bill_total + $tax;
 ?>
 </tbody>
 </table>
-
+<?php 
+global $post;
+$bill_total_price_display = ( isset($post->bill_total_price_display[0]) ) ? $post->bill_total_price_display[0]:'';
+if ( $bill_total_price_display != 'hidden' ) { ?>
 <table class="table table-bordered table-bill table-bill-total">
 <?php 
 global $post;
@@ -84,3 +87,5 @@ if ( isset( $post->bill_tax_type ) && $post->bill_tax_type == 'tax_not_auto' ) :
 <tr><th colspan="4">合計金額</th><td class="price">¥ <?php echo number_format( $bill_total_add_tax );?></td></tr>
 <?php endif;?>
 </table>
+
+<?php } // if ( $post->bill_total_price_display[0] != 'hidden' ) {  ?>

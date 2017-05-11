@@ -54,7 +54,7 @@ function bill_total_no_tax($post) {
 
     // $item_total
     if ( $item_count && $item_price ) {
-      $item_price_total = $item_count * $item_price;
+      $item_price_total = round( $item_count * $item_price );
       $item_price_total_print = '¥ '.number_format( $item_price_total );
     } else {
       $item_price_total = '';
