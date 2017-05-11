@@ -74,8 +74,8 @@ $bill_total_add_tax = $bill_total + $tax;
 </table>
 <?php 
 global $post;
-if ( $post->bill_total_price_display[0] != 'hidden' ) { ?>
-
+$bill_total_price_display = ( isset($post->bill_total_price_display[0]) ) ? $post->bill_total_price_display[0]:'';
+if ( $bill_total_price_display != 'hidden' ) { ?>
 <table class="table table-bordered table-bill table-bill-total">
 <?php 
 global $post;
