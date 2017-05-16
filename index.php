@@ -15,7 +15,7 @@
 
 <form action="" method="get">
 
-<div class="section">
+<div class="section" id="search-box">
 <?php get_template_part('template-parts/search-box');?>
 </div>
 

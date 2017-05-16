@@ -21,7 +21,14 @@ if ( $client_honorific ) {
 
 <dl class="bill-total">
 <dt>合計金額</dt>
-<dd>￥ <?php echo number_format( bill_total_add_tax($post) );?><span class="caption">(消費税含)</span></dd>
+<?php
+global $post;
+if ( isset( $post->bill_tax_type ) && $post->bill_tax_type == 'tax_not_auto' ) {
+	$bill_total = bill_total_no_tax($post);
+} else {
+	$bill_total = bill_total_add_tax($post);
+} ?>
+<dd>￥ <?php echo number_format( $bill_total );?><span class="caption">(消費税含)</span></dd>
 </dl>
 </div>
 
@@ -49,7 +56,6 @@ if ( $client_honorific ) {
 if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
 	$attr = array(
 		'id'    => 'bill-seal',
-		'src'   => '',
 		'class' => 'bill-seal',
 		'alt'   => trim( strip_tags( get_post_meta( $options['own-seal'], '_wp_attachment_image_alt', true ) ) ),
 	);
@@ -93,7 +99,6 @@ if ( $post->bill_remarks ){
 if ( isset( $options['own-logo'] ) && $options['own-logo'] ){
 	$attr = array(
 		'id'    => 'bill-payee-logo',
-		'src'   => '',
 		'class' => 'bill-payee-logo',
 		'alt'   => trim( strip_tags( get_post_meta( $options['own-logo'], '_wp_attachment_image_alt', true ) ) ),
 	);

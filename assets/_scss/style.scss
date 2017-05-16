@@ -63,9 +63,9 @@ table.table {
 }
 
 
-/*-------------------*/
-
-
+/*-------------------------------------------*/
+/* .header
+/*-------------------------------------------*/
 .header { 
 	padding-top:20px;
 	padding-bottom:15px;
@@ -103,16 +103,34 @@ table.table {
 
 #main { z-index: 0;position: relative; }
 
+/*-------------------------------------------*/
+/* .breadcrumb
+/*-------------------------------------------*/
 .breadcrumb { border:$border; background-color: #fff; }
 .breadcrumb .glyphicon { margin-right:7px; }
+
 
 .section { display:block; overflow:hidden; padding: 25px;margin-bottom:20px; border:$border; border-radius: $radius;background-color: #fff;
 	header { margin:0 0 20px;
 		h1 { margin:0 0 10px;font-size:28px; }
 	}
-
+	h4 {
+		margin-top:2em;
+		border-bottom:1px solid #ccc;
+		margin-bottom:1em;
+	}
+	h4:before {
+		content:"■ ";
+		color:$color_key;
+	}
+	p {
+		margin-bottom:1em;
+	}
 }
 
+/*-------------------------------------------*/
+/* .sub-section
+/*-------------------------------------------*/
 .sub-section {
 	.sub-section-title { 
 		font-size:14px; 
@@ -143,8 +161,6 @@ nav.sub-section {
 	.sub-section-title { margin-bottom:2px; }
 }
 
-.footer .container { padding-top:20px; padding-bottom:20px;margin-top:20px; border-top:$border; }
-
 /*-------------------------------------------*/
 /* .pager
 /*-------------------------------------------*/
@@ -152,6 +168,10 @@ nav.sub-section {
 	.page-numbers { padding:10px; border:$border;border-radius: $radius;margin-right:5px; background-color: #fff; }
 }
 
+/*-------------------------------------------*/
+/* .footer
+/*-------------------------------------------*/
+.footer .container { padding-top:20px; padding-bottom:20px;margin-top:20px; border-top:$border; }
 
 
 form {

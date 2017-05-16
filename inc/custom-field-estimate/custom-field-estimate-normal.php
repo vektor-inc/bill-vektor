@@ -81,6 +81,25 @@ class Estimate_Normal_Custom_Fields {
 			// 	'description' => '',
 			// 	'required' => true,
 			// ),
+			'bill_tax_type' => array(
+				'label' => __('消費税','bill-vektor'),
+				'type' => 'radio',
+				'description' => '',
+				'required' => false,
+				'options' => array( 
+					'tax_auto' => '最後にまとめて自動計算する（デフォルト）',
+					'tax_not_auto' => '品目毎に予め消費税込の金額で入力する',
+					),
+			),
+			'bill_total_price_display' => array(
+				'label' => __('合計の表示','bill-vektor'),
+				'type' => 'checkbox',
+				'description' => '価格の目安リストなど、金額の合計を表示しない場合はチェックを入れてください。',
+				'required' => false,
+				'options' => array( 
+					'hidden' => '合計金額を表示しない',
+					),
+			),
 			'bill_remarks' => array(
 				'label' => __('備考','bill-vektor'),
 				'type' => 'textarea',

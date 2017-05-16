@@ -25,7 +25,7 @@ function bill_raw_date($date){
     return $raw_date;
 }
 
-function bill_total_add_tax($post) {
+function bill_total_no_tax($post) {
   // global $post;
   $bill_items = get_post_meta( $post->ID, 'bill_items', true );
   $bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
@@ -39,7 +39,8 @@ function bill_total_add_tax($post) {
     if ( $bill_items[$key]['count'] === '' ){
       $item_count = '';
     } else {
-      $item_count = intval( $bill_items[$key]['count'] );
+      // intvalは小数点が切り捨てられるので使用していない
+      $item_count = $bill_items[$key]['count'];
     }
 
     // $item_price
@@ -53,7 +54,7 @@ function bill_total_add_tax($post) {
 
     // $item_total
     if ( $item_count && $item_price ) {
-      $item_price_total = $item_count * $item_price;
+      $item_price_total = round( $item_count * $item_price );
       $item_price_total_print = '¥ '.number_format( $item_price_total );
     } else {
       $item_price_total = '';
@@ -66,6 +67,11 @@ function bill_total_add_tax($post) {
 
   } // if ( is_array( $bill_items ) ) {
 
+  return $bill_total;
+}
+
+function bill_total_add_tax($post) {
+  $bill_total = bill_total_no_tax($post);
   $tax = round( $bill_total * 0.08 );
   $bill_total_add_tax = $bill_total + $tax;
   return $bill_total_add_tax;

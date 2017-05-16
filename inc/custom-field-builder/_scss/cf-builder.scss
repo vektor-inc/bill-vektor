@@ -4,7 +4,6 @@
 @import "jquery-ui-1.11.4.custom/_jquery-ui.theme.min.scss";
 
 .vk-custom-field-builder {
-
 	.table {
 		width:100%;
 		border-collapse: collapse;
@@ -20,6 +19,9 @@
 		}
 		td {
 			background-color: #fff;
+			ul {
+				margin-top:0;
+			}
 		}
 
 		input[type="text"]{
