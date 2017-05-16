@@ -40,13 +40,13 @@ before_script:
     else
       composer global require "phpunit/phpunit=4.8.*"
     fi
-#   - nvm install 4.2
-#   - npm install
+  - nvm install 4.2
+  - npm install
 
 script:
 #   # - phpcs --standard=phpcs.ruleset.xml $(find . -name '*.php')
   - find . \( -name '*.php' \) -exec php -lf {} \;
   - phpunit
 
-# after_success:
-#   - bash ./bin/deploy.sh
+after_success:
+  - bash ./bin/deploy.sh
