@@ -11,10 +11,6 @@ branches:
 
 sudo: false
 
-# php:
-#   - 5.6
-  # - 7
-
 # env: 
 #   global:
 #     - GIT_COMMITTER_NAME=travis-ci
@@ -27,13 +23,16 @@ sudo: false
 
 matrix:
   include:
-    - php: 5.3
+    - php: 7
       env: WP_VERSION=latest WP_MULTISITE=1
-    # - php: 5.6
-    #   env:
-    #     - WP_VERSION=latest WP_MULTISITE=0
-    #     - WP_VERSION=3.7 WP_MULTISITE=0
-    #     - WP_VERSION=4.7.3 WP_MULTISITE=0
+    - php: 5.6
+      env:
+        - WP_VERSION=latest WP_MULTISITE=0
+        - WP_VERSION=4.0 WP_MULTISITE=0
+        - WP_VERSION=4.7.3 WP_MULTISITE=0
+    - php: 5.4
+      env: WP_VERSION=latest WP_MULTISITE=1
+
 
 before_script:
   - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
