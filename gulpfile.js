@@ -10,6 +10,7 @@ gulp.task('copy', function() {
                 './assets/**',
                 './inc/**',
                 './template-parts/**',
+                './readme.md',
                 './style.css',
                 "!./tests/**",
                 "!./dist/**",
