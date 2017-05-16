@@ -1,0 +1,12 @@
+.form-table {
+
+}
+.form-table td input[type="text"],
+.form-table td textarea {
+	width:90%;
+	padding:0.5em;
+}
+.input_thumb { 
+	height:auto;
+	width:150px;
+}
