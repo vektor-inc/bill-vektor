@@ -11,15 +11,13 @@ branches:
 
 sudo: false
 
-# env: 
-#   global:
-#     - GIT_COMMITTER_NAME=travis-ci
-#     - GIT_COMMITTER_EMAIL=kurudrive@gmail.com
-#     - GIT_AUTHOR_NAME=travis-ci
-#     - GIT_AUTHOR_EMAIL=kurudrive@gmail.com
-#     - secure: "OIbsIUESLHI5IZ4AXhrufCukweIG0CNBvBtfXuzdUcQwi3LXHoGhGGubOccHMYRYH86+UjH9p3w3Euhz/5W6nDmyokDOha7gwSecMAgQoLBFncrh/T+ntlUi+zdW5w5I6kw8ZsmaJ1dZsrgNmkVxNwM/qrMCZsVSmwh3FnXpHFCOhhse2CGwfKtFz7YEC31JyizgxroiGv9QVTSFhacLuqFqhlMA6Uc6PB/RwAUf0ra9jt1DItYakKcamwg1cbyiROLtPwc83QY3TCOFkoFMVj/3wqn+HCUaoqgj5LQcFh2quHVn0u8xjebGdqyhD3v3sttZYRaT5/Up4CB/kRJ8bRB4a/eMR4tY89zjs8RVLo9HjbEAPO89HNgAg4Yce7y1iZOR1uc+q94tupzovq6PX4AtsC7ZAfnRdoGIskLs668satlAK6XQSwsIhNESLrVPjqG0Sr6CKPyw+RWLvsEpfQl8/OsoQpJCEfo/1ioGA2iNuZxuKfTJKSctZO3NAkG79V36ENfxWmM3PnAbYOaSkuZAr1rUGn0lZSj+dwclMTRNKN1dTUbq/yJZh5LdRKg+iT7OahhRP5AecG/Hd8v/dlGOAy500G6BUAXdP1Kfpop0cXpv8NMjpiFF2ldRGcnxb7DVQ/XsH21oTAaPhMzTmoIoWV3ZmZttpwrpCURhoz0="
-#     - WP_VERSION=latest WP_MULTISITE=0
-#     - WP_VERSION=4.7.3 WP_MULTISITE=0
+env: 
+  global:
+    - GIT_COMMITTER_NAME=travis-ci
+    - GIT_COMMITTER_EMAIL=kurudrive@gmail.com
+    - GIT_AUTHOR_NAME=travis-ci
+    - GIT_AUTHOR_EMAIL=kurudrive@gmail.com
+    - secure: "OIbsIUESLHI5IZ4AXhrufCukweIG0CNBvBtfXuzdUcQwi3LXHoGhGGubOccHMYRYH86+UjH9p3w3Euhz/5W6nDmyokDOha7gwSecMAgQoLBFncrh/T+ntlUi+zdW5w5I6kw8ZsmaJ1dZsrgNmkVxNwM/qrMCZsVSmwh3FnXpHFCOhhse2CGwfKtFz7YEC31JyizgxroiGv9QVTSFhacLuqFqhlMA6Uc6PB/RwAUf0ra9jt1DItYakKcamwg1cbyiROLtPwc83QY3TCOFkoFMVj/3wqn+HCUaoqgj5LQcFh2quHVn0u8xjebGdqyhD3v3sttZYRaT5/Up4CB/kRJ8bRB4a/eMR4tY89zjs8RVLo9HjbEAPO89HNgAg4Yce7y1iZOR1uc+q94tupzovq6PX4AtsC7ZAfnRdoGIskLs668satlAK6XQSwsIhNESLrVPjqG0Sr6CKPyw+RWLvsEpfQl8/OsoQpJCEfo/1ioGA2iNuZxuKfTJKSctZO3NAkG79V36ENfxWmM3PnAbYOaSkuZAr1rUGn0lZSj+dwclMTRNKN1dTUbq/yJZh5LdRKg+iT7OahhRP5AecG/Hd8v/dlGOAy500G6BUAXdP1Kfpop0cXpv8NMjpiFF2ldRGcnxb7DVQ/XsH21oTAaPhMzTmoIoWV3ZmZttpwrpCURhoz0="
 
 matrix:
   include:
@@ -32,7 +30,6 @@ matrix:
         - WP_VERSION=4.7.3 WP_MULTISITE=0
     - php: 5.4
       env: WP_VERSION=latest WP_MULTISITE=1
-
 
 before_script:
   - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
