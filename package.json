@@ -1,0 +1,12 @@
+{
+  "name": "bill-vektor",
+  "version": "1.0.0",
+  "devDependencies": {
+    "del": "^2.2.2",
+    "gulp": "~3.8.9",
+    "run-sequence": "^1.2.2"
+  },
+  "scripts": {
+    "dist": "gulp dist"
+  }
+}
