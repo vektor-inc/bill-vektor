@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-if [[ "false" != "$TRAVIS_PULL_REQUEST" ]]; then
-    echo "Not deploying pull requests."
-    exit
-fi
+# if [[ "false" != "$TRAVIS_PULL_REQUEST" ]]; then
+#     echo "Not deploying pull requests."
+#     exit
+# fi
  
-if [[ "ci_test" != "$TRAVIS_BRANCH" ]]; then
-    echo "Not on the 'ci_test' branch."
+if [[ "master" != "$TRAVIS_BRANCH" ]]; then
+    echo "Not on the 'master' branch."
     exit
 fi
 
