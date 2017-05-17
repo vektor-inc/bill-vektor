@@ -6,7 +6,8 @@ language: php
 #     on_failure: change
 
 branches:
-  only: ci_test
+  only: 
+    - ci_test
 
 sudo: false
 
