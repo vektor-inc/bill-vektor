@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/vektor-inc/bill-vektor.svg?branch=master)](https://travis-ci.org/vektor-inc/bill-vektor)
+
 # BillVektor - 見積書・請求書管理システム -
 
 請求書をエクセルで管理して、後から過去の請求書を探したり、請求書が入金・入力済なのか未処理なのか整理して管理するのが面倒ではありませんか？
