@@ -1,3 +1,4 @@
+<div class="bill-wrap">
 <div class="container">
 <div class="row">
 <div class="col-xs-6">
@@ -55,7 +56,7 @@ if ( isset( $options['own-seal'] ) && $options['own-seal'] ){
 
 <div class="container">
 
-<?php get_template_part('template-parts/bill/table-price');?>
+<?php get_template_part('template-parts/doc/table-price');?>
 
 <dl class="bill-remarks">
 <dt>備考</dt>
@@ -73,3 +74,4 @@ if ( $post->bill_remarks ){
 </dd>
 </dl>
 </div><!-- [ /.container ] -->
+</div><!-- [ /.bill-wrap ] -->
