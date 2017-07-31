@@ -64,6 +64,42 @@ class Client_Custom_Fields {
 				'description' => '本システム内での短縮表記名です。',
 				'required' => false,
 			),
+			'client_zip' => array(
+				'label' => __('郵便番号','bill-vektor'),
+				'type' => 'text',
+				'description' => '',
+				'required' => false,
+			),
+			'client_address' => array(
+				'label' => __('住所','bill-vektor'),
+				'type' => 'textarea',
+				'description' => '郵送先住所印刷などで使用します。',
+				'required' => false,
+			),
+			'client_doc_destination' => array(
+				'label' => __('郵送先宛名','bill-vektor'),
+				'type' => 'text',
+				'description' => '宛名が未入力の場合は「取引先名 + 敬称」が表記されます。',
+				'required' => false,
+			),
+			'client_doc_content' => array(
+				'label' => __('同封書類内容','bill-vektor'),
+				'type' => 'textarea',
+				'description' => '例）請求書・・・・・・・・・・・・・・・・・・・・・・・・１枚',
+				'required' => false,
+			),
+			'client_doc_tantou' => array(
+				'label' => __('同封書類に表記する自社担当者名','bill-vektor'),
+				'type' => 'text',
+				'description' => '',
+				'required' => false,
+			),
+			'client_doc_send_date' => array(
+				'label' => __('同封書類書に表記する書類送付日','bill-vektor'),
+				'type' => 'datepicker',
+				'description' => '印刷日と同じ日で良い場合は空欄でかまいません。',
+				'required' => false,
+			),
 			'client_remarks' => array(
 				'label' => __('メモ','bill-vektor'),
 				'type' => 'textarea',

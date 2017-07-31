@@ -106,8 +106,8 @@ function bill_add_post_type_client() {
             'labels' => array(
                 'name' => '取引先',
             ),
-        'public'             => false,
-        'publicly_queryable' => false,
+        'public'             => true,
+        'publicly_queryable' => true,
         'show_ui'            => true,
         'show_in_menu'       => true,
         'has_archive'        => false,
