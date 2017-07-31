@@ -49,7 +49,7 @@ echo '<a href="'.home_url('/').'?post_type='.$post_type['slug'].'&bill_client='.
 ?>
 </td>
 <!-- [ 件名 ] -->
-<td><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></td>
+<td><a href="<?php the_permalink(); ?>" target="_blank"><?php the_title(); ?></a></td>
 <!-- [ カテゴリー ] -->
 <td><?php echo bill_get_terms(); ?></td>
 </tr>
