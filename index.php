@@ -43,9 +43,9 @@ echo '<a href="'.esc_url($post_type['url']).'">'.$post_type['name'].'</a>';
 $client_id = $post->bill_client;
 $client_name = get_post_meta( $client_id, 'client_short_name', true );
 if ( !$client_name ){
-  $client_name = get_the_title($client_id);
+  $client_name = get_the_title( $client_id );
 }
-echo '<a href="'.home_url('/').'?post_type='.$post_type['slug'].'&bill_client='.$client_id.'">'.esc_html( $client_name ).'</a>';
+echo '<a href="'.get_the_permalink( $client_id ).'" target="_blank">'.esc_html( $client_name ).'</a>';
 ?>
 </td>
 <!-- [ 件名 ] -->
