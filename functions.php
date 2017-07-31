@@ -104,7 +104,9 @@ function bill_add_post_type_client() {
     register_post_type( 'client', /* カスタム投稿タイプのスラッグ */
         array(
             'labels' => array(
-                'name' => '取引先',
+                'name' => '取引先・送付状',
+                'view_item' => '送付状を表示',
+                'edit_item' => '送付状を編集',
             ),
         'public'             => true,
         'publicly_queryable' => true,

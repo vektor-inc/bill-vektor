@@ -27,7 +27,10 @@ $allowed_html = array(
 );
 
 if ( $post->client_doc_destination ) {
-	echo esc_html( get_the_title() );
+	echo esc_html( get_the_title() ).'<br>';
+	if ( $post->client_section ) {
+		echo nl2br( esc_textarea( $post->client_section, $allowed_html ) ).'<br>';
+	}
 	echo '<h2 class="client-destination">'.wp_kses( $post->client_doc_destination, $allowed_html ).'</h2>';
 } else {
 	echo '<h2 class="client-destination">'.esc_html( get_the_title() ).' '.esc_html( $post->client_honorific ).'</h2>';
