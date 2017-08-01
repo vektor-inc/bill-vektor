@@ -112,6 +112,15 @@ class Client_Custom_Fields {
 				'description' => '取引上の注意や担当者情報などを必要に応じてメモするためのものです。<br>この項目はどこにも反映されません。',
 				'required' => false,
 			),
+			'client_hidden' => array(
+				'label' => __('ドロップダウンへの表示','bill-vektor'),
+				'type' => 'checkbox',
+				'description' => '普段取引がない、今後取引がないなど、取引先のドロップダウンに含めない場合はチェックを入れてください。',
+				'required' => false,
+				'options' => array( 
+					'hidden' => 'ドロップダウンに表示しない',
+					),
+			),
 		);
 		return $custom_fields_array;
 	}
