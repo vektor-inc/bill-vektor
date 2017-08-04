@@ -14,8 +14,8 @@ class Bill_Admin {
 
 	public static function add_admin_menu() 
 	{
-		$page_title = '請求設定';
-		$menu_title = '請求設定';
+		$page_title = 'BillVektor設定';
+		$menu_title = 'BillVektor設定';
 		$capability = 'administrator';
 		$menu_slug  = 'bill-setting-page';
 		$function	= array( __CLASS__, 'setting_page');
@@ -29,7 +29,7 @@ class Bill_Admin {
 		// delete_option('bill-setting');
 		?>
 		<div class="wrap">
-		<h2>請求設定</h2>
+		<h2>BillVektor設定</h2>
 		<form id="bill-setting-form" method="post" action="">
 		<?php wp_nonce_field( 'bill-nonce-key', 'bill-setting-page' );?>
 		<?php $options = get_option('bill-setting', Bill_Admin::options_default());?>
