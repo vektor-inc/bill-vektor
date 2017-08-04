@@ -55,7 +55,12 @@ class Estimate_Normal_Custom_Fields {
 		$client_posts = get_posts($args);
 		if ( $client_posts ) {
 			foreach ($client_posts as $key => $post) {
-				$client[$post->ID] = $post->post_title;
+				// プルダウンに表示するかしないかの情報を取得
+				$client_hidden = get_post_meta(  $post->ID, 'client_hidden', true );
+				// プルダウン非表示にチェックが入っていない項目だけ出力
+				if ( ! $client_hidden )  {
+						$client[$post->ID] = $post->post_title;
+				}
 			}	
 		} else {
 			$client = array( "0" => "請求先が登録されていません");
