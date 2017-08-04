@@ -105,8 +105,8 @@ class Bill_Admin {
 		</tr>
 		<tr>
 		<th>送付状メッセージ</th>
-		<?php $lot_message  = ( isset( $options['lot-message'] ) )  ? $options['lot-message'] : '' ;?>
-		<td><textarea name="bill-setting[lot-message]" rows="4"><?php echo esc_textarea( $lot_message ) ?></textarea></td>
+		<?php $client_doc_message  = ( isset( $options['client-doc-message'] ) )  ? $options['client-doc-message'] : '' ;?>
+		<td><textarea name="bill-setting[client-doc-message]" rows="4"><?php echo esc_textarea( $client_doc_message ) ?></textarea></td>
 		</tr>
 		</table>
 		<p><input type="submit" value="設定を保存" class="button button-primary button-large"></p>
@@ -129,7 +129,7 @@ TEL : 000-000-0000',
 株式会社ベクトル',
 			'remarks-bill'     => '恐れ入りますがお振込手数料は御社でご負担いただけますようお願い申し上げます。',
 			'remarks-estimate' => '本見積もりの有効期限は3ヶ月となります。',
-			'lot-message' => '平素は格別のお引き立てにあずかり、厚く御礼申し上げます。
+			'client-doc-message' => '平素は格別のお引き立てにあずかり、厚く御礼申し上げます。
 早速ではございますが下記書類をお送りします。御査収の上よろしく御取計らいの程お願い申し上げます。',
 		);
 		return $default;

@@ -63,7 +63,7 @@ if ( $post->client_doc_send_date ) {
 	</div><!-- [ /.row ] -->
 <h1 class="client-doc-title">書類送付のご案内</h1>
 <p>拝啓</p>
-<p><?php echo nl2br( esc_textarea( $options['lot-message'] ) );?></p>
+<p><?php echo nl2br( esc_textarea( $options['client-doc-message'] ) );?></p>
 <p class="text-right">敬具</p>
 
 <h4 class="text-center">記</h4>
