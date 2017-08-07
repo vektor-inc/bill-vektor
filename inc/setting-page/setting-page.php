@@ -14,8 +14,8 @@ class Bill_Admin {
 
 	public static function add_admin_menu() 
 	{
-		$page_title = '請求設定';
-		$menu_title = '請求設定';
+		$page_title = 'BillVektor設定';
+		$menu_title = 'BillVektor設定';
 		$capability = 'administrator';
 		$menu_slug  = 'bill-setting-page';
 		$function	= array( __CLASS__, 'setting_page');
@@ -29,7 +29,7 @@ class Bill_Admin {
 		// delete_option('bill-setting');
 		?>
 		<div class="wrap">
-		<h2>請求設定</h2>
+		<h2>BillVektor設定</h2>
 		<form id="bill-setting-form" method="post" action="">
 		<?php wp_nonce_field( 'bill-nonce-key', 'bill-setting-page' );?>
 		<?php $options = get_option('bill-setting', Bill_Admin::options_default());?>
@@ -103,6 +103,11 @@ class Bill_Admin {
 		<?php $remarks_estimate  = ( isset( $options['remarks-estimate'] ) )  ? $options['remarks-estimate'] : '' ;?>
 		<td><textarea name="bill-setting[remarks-estimate]" rows="4"><?php echo esc_textarea( $remarks_estimate ) ?></textarea></td>
 		</tr>
+		<tr>
+		<th>送付状メッセージ</th>
+		<?php $client_doc_message  = ( isset( $options['client-doc-message'] ) )  ? $options['client-doc-message'] : '' ;?>
+		<td><textarea name="bill-setting[client-doc-message]" rows="4"><?php echo esc_textarea( $client_doc_message ) ?></textarea></td>
+		</tr>
 		</table>
 		<p><input type="submit" value="設定を保存" class="button button-primary button-large"></p>
 		</form>
@@ -124,6 +129,8 @@ TEL : 000-000-0000',
 株式会社ベクトル',
 			'remarks-bill'     => '恐れ入りますがお振込手数料は御社でご負担いただけますようお願い申し上げます。',
 			'remarks-estimate' => '本見積もりの有効期限は3ヶ月となります。',
+			'client-doc-message' => '平素は格別のお引き立てにあずかり、厚く御礼申し上げます。
+早速ではございますが下記書類をお送りします。御査収の上よろしく御取計らいの程お願い申し上げます。',
 		);
 		return $default;
 	}
