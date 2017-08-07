@@ -63,7 +63,15 @@ if ( $post->client_doc_send_date ) {
 	</div><!-- [ /.row ] -->
 <h1 class="client-doc-title">書類送付のご案内</h1>
 <p>拝啓</p>
-<p><?php echo nl2br( esc_textarea( $options['client-doc-message'] ) );?></p>
+<?php
+if ( isset( $options['client-doc-message'] ) ){
+	$message = $options['client-doc-message'];
+} else {
+	$message = '平素は格別のお引き立てにあずかり、厚く御礼申し上げます。
+早速ではございますが下記書類をお送りします。御査収の上よろしく御取計らいの程お願い申し上げます。';
+}
+?>
+<p><?php echo nl2br( wp_kses_post( $message ) );?></p>
 <p class="text-right">敬具</p>
 
 <h4 class="text-center">記</h4>
