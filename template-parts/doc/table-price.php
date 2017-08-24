@@ -27,6 +27,7 @@ foreach ($bill_items as $key => $value) { ?>
 	} else {
 		// intvalだと小数点が切り捨てられるので使用していない
 		$item_count = $bill_items[$key]['count'];
+		$item_count = mb_convert_kana ( $item_count, 'a');
 	}
 
 	// $item_price
@@ -34,7 +35,8 @@ foreach ($bill_items as $key => $value) { ?>
 		$item_price = '';
 		$item_price_print = '';
 	} else {
-		$item_price = intval( $bill_items[$key]['price'] );
+		$item_price = mb_convert_kana( $bill_items[$key]['price'], 'a' );
+		$item_price = intval( $item_price );
 		$item_price_print = '¥ '.number_format( $item_price );
 	}
 
