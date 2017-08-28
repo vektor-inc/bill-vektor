@@ -9,7 +9,7 @@
 </tr>
 </thead>
 <tbody>
-<?php 
+<?php
 $bill_items = get_post_meta( $post->ID, 'bill_items', true );
 $bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
 $bill_total = 0;
@@ -55,13 +55,13 @@ foreach ($bill_items as $key => $value) { ?>
 		$bill_item_name = '　';
 	} ?>
 	<td><?php echo esc_html( $bill_item_name );?></td>
-	<td class="text-center"><?php echo esc_html( $item_count) ;?></td>
+	<td class="text-center" id="bill-item-count-<?php echo $key;?>"><?php echo esc_html( $item_count) ;?></td>
 	<td class="text-center"><?php echo esc_html( $bill_items[$key]['unit'] );?></td>
 	<td class="price"><?php echo esc_html( $item_price_print );?></td>
 	<td class="price"><?php echo esc_html( $item_price_total_print );?></td>
 	</tr>
 
-	<?php 
+	<?php
 	// 小計
 	$bill_total += $item_price_total;
 
@@ -74,12 +74,12 @@ $bill_total_add_tax = $bill_total + $tax;
 ?>
 </tbody>
 </table>
-<?php 
+<?php
 global $post;
 $bill_total_price_display = ( isset($post->bill_total_price_display[0]) ) ? $post->bill_total_price_display[0]:'';
 if ( $bill_total_price_display != 'hidden' ) { ?>
 <table class="table table-bordered table-bill table-bill-total">
-<?php 
+<?php
 global $post;
 if ( isset( $post->bill_tax_type ) && $post->bill_tax_type == 'tax_not_auto' ) : ?>
 <tr><th colspan="4">合計金額</th><td class="price">¥ <?php echo number_format( $bill_total );?></td></tr>
