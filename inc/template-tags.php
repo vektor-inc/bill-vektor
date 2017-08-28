@@ -9,7 +9,7 @@ function bill_form_post_value( $post_field, $type = false ){
               $value = esc_textarea( $post_field );
           } else {
               $value = esc_attr( $post_field );
-          } 
+          }
         } else if ( isset( $post->$post_field ) && $post->$post_field ) {
           $value = $post->$post_field;
         }
@@ -34,13 +34,14 @@ function bill_total_no_tax($post) {
   if ( is_array( $bill_items ) ) {
 
   // 行のループ
-  foreach ($bill_items as $key => $value) { 
+  foreach ($bill_items as $key => $value) {
     // $item_count
     if ( $bill_items[$key]['count'] === '' ){
       $item_count = '';
     } else {
       // intvalは小数点が切り捨てられるので使用していない
       $item_count = $bill_items[$key]['count'];
+  		$item_count = mb_convert_kana ( $item_count, 'a');
     }
 
     // $item_price
@@ -48,10 +49,10 @@ function bill_total_no_tax($post) {
       $item_price = '';
       $item_price_print = '';
     } else {
-      $item_price = intval( $bill_items[$key]['price'] );
+      $item_price = mb_convert_kana( $bill_items[$key]['price'], 'a' );
+  		$item_price = intval( $item_price );
       $item_price_print = '¥ '.number_format( $item_price );
     }
-
     // $item_total
     if ( $item_count && $item_price ) {
       $item_price_total = round( $item_count * $item_price );
@@ -60,6 +61,9 @@ function bill_total_no_tax($post) {
       $item_price_total = '';
       $item_price_total_print = '';
     }
+
+
+
     // 小計
     $bill_total += $item_price_total;
 
@@ -128,4 +132,3 @@ function bill_get_terms(){
   $taxo_catelist = get_the_term_list( $post->ID, $taxonomySlug, ' ', ', ' ,'' );
   return $taxo_catelist;
 }
-
