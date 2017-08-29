@@ -22,8 +22,18 @@ Feature: Example Features
     # 項目入力
     # タイトル欄に「表の値のテスト」を入力
     And I fill in "title" with "表の値のテスト"
+    And I fill in "bill_items[0][name]" with "全角数字のみ"
     And I fill in "bill_items[0][count]" with "１"
     And I fill in "bill_items[0][price]" with "５０００"
+    And I fill in "bill_items[1][name]" with "全角数字全角コンマあり"
+    And I fill in "bill_items[1][count]" with "１"
+    And I fill in "bill_items[1][price]" with "５，０００"
+    And I fill in "bill_items[2][name]" with "半角数字のみ"
+    And I fill in "bill_items[2][count]" with "1"
+    And I fill in "bill_items[2][price]" with "5000"
+    And I fill in "bill_items[3][name]" with "半角数字半角コンマあり"
+    And I fill in "bill_items[3][count]" with "1"
+    And I fill in "bill_items[3][price]" with "5,000"
 
     # 公開ボタンをクリック
     And I press "公開"
@@ -41,7 +51,7 @@ Feature: Example Features
     Then I should see "1" in the "#bill-item-count-0" element
 
     # 請求書全体の合計金額が正しく計算されているかどうか
-    Then I should see "5,400" in the "#bill-frame-total-price" element
+    Then I should see "21,600" in the "#bill-frame-total-price" element
 
     ####################################################################
     # テスト用の投稿を削除
