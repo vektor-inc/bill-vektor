@@ -50,7 +50,7 @@ function bill_total_no_tax($post) {
       $item_price_print = '';
     } else {
       $item_price = mb_convert_kana( $bill_items[$key]['price'], 'a' );
-  		$item_price = intval( $item_price );
+      $item_price = str_replace(',','',$item_price);
       $item_price_print = '¥ '.number_format( $item_price );
     }
     // $item_total

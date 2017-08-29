@@ -36,7 +36,7 @@ foreach ($bill_items as $key => $value) { ?>
 		$item_price_print = '';
 	} else {
 		$item_price = mb_convert_kana( $bill_items[$key]['price'], 'a' );
-		$item_price = intval( $item_price );
+		$item_price = str_replace(',','',$item_price);
 		$item_price_print = '¥ '.number_format( $item_price );
 	}
 
@@ -60,7 +60,6 @@ foreach ($bill_items as $key => $value) { ?>
 	<td class="price"><?php echo esc_html( $item_price_print );?></td>
 	<td class="price"><?php echo esc_html( $item_price_total_print );?></td>
 	</tr>
-
 	<?php
 	// 小計
 	$bill_total += $item_price_total;
@@ -72,6 +71,7 @@ foreach ($bill_items as $key => $value) { ?>
 $tax = round( $bill_total * 0.08 );
 $bill_total_add_tax = $bill_total + $tax;
 ?>
+
 </tbody>
 </table>
 <?php
