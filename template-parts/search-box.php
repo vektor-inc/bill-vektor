@@ -32,17 +32,23 @@ $args = array(
 	'orderby' => 'title',
 	);
 $client_posts = get_posts($args);
-$client_id = ( isset( $_GET['client'] ) && $_GET['client'] ) ? esc_attr( $_GET['client'] ) : "";
-echo '<select name="client" id="client" class="form-control">';
+
+$client_id = ( isset( $_GET['bill_client'] ) && $_GET['bill_client'] ) ? esc_attr( $_GET['bill_client'] ) : "";	
+echo '<select name="bill_client" id="bill_client" class="form-control">';
 echo '<option value="">- 未選択 -</option>';
 if ( $client_posts ) {
-	foreach ( $client_posts as $key => $post ) {
+	foreach ( $client_posts as $post ) {
 		$selected = '';
 		if ( $client_id == $post->ID ) {
 			$selected = ' selected';
 		}
 		$client_name = get_the_title( $post->ID );
-		echo '<option value="'.$post->ID.'"'.$selected.'>'.esc_attr( $client_name ).'</option>';
+		// プルダウンに表示するかしないかの情報を取得
+		$client_hidden = get_post_meta(  $post->ID, 'client_hidden', true );
+		// プルダウン非表示にチェックが入っていない項目だけ出力
+		if ( ! $client_hidden )  {
+			echo '<option value="'.$post->ID.'"'.$selected.'>'.esc_attr( $client_name ).'</option>';
+		}
 	}	
 }
 echo '</select>';

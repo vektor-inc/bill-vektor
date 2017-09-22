@@ -18,6 +18,8 @@
 /*-------------------------------------------*/
 /*  Replace Document Title
 /*-------------------------------------------*/
+/*  ログイン画面のロゴ
+/*-------------------------------------------*/
 
 
 $theme_opt = wp_get_theme(get_template());
@@ -104,10 +106,12 @@ function bill_add_post_type_client() {
     register_post_type( 'client', /* カスタム投稿タイプのスラッグ */
         array(
             'labels' => array(
-                'name' => '取引先',
+                'name' => '取引先・送付状',
+                'view_item' => '送付状を表示',
+                'edit_item' => '送付状を編集',
             ),
-        'public'             => false,
-        'publicly_queryable' => false,
+        'public'             => true,
+        'publicly_queryable' => true,
         'show_ui'            => true,
         'show_in_menu'       => true,
         'has_archive'        => false,
@@ -231,3 +235,19 @@ function bill_immediately_publish($id)
     $wpdb->get_results($q);
 }
 add_action('future_event', 'bill_immediately_publish');
+
+/*-------------------------------------------*/
+/*  ログイン画面のロゴ
+/*-------------------------------------------*/
+
+function custom_login_logo() { ?>
+  <style>
+    .login #login h1 a {
+      width: 300px;
+      height: 65px;
+      background: url(<?php echo get_template_directory_uri(); ?>/assets/images/head_logo.png) no-repeat 0 0;
+    }
+  </style>
+<?php }
+add_action( 'login_enqueue_scripts', 'custom_login_logo' );
+

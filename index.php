@@ -1,5 +1,7 @@
 <?php get_header();?>
 
+<?php $page_post_type = bill_get_post_type(); ?>
+
 <?php get_template_part('template-parts/breadcrumb');?>
 
   <div class="container">
@@ -19,15 +21,21 @@
 <?php get_template_part('template-parts/search-box');?>
 </div>
 
+
+
 <div class="section">
 <?php if ( have_posts() ) { ?>
 <table class="table table-striped table-borderd">
 <tr>
 <th>書類</th>
+<?php if ( $page_post_type['slug'] != 'client' ) { ?>
 <th>発行日</th>
+<?php } ?>
 <th>取引先</th>
+<?php if ( $page_post_type['slug'] != 'client' ) { ?>
 <th>件名</th>
 <th>カテゴリー</th>
+<?php } ?>
 </tr>
 <?php while( have_posts() ) : the_post(); ?>
 <tr>
@@ -35,23 +43,33 @@
 <td class="text-nowrap"><?php $post_type = bill_get_post_type();
 echo '<a href="'.esc_url($post_type['url']).'">'.$post_type['name'].'</a>';
 ?></td>
+
+<?php if ( $page_post_type['slug'] != 'client' ) { ?>
 <!-- [ 発行日 ] -->
 <td><?php echo esc_html( get_the_date("Y.m.d") );?></td>
 <!-- [ 取引先 ] -->
+<?php } ?>
+
 <td class="text-nowrap">
 <?php 
 $client_id = $post->bill_client;
 $client_name = get_post_meta( $client_id, 'client_short_name', true );
 if ( !$client_name ){
-  $client_name = get_the_title($client_id);
+  $client_name = get_the_title( $client_id );
 }
-echo '<a href="'.home_url('/').'?post_type='.$post_type['slug'].'&client='.$client_id.'">'.esc_html( $client_name ).'</a>';
+echo '<a href="'.get_the_permalink( $client_id ).'" target="_blank">'.esc_html( $client_name ).'</a>';
 ?>
 </td>
+
+<?php if ( $page_post_type['slug'] != 'client' ) { ?>
+
 <!-- [ 件名 ] -->
-<td><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></td>
+<td><a href="<?php the_permalink(); ?>" target="_blank"><?php the_title(); ?></a></td>
 <!-- [ カテゴリー ] -->
 <td><?php echo bill_get_terms(); ?></td>
+
+<?php } ?>
+
 </tr>
 <?php endwhile; ?>
 </table>

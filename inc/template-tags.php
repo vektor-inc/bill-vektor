@@ -9,7 +9,7 @@ function bill_form_post_value( $post_field, $type = false ){
               $value = esc_textarea( $post_field );
           } else {
               $value = esc_attr( $post_field );
-          } 
+          }
         } else if ( isset( $post->$post_field ) && $post->$post_field ) {
           $value = $post->$post_field;
         }
@@ -25,6 +25,18 @@ function bill_raw_date($date){
     return $raw_date;
 }
 
+function bill_item_number( $number = 0 ){
+  // 全角を半額に変換
+  $number = mb_convert_kana( $number, 'a' );
+  $number = str_replace(',','',$number);
+  return $number;
+}
+function bill_item_price_total( $count = 0, $price = 0 ){
+  // 数量×単価
+  $item_price_total = round( $count * $price );
+  return $item_price_total;
+}
+
 function bill_total_no_tax($post) {
   // global $post;
   $bill_items = get_post_meta( $post->ID, 'bill_items', true );
@@ -34,13 +46,13 @@ function bill_total_no_tax($post) {
   if ( is_array( $bill_items ) ) {
 
   // 行のループ
-  foreach ($bill_items as $key => $value) { 
+  foreach ($bill_items as $key => $value) {
     // $item_count
     if ( $bill_items[$key]['count'] === '' ){
       $item_count = '';
     } else {
       // intvalは小数点が切り捨てられるので使用していない
-      $item_count = $bill_items[$key]['count'];
+      $item_count = bill_item_number( $bill_items[$key]['count'] );
     }
 
     // $item_price
@@ -48,18 +60,18 @@ function bill_total_no_tax($post) {
       $item_price = '';
       $item_price_print = '';
     } else {
-      $item_price = intval( $bill_items[$key]['price'] );
+      $item_price = bill_item_number( $bill_items[$key]['price'] );
       $item_price_print = '¥ '.number_format( $item_price );
     }
-
     // $item_total
     if ( $item_count && $item_price ) {
-      $item_price_total = round( $item_count * $item_price );
+      $item_price_total = bill_item_price_total( $item_count, $item_price );
       $item_price_total_print = '¥ '.number_format( $item_price_total );
     } else {
       $item_price_total = '';
       $item_price_total_print = '';
     }
+
     // 小計
     $bill_total += $item_price_total;
 
@@ -70,9 +82,10 @@ function bill_total_no_tax($post) {
   return $bill_total;
 }
 
-function bill_total_add_tax($post) {
+function bill_total_add_tax( $post ) {
   $bill_total = bill_total_no_tax($post);
-  $tax = round( $bill_total * 0.08 );
+  // 小数点以下切り捨て
+  $tax = floor( $bill_total * 0.08 );
   $bill_total_add_tax = $bill_total + $tax;
   return $bill_total_add_tax;
 }
@@ -128,4 +141,3 @@ function bill_get_terms(){
   $taxo_catelist = get_the_term_list( $post->ID, $taxonomySlug, ' ', ', ' ,'' );
   return $taxo_catelist;
 }
-

@@ -140,6 +140,9 @@ table.table {
 		margin:0 0 15px;
 		border-radius: $radius;
 	}
+	.sub-section-title:before{
+		content:"";
+	}
 	.sub-section-title a { 
 		color:#fff;
 		display:block;
@@ -251,5 +254,5 @@ ul.post-list {
 	}
 }
 
-
 @import "bill";
+@import "client";

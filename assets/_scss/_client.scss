@@ -1,0 +1,27 @@
+.client-wrap {
+	display:block; overflow:hidden;
+	padding: 2em 6em;
+	background-color:#fff;
+	font-size:12px;
+}
+.address-area{
+	.client-destination {
+		font-size:14px;
+		font-weight: lighter;
+		margin-top:5px;
+	}
+	margin-bottom:4em;
+}
+.client-doc-content {
+	margin:4em 2em 6em;
+	text-align:center;
+}
+
+.client-doc-title {
+	line-height: 1em;
+	border-bottom:3px double #000;
+	text-align: center;
+	letter-spacing: 1em;
+	margin-bottom:1em;
+	font-size:1.6em;
+}
