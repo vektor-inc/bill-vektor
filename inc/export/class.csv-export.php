@@ -144,7 +144,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 			foreach ( $posts as $key => $post ) {
 				$bill_limit_date = get_post_meta( $post->ID, 'bill_limit_date', true );
 				$date_pay = date("Y/n/j", bill_raw_date( $bill_limit_date ) );
-				$bill_total_add_tax = bill_total_add_tax($post);
+				$bill_total_add_tax = bill_total_add_tax( $post );
 
 				// 取引先名（省略名があれば省略名で表示）
 				$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
