@@ -84,7 +84,8 @@ function bill_total_no_tax($post) {
 
 function bill_total_add_tax( $post ) {
   $bill_total = bill_total_no_tax($post);
-  $tax = round( $bill_total * 0.08 );
+  // 小数点以下切り捨て
+  $tax = floor( $bill_total * 0.08 );
   $bill_total_add_tax = $bill_total + $tax;
   return $bill_total_add_tax;
 }
