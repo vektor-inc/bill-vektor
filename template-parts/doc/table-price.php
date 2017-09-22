@@ -9,7 +9,7 @@
 </tr>
 </thead>
 <tbody>
-<?php 
+<?php
 $bill_items = get_post_meta( $post->ID, 'bill_items', true );
 $bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
 $bill_total = 0;
@@ -27,6 +27,7 @@ foreach ($bill_items as $key => $value) { ?>
 	} else {
 		// intvalだと小数点が切り捨てられるので使用していない
 		$item_count = $bill_items[$key]['count'];
+		$item_count = mb_convert_kana ( $item_count, 'a');
 	}
 
 	// $item_price
@@ -34,7 +35,8 @@ foreach ($bill_items as $key => $value) { ?>
 		$item_price = '';
 		$item_price_print = '';
 	} else {
-		$item_price = intval( $bill_items[$key]['price'] );
+		$item_price = mb_convert_kana( $bill_items[$key]['price'], 'a' );
+		$item_price = str_replace(',','',$item_price);
 		$item_price_print = '¥ '.number_format( $item_price );
 	}
 
@@ -53,13 +55,12 @@ foreach ($bill_items as $key => $value) { ?>
 		$bill_item_name = '　';
 	} ?>
 	<td><?php echo esc_html( $bill_item_name );?></td>
-	<td class="text-center"><?php echo esc_html( $item_count) ;?></td>
+	<td class="text-center" id="bill-item-count-<?php echo $key;?>"><?php echo esc_html( $item_count) ;?></td>
 	<td class="text-center"><?php echo esc_html( $bill_items[$key]['unit'] );?></td>
 	<td class="price"><?php echo esc_html( $item_price_print );?></td>
 	<td class="price"><?php echo esc_html( $item_price_total_print );?></td>
 	</tr>
-
-	<?php 
+	<?php
 	// 小計
 	$bill_total += $item_price_total;
 
@@ -70,14 +71,15 @@ foreach ($bill_items as $key => $value) { ?>
 $tax = round( $bill_total * 0.08 );
 $bill_total_add_tax = $bill_total + $tax;
 ?>
+
 </tbody>
 </table>
-<?php 
+<?php
 global $post;
 $bill_total_price_display = ( isset($post->bill_total_price_display[0]) ) ? $post->bill_total_price_display[0]:'';
 if ( $bill_total_price_display != 'hidden' ) { ?>
 <table class="table table-bordered table-bill table-bill-total">
-<?php 
+<?php
 global $post;
 if ( isset( $post->bill_tax_type ) && $post->bill_tax_type == 'tax_not_auto' ) : ?>
 <tr><th colspan="4">合計金額</th><td class="price">¥ <?php echo number_format( $bill_total );?></td></tr>

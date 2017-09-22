@@ -29,7 +29,7 @@ if ( isset( $post->bill_tax_type ) && $post->bill_tax_type == 'tax_not_auto' ) {
 } else {
 	$bill_total = bill_total_add_tax($post);
 } ?>
-<dd>￥ <?php echo number_format( $bill_total );?><span class="caption">(消費税含)</span></dd>
+<dd id="bill-frame-total-price">￥ <?php echo number_format( $bill_total );?><span class="caption">(消費税含)</span></dd>
 </dl>
 </div>
 

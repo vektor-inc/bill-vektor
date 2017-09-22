@@ -54,6 +54,7 @@ class Estimate_Normal_Custom_Fields {
 
 		$client_posts = get_posts($args);
 		if ( $client_posts ) {
+			$client = array( "" => "選択してください");
 			foreach ($client_posts as $key => $post) {
 				// プルダウンに表示するかしないかの情報を取得
 				$client_hidden = get_post_meta(  $post->ID, 'client_hidden', true );
