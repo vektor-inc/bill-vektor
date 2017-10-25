@@ -37,7 +37,8 @@ function bill_item_price_total( $count = 0, $price = 0 ){
   return $item_price_total;
 }
 
-function bill_total_no_tax($post) {
+// 書類の税抜き合計
+function bill_total_no_tax( $post ) {
   // global $post;
   $bill_items = get_post_meta( $post->ID, 'bill_items', true );
   $bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
@@ -82,11 +83,21 @@ function bill_total_no_tax($post) {
   return $bill_total;
 }
 
+// 消費税を計算
+function bill_tax( $price = 0 ){
+  $tax = floor( $price * 0.08 );
+  return $tax;
+}
+
+// 消費税込みの書類の合計金額
 function bill_total_add_tax( $post ) {
-  $bill_total = bill_total_no_tax($post);
-  // 小数点以下切り捨て
-  $tax = floor( $bill_total * 0.08 );
-  $bill_total_add_tax = $bill_total + $tax;
+
+  // 消費税抜きの合計金額
+  $bill_total_no_tax = bill_total_no_tax( $post );
+
+  // 税込合計金額 = 消費税抜きの合計金額 + 消費税
+  $bill_total_add_tax = $bill_total_no_tax + bill_tax( $bill_total_no_tax );
+
   return $bill_total_add_tax;
 }
 

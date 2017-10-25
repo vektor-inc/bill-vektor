@@ -26,17 +26,17 @@ foreach ($bill_items as $key => $value) { ?>
 		$item_count = '';
 	} else {
 		// intvalだと小数点が切り捨てられるので使用していない
-		$item_count = $bill_items[$key]['count'];
-		$item_count = mb_convert_kana ( $item_count, 'a');
-	}
+		$item_count = bill_item_number( $bill_items[$key]['count'] );
+		}
 
 	// $item_price
 	if ( $bill_items[$key]['price'] === '' ) {
 		$item_price = '';
 		$item_price_print = '';
 	} else {
-		$item_price = mb_convert_kana( $bill_items[$key]['price'], 'a' );
-		$item_price = str_replace(',','',$item_price);
+
+		$item_price = bill_item_number( $bill_items[$key]['price'] );
+
 		$item_price_print = '¥ '.number_format( $item_price );
 	}
 
@@ -68,8 +68,8 @@ foreach ($bill_items as $key => $value) { ?>
 
 } // if ( is_array( $bill_items ) ) {
 
-$tax = round( $bill_total * 0.08 );
-$bill_total_add_tax = $bill_total + $tax;
+$tax = bill_tax( $bill_total );
+$bill_total_add_tax = bill_total_add_tax( $post );
 ?>
 
 </tbody>
