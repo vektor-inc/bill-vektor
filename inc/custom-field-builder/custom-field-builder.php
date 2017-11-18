@@ -21,8 +21,8 @@ class VK_Custom_Field_Builder {
   }
 
   static function admin_directory_url (){
-    global $custom_field_builder_dir; // configファイルで指定
-    $direcrory_url = $custom_field_builder_dir;
+    global $custom_field_builder_url; // configファイルで指定
+    $direcrory_url = $custom_field_builder_url;
     return $direcrory_url;
   }
 
@@ -66,7 +66,7 @@ class VK_Custom_Field_Builder {
       wp_nonce_field(wp_create_nonce(__FILE__), 'noncename__fields');
 
       global $post;
-			global $custom_field_builder_dir;
+			global $custom_field_builder_url;
 			global $custom_field_builder_textdomain;
 
       $form_html = '';
@@ -138,7 +138,7 @@ class VK_Custom_Field_Builder {
 								$thumb_image = wp_get_attachment_image_src( $post->$key, 'medium', false );
 								$thumb_image_url = $thumb_image[0];
               } else {
-								$thumb_image_url = $custom_field_builder_dir.'/images/no_image.png';
+								$thumb_image_url = $custom_field_builder_url.'/images/no_image.png';
               }
 							$form_html .= '<img src="'.$thumb_image_url.'" id="thumb_'.$key.'" alt="" class="input_thumb" style="width:200px;height:auto;">';
 
