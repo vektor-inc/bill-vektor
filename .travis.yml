@@ -6,12 +6,12 @@ language: php
 #     on_failure: change
 
 branches:
-  only: 
+  only:
     - master
 
 sudo: false
 
-env: 
+env:
   global:
     - GIT_COMMITTER_NAME=travis-ci
     - GIT_COMMITTER_EMAIL=kurudrive@gmail.com
@@ -21,8 +21,14 @@ env:
 
 matrix:
   include:
+    - php: 7.2
+      env:
+        - WP_VERSION=latest WP_MULTISITE=0
+    - php: 7.1
+      env:
+        - WP_VERSION=latest WP_MULTISITE=0
     - php: 7
-      env: 
+      env:
         - WP_VERSION=latest WP_MULTISITE=0
         # - WP_VERSION=latest WP_MULTISITE=1
     - php: 5.6
