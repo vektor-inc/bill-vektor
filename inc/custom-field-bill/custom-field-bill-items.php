@@ -15,7 +15,7 @@ class Bill_Item_Custom_Fields {
 	}
 
 	// add meta_box
-	public static function add_metabox() 
+	public static function add_metabox()
 	{
 
 		$id = 'meta_box_bill_items';
@@ -100,7 +100,7 @@ class Bill_Item_Custom_Fields {
 		$noncename__bill_fields = isset( $_POST['noncename__bill_fields'] ) ? $_POST['noncename__bill_fields'] : null;
 
 		//nonce を確認し、値が書き換えられていれば、何もしない（CSRF対策）
-		if( !wp_verify_nonce( $noncename__bill_fields, wp_create_nonce(__FILE__) ) ) {  
+		if( !wp_verify_nonce( $noncename__bill_fields, wp_create_nonce(__FILE__) ) ) {
 		return $post_id;
 		}
 
