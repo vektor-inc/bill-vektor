@@ -38,6 +38,11 @@ class Bill_Item_Custom_Fields {
 		global $post;
 		$bill_items = get_post_meta( $post->ID, 'bill_items', true );
 
+		// $bill_items が空の時、配列にしておかないと PHP 7.1 でエラーになる
+		if ( !is_array( $bill_items ) ) {
+			$bill_items = array();
+		}
+
 		$form_table = '<div class="vk-custom-field-builder">';
 		$form_table .= '<table class="table table-striped table-bordered row-control">';
 
