@@ -12,15 +12,15 @@ class Estimate_Item_Custom_Fields {
 	/*-------------------------------------------*/
 	/*  実行
 	/*-------------------------------------------*/
-	public function __construct(){
-		add_action( 'admin_menu' , array( __CLASS__, 'add_metabox'), 10, 2);
-		add_action( 'save_post' , array( __CLASS__, 'save_custom_fields'), 10, 2);
-	}
-
-	// public static function init() {
+	// public function __construct(){
 	// 	add_action( 'admin_menu' , array( __CLASS__, 'add_metabox'), 10, 2);
 	// 	add_action( 'save_post' , array( __CLASS__, 'save_custom_fields'), 10, 2);
 	// }
+
+	public static function init() {
+		add_action( 'admin_menu' , array( __CLASS__, 'add_metabox'), 10, 2);
+		add_action( 'save_post' , array( __CLASS__, 'save_custom_fields'), 10, 2);
+	}
 
 	// add meta_box
 	public static function add_metabox()
