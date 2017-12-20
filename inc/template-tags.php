@@ -1,5 +1,30 @@
 <?php
+/*-------------------------------------------*/
+/*  bill_form_post_value()
+/*-------------------------------------------*/
+/*  bill_raw_date()
+/*-------------------------------------------*/
+/*  bill_item_number()
+/*-------------------------------------------*/
+/*  bill_item_price_total()
+/*-------------------------------------------*/
+/*  bill_total_no_tax()
+/*-------------------------------------------*/
+/*  消費税を計算
+/*  bill_tax()
+/*-------------------------------------------*/
+/*  消費税込みの書類の合計金額
+/*  bill_total_add_tax()
+/*-------------------------------------------*/
+/*  Chack post type info
+/*	bill_get_post_type()
+/*-------------------------------------------*/
+/*	bill_get_terms()
+/*-------------------------------------------*/
 
+/*-------------------------------------------*/
+/*  bill_form_post_value()
+/*-------------------------------------------*/
 function bill_form_post_value( $post_field, $type = false ){
       $value = '';
       global $post;
@@ -16,6 +41,9 @@ function bill_form_post_value( $post_field, $type = false ){
       return $value;
 }
 
+/*-------------------------------------------*/
+/*  bill_raw_date()
+/*-------------------------------------------*/
 // 8桁の数字で保存されているデータを
 function bill_raw_date($date){
     $year   = substr($date,0,4);
@@ -25,19 +53,29 @@ function bill_raw_date($date){
     return $raw_date;
 }
 
+/*-------------------------------------------*/
+/*  bill_item_number()
+/*-------------------------------------------*/
 function bill_item_number( $number = 0 ){
   // 全角を半額に変換
   $number = mb_convert_kana( $number, 'a' );
   $number = str_replace(',','',$number);
   return $number;
 }
+/*-------------------------------------------*/
+/*  bill_item_price_total()
+/*-------------------------------------------*/
 function bill_item_price_total( $count = 0, $price = 0 ){
   // 数量×単価
   $item_price_total = round( $count * $price );
   return $item_price_total;
 }
 
-function bill_total_no_tax($post) {
+/*-------------------------------------------*/
+/*  bill_total_no_tax()
+/*-------------------------------------------*/
+// 書類の税抜き合計
+function bill_total_no_tax( $post ) {
   // global $post;
   $bill_items = get_post_meta( $post->ID, 'bill_items', true );
   $bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
@@ -82,16 +120,33 @@ function bill_total_no_tax($post) {
   return $bill_total;
 }
 
+/*-------------------------------------------*/
+/*  消費税を計算
+/*  bill_tax()
+/*-------------------------------------------*/
+function bill_tax( $price = 0 ){
+  $tax = floor( $price * 0.08 );
+  return $tax;
+}
+
+/*-------------------------------------------*/
+/*  消費税込みの書類の合計金額
+/*  bill_total_add_tax()
+/*-------------------------------------------*/
 function bill_total_add_tax( $post ) {
-  $bill_total = bill_total_no_tax($post);
-  // 小数点以下切り捨て
-  $tax = floor( $bill_total * 0.08 );
-  $bill_total_add_tax = $bill_total + $tax;
+
+  // 消費税抜きの合計金額
+  $bill_total_no_tax = bill_total_no_tax( $post );
+
+  // 税込合計金額 = 消費税抜きの合計金額 + 消費税
+  $bill_total_add_tax = $bill_total_no_tax + bill_tax( $bill_total_no_tax );
+
   return $bill_total_add_tax;
 }
 
 /*-------------------------------------------*/
 /*  Chack post type info
+/*	bill_get_post_type()
 /*-------------------------------------------*/
 function bill_get_post_type() {
 
@@ -123,6 +178,9 @@ function bill_get_post_type() {
   return $post_type;
 }
 
+/*-------------------------------------------*/
+/*	bill_get_terms()
+/*-------------------------------------------*/
 function bill_get_terms(){
   global $post;
   $postType = get_post_type();
