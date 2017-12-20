@@ -8,7 +8,7 @@ jQuery(document).ready(function($){
     // var media_btn = '#media_' + media_id[i];
     // var media_target = '#' + media_id[i];
     jQuery('.media_btn').click(function(e) {
-        // 画像URLで値を返す場合
+        // 画像URLで値を返す場合はフォームの input タグのIDにsrcを含める
         media_target_src    = jQuery(this).attr('id').replace(/media_src_/g,'#');
         // id で値を返す場合
         media_target    = jQuery(this).attr('id').replace(/media_/g,'#');
@@ -40,5 +40,15 @@ jQuery(document).ready(function($){
             });
         });
         custom_uploader.open();
+    });
+
+		/*	リセット処理
+		/*-------------------------------------------*/
+		jQuery('.media_reset_btn').click(function(e) {
+        media_target_id			= jQuery(this).attr('id').replace(/media_reset_/g,'#');
+        thumb_id						= jQuery(this).attr('id').replace(/media_reset_/g,'#thumb_');
+        jQuery(media_target_id).attr('value', '' );
+        jQuery(thumb_id).attr('src', '' );
+				jQuery(thumb_id).attr('srcset', '' );
     });
 });

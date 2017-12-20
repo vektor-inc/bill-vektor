@@ -9,13 +9,21 @@ class Estimate_Item_Custom_Fields {
 
 	// define( 'Bill_URL', get_template_directory_uri() );
 
-	public static function init() {
+	/*-------------------------------------------*/
+	/*  実行
+	/*-------------------------------------------*/
+	public function __construct(){
 		add_action( 'admin_menu' , array( __CLASS__, 'add_metabox'), 10, 2);
 		add_action( 'save_post' , array( __CLASS__, 'save_custom_fields'), 10, 2);
 	}
 
+	// public static function init() {
+	// 	add_action( 'admin_menu' , array( __CLASS__, 'add_metabox'), 10, 2);
+	// 	add_action( 'save_post' , array( __CLASS__, 'save_custom_fields'), 10, 2);
+	// }
+
 	// add meta_box
-	public static function add_metabox() 
+	public static function add_metabox()
 	{
 
 		$id = 'meta_box_estimate_items';
@@ -100,7 +108,7 @@ class Estimate_Item_Custom_Fields {
 		$noncename__bill_fields = isset( $_POST['noncename__bill_fields'] ) ? $_POST['noncename__bill_fields'] : null;
 
 		//nonce を確認し、値が書き換えられていれば、何もしない（CSRF対策）
-		if( !wp_verify_nonce( $noncename__bill_fields, wp_create_nonce(__FILE__) ) ) {  
+		if( !wp_verify_nonce( $noncename__bill_fields, wp_create_nonce(__FILE__) ) ) {
 		return $post_id;
 		}
 
