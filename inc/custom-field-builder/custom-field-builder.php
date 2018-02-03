@@ -82,7 +82,15 @@ class VK_Custom_Field_Builder {
           $form_html .= '</th><td>';
 
           if ( $value['type'] == 'text' || $value['type'] == 'url' ){
+             if ( isset( $value['before_text'] ) && $value['before_text'] ){
+                 $form_html .= esc_html( $value['before_text'] ).' ';
+             }
+
               $form_html .= '<input class="form-control" type="text" id="'.$key.'" name="'.$key.'" value="'.VK_Custom_Field_Builder::form_post_value($key).'" size="70">';
+
+             if ( isset( $value['after_text'] ) && $value['after_text'] ){
+                 $form_html .= ' '.esc_html( $value['after_text'] );
+             }
 
           } else if ( $value['type'] == 'datepicker' ){
               $form_html .= '<input class="form-control datepicker" type="text" id="'.$key.'" name="'.$key.'" value="'.VK_Custom_Field_Builder::form_post_value($key).'" size="70">';
