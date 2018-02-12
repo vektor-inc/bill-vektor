@@ -149,7 +149,7 @@ function bill_add_post_type_estimate() {
 			'show_ui'            => true,
 			'show_in_menu'       => true,
 			'has_archive'        => true,
-			'supports'           => array( 'title', 'revisions' ),
+			'supports'           => array( 'title' ),
 			'menu_icon'          => 'dashicons-media-spreadsheet',
 			'menu_position'      => 5,
 		)
