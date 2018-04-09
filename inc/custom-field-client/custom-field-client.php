@@ -10,7 +10,7 @@ class Client_Custom_Fields {
 	}
 
 	// add meta_box
-	public static function add_metabox() 
+	public static function add_metabox()
 	{
 
 		$id = 'meta_box_bill_normal';
@@ -67,6 +67,8 @@ class Client_Custom_Fields {
 			'client_zip' => array(
 				'label' => __('郵便番号','bill-vektor'),
 				'type' => 'text',
+				'before_text' => '〒',
+				'after_text' => '',
 				'description' => '',
 				'required' => false,
 			),
@@ -117,7 +119,7 @@ class Client_Custom_Fields {
 				'type' => 'checkbox',
 				'description' => '普段取引がない、今後取引がないなど、取引先のドロップダウンに含めない場合はチェックを入れてください。',
 				'required' => false,
-				'options' => array( 
+				'options' => array(
 					'hidden' => 'ドロップダウンに表示しない',
 					),
 			),
@@ -127,6 +129,3 @@ class Client_Custom_Fields {
 
 }
 Client_Custom_Fields::init();
-
-
-
