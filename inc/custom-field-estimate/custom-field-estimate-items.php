@@ -116,9 +116,12 @@ class Estimate_Item_Custom_Fields {
 			return $post_id;
 		}
 
+		/*
 		// 自動保存ルーチンかどうかチェック。そうだった場合は何もしない（記事の自動保存処理として呼び出された場合の対策）
+		// → 長時間かけてから保存すると全部消える事があるので自動保存を有効にするためのコメントアウト
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return $post_id; }
+		return $post_id; }
+		*/
 
 		$field       = 'bill_items';
 		$field_value = ( isset( $_POST[ $field ] ) ) ? $_POST[ $field ] : '';
