@@ -12,7 +12,7 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 
 	class VK_Custom_Field_Builder {
 
-		public static $version = '0.0.1';
+		public static $version = '0.1.0';
 
 		// define( 'Bill_URL', get_template_directory_uri() );
 		public static function init() {
@@ -58,6 +58,11 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 			return $required;
 		}
 
+		/*
+		-------------------------------------------
+		フォームテーブル
+		-------------------------------------------
+		*/
 		public static function form_table( $custom_fields_array, $befor_items = '', $echo = true ) {
 
 			wp_nonce_field( wp_create_nonce( __FILE__ ), 'noncename__fields' );
@@ -136,21 +141,26 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 					$form_html .= '</ul>';
 
 				} elseif ( $value['type'] == 'image' ) {
-					if ( isset( $_POST[ $key ] ) && $_POST[ $key ] ) {
-								$thumb_image     = wp_get_attachment_image_src( $image_key, 'medium', false );
-								$thumb_image_url = $thumb_image[0];
-					} elseif ( $post->$key ) {
+					if ( $post->$key ) {
 								$thumb_image     = wp_get_attachment_image_src( $post->$key, 'medium', false );
 								$thumb_image_url = $thumb_image[0];
+						// } elseif ( isset( $_POST[ $key ] ) && $_POST[ $key ] ) {
+						// $thumb_image     = wp_get_attachment_image_src( $image_key, 'medium', false );
+						// $thumb_image_url = $thumb_image[0];
 					} else {
 								$thumb_image_url = $custom_field_builder_url . '/images/no_image.png';
 					}
-							$form_html .= '<img src="' . $thumb_image_url . '" id="thumb_' . $key . '" alt="" class="input_thumb" style="width:200px;height:auto;">';
-
-					$form_html         .= '<input type="hidden" name="' . $key . '" id="' . $key . '" value="' . VK_Custom_Field_Builder::form_post_value( $key ) . '" style="width:60%;" />
+					$form_html .= '<img src="' . $thumb_image_url . '" id="thumb_' . $key . '" alt="" class="input_thumb" style="width:200px;height:auto;">';
+					$form_html .= '<input type="hidden" name="' . $key . '" id="' . $key . '" value="' . VK_Custom_Field_Builder::form_post_value( $key ) . '" style="width:60%;" />
 <button id="media_' . $key . '" class="media_btn btn btn-default button button-default">' . __( 'Choose Image', $custom_field_builder_textdomain ) . '</button> ';
-							$form_html .= '<button id="media_reset_' . $key . '" class="media_reset_btn btn btn-default button button-default">' . __( 'Delete Image', $custom_field_builder_textdomain ) . '</button>';
+					$form_html .= '<button id="media_reset_' . $key . '" class="media_reset_btn btn btn-default button button-default">' . __( 'Delete Image', $custom_field_builder_textdomain ) . '</button>';
 
+				} elseif ( $value['type'] == 'file' ) {
+					$form_html .= '<input name="' . $key . '" id="' . $key . '" value="' . VK_Custom_Field_Builder::form_post_value( $key ) . '" style="width:60%;" />
+<button id="media_src_' . $key . '" class="media_btn btn btn-default button button-default">' . __( 'ファイルを選択', $custom_field_builder_textdomain ) . '</button> ';
+					if ( $post->$key ) {
+						$form_html .= '<a href="' . esc_url( $post->$key ) . '" target="_blank" class="btn btn-default button button-default">ファイルを確認</a>';
+					}
 				}
 				if ( $value['description'] ) {
 					$form_html .= '<div class="description">' . apply_filters( 'the_content', $value['description'] ) . '</div>';
