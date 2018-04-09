@@ -104,6 +104,12 @@ class Bill_Normal_Custom_Fields {
 				'description' => 'この項目は請求書には印刷されません。',
 				'required'    => false,
 			),
+			'bill_send_pdf'   => array(
+				'label'       => __( '送付済PDF', 'bill-vektor' ),
+				'type'        => 'file',
+				'description' => '客先に送付したPDFファイルを保存しておく場合に登録してください。',
+				'hidden'      => true,
+			),
 		// 'event_image_main' => array(
 		// 'label' => __('メインイメージ','bill-vektor'),
 		// 'type' => 'image',

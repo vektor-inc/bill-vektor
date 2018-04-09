@@ -115,9 +115,9 @@ class Estimate_Normal_Custom_Fields {
 				'required'    => false,
 			),
 			'bill_send_pdf'            => array(
-				'label'       => __( '送付PDF', 'bill-vektor' ),
+				'label'       => __( '送付済PDF', 'bill-vektor' ),
 				'type'        => 'file',
-				'description' => '',
+				'description' => '客先に送付したPDFファイルを保存しておく場合に登録してください。',
 				'hidden'      => true,
 			),
 		);
