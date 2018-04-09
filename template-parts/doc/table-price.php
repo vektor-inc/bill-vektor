@@ -64,7 +64,7 @@ if ( is_array( $bill_items ) ) {
 		</tr>
 		<?php
 		// 小計
-		$bill_total += $item_price_total;
+		$bill_total += (int) $item_price_total;
 
 	} // foreach ($bill_items as $key => $value) {
 
