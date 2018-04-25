@@ -1,4 +1,4 @@
-<table class="table table-bordered table-bill">
+<table class="table table-bordered table-striped table-bill">
 <thead>
 <tr>
 <th class="text-center">品目</th>

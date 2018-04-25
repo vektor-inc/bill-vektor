@@ -91,11 +91,14 @@ body.single {
 }
 
 table.table-bill {
+	&.table-striped tbody tr:nth-of-type(odd) {
+	    background-color: #f6f6f6;
+	}
 	.price {
 		text-align: right;
 		width:8em;
 	}
-	thead tr th { 
+	thead tr th {
 		@include bill-th;
 	}
 }
