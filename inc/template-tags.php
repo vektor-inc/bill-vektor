@@ -87,6 +87,7 @@ function bill_raw_date( $date ) {
 function bill_item_number( $number = 0 ) {
 	// 全角を半額に変換
 	$number = mb_convert_kana( $number, 'a' );
+	// , が入ってたら除去
 	$number = str_replace( ',', '', $number );
 	return $number;
 }
