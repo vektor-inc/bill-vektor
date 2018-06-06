@@ -30,6 +30,9 @@ if ( is_array( $bill_items ) ) {
 		}
 
 		// $item_price
+		// 金額の小数点以下の桁数
+		$digits = apply_filters( 'item_price_print_digits', 0 );
+
 		if ( $bill_items[ $key ]['price'] === '' ) {
 			$item_price       = '';
 			$item_price_print = '';
@@ -37,13 +40,13 @@ if ( is_array( $bill_items ) ) {
 
 			$item_price = bill_item_number( $bill_items[ $key ]['price'] );
 
-			$item_price_print = '¥ ' . number_format( $item_price );
+			$item_price_print = '¥ ' . number_format( $item_price, $digits );
 		}
 
 		// $item_total
 		if ( is_numeric( $item_count ) && is_numeric( $item_price ) ) {
 			$item_price_total       = $item_count * $item_price;
-			$item_price_total_print = '¥ ' . number_format( $item_price_total );
+			$item_price_total_print = '¥ ' . number_format( $item_price_total, $digits );
 		} else {
 			$item_price_total       = '';
 			$item_price_total_print = '';
