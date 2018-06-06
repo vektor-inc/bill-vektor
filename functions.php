@@ -35,6 +35,14 @@ get_template_part( 'inc/template-tags' );
 get_template_part( 'inc/functions-limit-view' );
 get_template_part( 'inc/functions-pre-get-posts' );
 
+require 'inc/plugin-update-checker/plugin-update-checker.php';
+$myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
+	'https://github.com/vektor-inc/bill-vektor/',
+	__FILE__, // Full path to the main plugin file or functions.php.
+	'bill-vektor'
+);
+$myUpdateChecker->setBranch( 'dist' );
+
 /*
 -------------------------------------------
   Theme setup
