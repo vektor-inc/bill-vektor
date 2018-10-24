@@ -7,12 +7,16 @@ jQuery(document).ready(function($){
     // media_id[0] = "head_logo";
     // var media_btn = '#media_' + media_id[i];
     // var media_target = '#' + media_id[i];
-    jQuery('.media_btn').click(function(e) {
+    jQuery('.cfb_media_btn').click(function(e) {
+
         // 画像URLで値を返す場合はフォームの input タグのIDにsrcを含める
+        // クリックされたボタンのidを取得 → ボタンの id名 から media_src_ を削除して かわりに # をつける
         media_target_src    = jQuery(this).attr('id').replace(/media_src_/g,'#');
+
         // id で値を返す場合
         media_target    = jQuery(this).attr('id').replace(/media_/g,'#');
         thumb_src       = jQuery(this).attr('id').replace(/media_/g,'#thumb_');
+
         e.preventDefault();
         if (custom_uploader) {
             custom_uploader.open();
