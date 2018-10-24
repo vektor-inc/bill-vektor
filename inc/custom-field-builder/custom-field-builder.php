@@ -69,7 +69,6 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 
 			global $post;
 			global $custom_field_builder_url;
-			global $custom_field_builder_textdomain;
 
 			$form_html = '';
 
@@ -80,7 +79,7 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 
 			foreach ( $custom_fields_array as $key => $value ) {
 				$form_html .= '<tr class="cf_item"><th class="text-nowrap"><label>' . $value['label'] . '</label>';
-				$form_html .= ( isset( $value['required'] ) && $value['required'] ) ? VK_Custom_Field_Builder::form_required() : '';
+				$form_html .= ( isset( $value['required'] ) && $value['required'] ) ? self::form_required() : '';
 				$form_html .= '</th><td>';
 
 				if ( $value['type'] == 'text' || $value['type'] == 'url' ) {
@@ -88,22 +87,22 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 						$form_html .= esc_html( $value['before_text'] ) . ' ';
 					}
 
-					$form_html .= '<input class="form-control" type="text" id="' . $key . '" name="' . $key . '" value="' . VK_Custom_Field_Builder::form_post_value( $key ) . '" size="70">';
+					$form_html .= '<input class="form-control" type="text" id="' . $key . '" name="' . $key . '" value="' . self::form_post_value( $key ) . '" size="70">';
 
 					if ( isset( $value['after_text'] ) && $value['after_text'] ) {
 						$form_html .= ' ' . esc_html( $value['after_text'] );
 					}
 				} elseif ( $value['type'] == 'datepicker' ) {
-					$form_html .= '<input class="form-control datepicker" type="text" id="' . $key . '" name="' . $key . '" value="' . VK_Custom_Field_Builder::form_post_value( $key ) . '" size="70">';
+					$form_html .= '<input class="form-control datepicker" type="text" id="' . $key . '" name="' . $key . '" value="' . self::form_post_value( $key ) . '" size="70">';
 
 				} elseif ( $value['type'] == 'textarea' ) {
-					$form_html .= '<textarea class="form-control" class="cf_textarea_wysiwyg" name="' . $key . '" cols="70" rows="3">' . VK_Custom_Field_Builder::form_post_value( $key, 'textarea' ) . '</textarea>';
+					$form_html .= '<textarea class="form-control" class="cf_textarea_wysiwyg" name="' . $key . '" cols="70" rows="3">' . self::form_post_value( $key, 'textarea' ) . '</textarea>';
 
 				} elseif ( $value['type'] == 'select' ) {
 					$form_html .= '<select id="' . $key . '" class="form-control" name="' . $key . '"  >';
 
 					foreach ( $value['options'] as $option_value => $option_label ) {
-						if ( VK_Custom_Field_Builder::form_post_value( $key ) == $option_value ) {
+						if ( self::form_post_value( $key ) == $option_value ) {
 							$selected = ' selected="selected"';
 						} else {
 							$selected = '';
@@ -148,18 +147,29 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 						// $thumb_image     = wp_get_attachment_image_src( $image_key, 'medium', false );
 						// $thumb_image_url = $thumb_image[0];
 					} else {
-								$thumb_image_url = $custom_field_builder_url . '/images/no_image.png';
+								$thumb_image_url = $custom_field_builder_url . 'images/no_image.png';
 					}
-					$form_html .= '<img src="' . $thumb_image_url . '" id="thumb_' . $key . '" alt="" class="input_thumb" style="width:200px;height:auto;">';
-					$form_html .= '<input type="hidden" name="' . $key . '" id="' . $key . '" value="' . VK_Custom_Field_Builder::form_post_value( $key ) . '" style="width:60%;" />
-<button id="media_' . $key . '" class="media_btn btn btn-default button button-default">' . __( 'Choose Image', $custom_field_builder_textdomain ) . '</button> ';
-					$form_html .= '<button id="media_reset_' . $key . '" class="media_reset_btn btn btn-default button button-default">' . __( 'Delete Image', $custom_field_builder_textdomain ) . '</button>';
+					// ダミー & プレビュー画像
+					$form_html .= '<img src="' . $thumb_image_url . '" id="thumb_' . $key . '" alt="" class="input_thumb" style="width:200px;height:auto;"> ';
+
+					// 実際に送信する値
+					$form_html .= '<input type="hidden" name="' . $key . '" id="' . $key . '" value="' . self::form_post_value( $key ) . '" style="width:60%;" />';
+
+					// 画像選択ボタン
+					// .media_btn がトリガーでメディアアップローダーが起動する
+					// id名から media_ を削除した id 名の input 要素に返り値が反映される。
+					// id名が media_src_ で始まる場合はURLを返す
+					$form_html .= '<button id="media_' . $key . '" class="cfb_media_btn btn btn-default button button-default">' . __( 'Choose Image', 'custom_field_builder_textdomain' ) . '</button> ';
+
+					// 削除ボタン
+					// ボタンタグだとその場でページが再読込されてしまうのでaタグに変更
+					$form_html .= '<a id="media_reset_' . $key . '" class="media_reset_btn btn btn-default button button-default">' . __( 'Delete Image', 'custom_field_builder_textdomain' ) . '</a>';
 
 				} elseif ( $value['type'] == 'file' ) {
-					$form_html .= '<input name="' . $key . '" id="' . $key . '" value="' . VK_Custom_Field_Builder::form_post_value( $key ) . '" style="width:60%;" />
-<button id="media_src_' . $key . '" class="media_btn btn btn-default button button-default">' . __( 'ファイルを選択', $custom_field_builder_textdomain ) . '</button> ';
+					$form_html .= '<input name="' . $key . '" id="' . $key . '" value="' . self::form_post_value( $key ) . '" style="width:60%;" />
+<button id="media_src_' . $key . '" class="cfb_media_btn btn btn-default button button-default">' . __( 'Select file', 'custom_field_builder_textdomain' ) . '</button> ';
 					if ( $post->$key ) {
-						$form_html .= '<a href="' . esc_url( $post->$key ) . '" target="_blank" class="btn btn-default button button-default">ファイルを確認</a>';
+						$form_html .= '<a href="' . esc_url( $post->$key ) . '" target="_blank" class="btn btn-default button button-default">' . __( 'View file', 'custom_field_builder_textdomain' ) . '</a>';
 					}
 				}
 				if ( $value['description'] ) {
