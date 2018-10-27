@@ -12,7 +12,7 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 
 	class VK_Custom_Field_Builder {
 
-		public static $version = '0.1.0';
+		public static $version = '0.1.1';
 
 		// define( 'Bill_URL', get_template_directory_uri() );
 		public static function init() {
