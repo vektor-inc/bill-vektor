@@ -91,7 +91,7 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 
 		// テーブルをそのまま複製する場合
 		$bill_items = get_post_meta( $post->ID, 'bill_items', true );
-		update_post_meta( $new_post, 'bill_items', $bill_items );
+		add_post_meta( $new_post, 'bill_items', $bill_items );
 
 	} else {
 
@@ -185,7 +185,7 @@ add_action( 'admin_init', 'bill_copy_redirect' );
 /*-------------------------------------------*/
 function bill_row_actions_add_duplicate_link( $actions, $post ) {
 	$post_type          = get_post_type();
-	$links              = admin_url() . 'post-new.php?post_type=' . $post_type . '&master_id=' . $post->ID . '&table_copy_type=full&duplicate_type=full';
+	$links              = admin_url() . 'post-new.php?post_type=' . $post_type . '&master_id=' . $post->ID . '&table_copy_type=all&duplicate_type=full';
 	$actions['newlink'] = '<a href="' . $links . '">複製</a>';
 	return $actions;
 }
