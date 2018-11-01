@@ -8,6 +8,8 @@ $post_type_array = array(
 	'estimate' => '見積書',
 	'post'     => '請求書',
 );
+$post_type_array = apply_filters( 'bill_vektor_post_types', $post_type_array );
+
 foreach ( $post_type_array as $key => $label ) {
 	echo '<label class="checkbox-inline">';
 	$selected = '';
