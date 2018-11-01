@@ -3,18 +3,20 @@
 <dt><label for="client">書類種別</label></dt>
 <dd>
 <?php
-$post_type = ( isset( $_GET['post_type'] ) && $_GET['post_type'] ) ? esc_attr( $_GET['post_type'] ) : "";
+$post_type       = ( isset( $_GET['post_type'] ) && $_GET['post_type'] ) ? esc_attr( $_GET['post_type'] ) : '';
 $post_type_array = array(
 	'estimate' => '見積書',
-	'post' => '請求書',
-	);
-foreach ($post_type_array as $key => $label) {
+	'post'     => '請求書',
+);
+$post_type_array = apply_filters( 'bill_vektor_post_types', $post_type_array );
+
+foreach ( $post_type_array as $key => $label ) {
 	echo '<label class="checkbox-inline">';
 	$selected = '';
 	if ( $post_type == $key ) {
 		$selected = ' checked="checked"';
 	}
-	echo '<input type="radio" class="" name="post_type" id="post_type_'.$key.'" value="'.$key.'"'.$selected.'>　'.$label;
+	echo '<input type="radio" class="" name="post_type" id="post_type_' . $key . '" value="' . $key . '"' . $selected . '>　' . $label;
 	echo '</label>';
 }
 ?>
@@ -25,15 +27,15 @@ foreach ($post_type_array as $key => $label) {
 <dt><label for="client">取引先</label></dt>
 <dd>
 <?php
-$args = array(
-	'post_type' => 'client',
+$args         = array(
+	'post_type'      => 'client',
 	'posts_per_page' => -1,
-	'order' => 'ASC',
-	'orderby' => 'title',
-	);
-$client_posts = get_posts($args);
+	'order'          => 'ASC',
+	'orderby'        => 'title',
+);
+$client_posts = get_posts( $args );
 
-$client_id = ( isset( $_GET['bill_client'] ) && $_GET['bill_client'] ) ? esc_attr( $_GET['bill_client'] ) : "";	
+$client_id = ( isset( $_GET['bill_client'] ) && $_GET['bill_client'] ) ? esc_attr( $_GET['bill_client'] ) : '';
 echo '<select name="bill_client" id="bill_client" class="form-control">';
 echo '<option value="">- 未選択 -</option>';
 if ( $client_posts ) {
@@ -44,12 +46,12 @@ if ( $client_posts ) {
 		}
 		$client_name = get_the_title( $post->ID );
 		// プルダウンに表示するかしないかの情報を取得
-		$client_hidden = get_post_meta(  $post->ID, 'client_hidden', true );
+		$client_hidden = get_post_meta( $post->ID, 'client_hidden', true );
 		// プルダウン非表示にチェックが入っていない項目だけ出力
-		if ( ! $client_hidden )  {
-			echo '<option value="'.$post->ID.'"'.$selected.'>'.esc_attr( $client_name ).'</option>';
+		if ( ! $client_hidden ) {
+			echo '<option value="' . $post->ID . '"' . $selected . '>' . esc_attr( $client_name ) . '</option>';
 		}
-	}	
+	}
 }
 echo '</select>';
 ?>
@@ -61,10 +63,10 @@ echo '</select>';
 <dd>
 <?php
 $start_date = ( isset( $_GET['start_date'] ) && $_GET['start_date'] ) ? $_GET['start_date'] : '';
-$end_date = ( isset( $_GET['end_date'] ) && $_GET['end_date'] ) ? $_GET['end_date'] : '';
+$end_date   = ( isset( $_GET['end_date'] ) && $_GET['end_date'] ) ? $_GET['end_date'] : '';
 ?>
-<input type="text" class="datepicker form-control" value="<?php echo esc_html($start_date);?>" name="start_date" id="start_date"> ～ 
-<input type="text" class="datepicker form-control" value="<?php echo esc_html($end_date);?>" name="end_date" id="end_date">
+<input type="text" class="datepicker form-control" value="<?php echo esc_html( $start_date ); ?>" name="start_date" id="start_date"> ～
+<input type="text" class="datepicker form-control" value="<?php echo esc_html( $end_date ); ?>" name="end_date" id="end_date">
 </dd>
 </dl>
 

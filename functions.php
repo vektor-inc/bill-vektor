@@ -24,10 +24,12 @@ define( 'BILLVEKTOR_THEME_VERSION', $theme_opt->Version );
 -------------------------------------------
 */
 require_once( 'inc/custom-field-builder-config.php' );
+require_once( 'inc/custom-field/custom-field-normal-bill.php' );
+require_once( 'inc/custom-field/custom-field-normal-estimate.php' );
+require_once( 'inc/custom-field/custom-field-normal-client.php' );
+require_once( 'inc/custom-field/custom-field-table.php' );
+require_once( 'inc/custom-field/custom-field-table-bill.php' );
 require_once( 'inc/setting-page/setting-page.php' );
-require_once( 'inc/custom-field-bill/custom-field-bill.php' );
-require_once( 'inc/custom-field-estimate/custom-field-estimate.php' );
-require_once( 'inc/custom-field-client/custom-field-client.php' );
 require_once( 'inc/duplicate-doc/duplicate-doc.php' );
 require_once( 'inc/export/class.csv-export.php' );
 
