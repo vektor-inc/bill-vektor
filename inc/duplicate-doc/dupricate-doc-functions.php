@@ -98,15 +98,7 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 		// 一括にしてテーブルを保存する
 		//
 		// 合計金額を算出する
-		$bill_items = get_post_meta( $post->ID, 'bill_items', true );
-		$bill_total = 0;
-		foreach ( $bill_items as $key => $value ) {
-			if ( isset( $value['count'] ) && isset( $value['price'] ) ) {
-				$count       = intval( $bill_items[ $key ]['count'] );
-				$price       = intval( $bill_items[ $key ]['price'] );
-				$bill_total += $count * $price;
-			}
-		}
+		$bill_total = bill_total_no_tax( $post );
 
 		$new_bill_items[0] = array(
 			'name'  => $post->post_title,
@@ -114,6 +106,7 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 			'unit'  => '式',
 			'price' => $bill_total,
 		);
+		// 余白分数行追加しておく
 		for ( $i = 1; $i <= 7;$i++ ) {
 			$new_bill_items[ $i ] = array(
 				'name'  => '',
