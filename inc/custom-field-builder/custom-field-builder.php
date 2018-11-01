@@ -115,6 +115,14 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 				} elseif ( $value['type'] == 'checkbox' || $value['type'] == 'radio' ) {
 					$field_value = get_post_meta( $post->ID, $key, true );
 					$form_html  .= '<ul>';
+
+					// シリアライズして保存されてたら戻す
+					if ( $value['type'] == 'checkbox' ) {
+						if ( ! is_array( $field_value ) ) {
+							$field_value = unserialize( get_post_meta( $post->ID, $key, true ) );
+						}
+					}
+
 					foreach ( $value['options'] as $option_value => $option_label ) {
 						$selected = '';
 						// print '<pre style="text-align:left">';print_r( $option_value );print '</pre>';

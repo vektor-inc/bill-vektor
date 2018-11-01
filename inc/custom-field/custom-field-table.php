@@ -3,39 +3,13 @@
 * 請求品目のカスタムフィールド
 */
 
-class Estimate_Item_Custom_Fields {
+class Bill_Item_Custom_Fields {
 
 	public static $version = '0.0.0';
 
 	// define( 'Bill_URL', get_template_directory_uri() );
-	/*
-	-------------------------------------------
-	実行
-	-------------------------------------------
-	*/
-
-	// public function __construct(){
-	// add_action( 'admin_menu' , array( __CLASS__, 'add_metabox'), 10, 2);
-	// add_action( 'save_post' , array( __CLASS__, 'save_custom_fields'), 10, 2);
-	// }
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_metabox' ), 10, 2 );
 		add_action( 'save_post', array( __CLASS__, 'save_custom_fields' ), 10, 2 );
-	}
-
-	// add meta_box
-	public static function add_metabox() {
-
-		$id            = 'meta_box_estimate_items';
-		$title         = __( '見積品目', '' );
-		$callback      = array( __CLASS__, 'fields_form' );
-		$screen        = 'estimate';
-		$context       = 'advanced';
-		$priority      = 'high';
-		$callback_args = '';
-
-		add_meta_box( $id, $title, $callback, $screen, $context, $priority, $callback_args );
-
 	}
 
 	public static function fields_form() {
@@ -116,19 +90,16 @@ class Estimate_Item_Custom_Fields {
 			return $post_id;
 		}
 
-		/*
 		// 自動保存ルーチンかどうかチェック。そうだった場合は何もしない（記事の自動保存処理として呼び出された場合の対策）
-		// → 長時間かけてから保存すると全部消える事があるので自動保存を有効にするためのコメントアウト
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-		return $post_id; }
-		*/
+			return $post_id; }
 
 		$field       = 'bill_items';
 		$field_value = ( isset( $_POST[ $field ] ) ) ? $_POST[ $field ] : '';
 
 		// 配列の空の行を削除する
 		if ( is_array( $field_value ) ) {
-			// $field_value = Estimate_Item_Custom_Fields::delete_null_row( $field_value );
+			// $field_value = Bill_Item_Custom_Fields::delete_null_row( $field_value );
 		}
 
 		// データが空だったら入れる
@@ -165,4 +136,4 @@ class Estimate_Item_Custom_Fields {
 
 }
 
-Estimate_Item_Custom_Fields::init();
+Bill_Item_Custom_Fields::init();
