@@ -139,6 +139,28 @@ table.table-bill-total {
 	margin-right:1em;
 }
 
+.bill-content{
+	h2,h3,h4,h5 {
+		font-weight: bold;
+		padding: 0;
+		background: none;
+		margin:1.5em 0 0.8em;
+	}
+	h2 {
+		font-size:21px;
+	}
+	h3 {
+		font-size:18px;
+	}
+	h4 {
+		font-size:16px;
+	}
+	p {
+		font-size:14px;
+		line-height: 1.7em;
+	}
+}
+
 .bill-no-print {
 	background-color: #f5f5f5;
 	padding:2em 0;
