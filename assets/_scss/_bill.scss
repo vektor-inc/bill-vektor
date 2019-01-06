@@ -101,6 +101,10 @@ table.table-bill {
 	thead tr th {
 		@include bill-th;
 	}
+	thead,
+	tfoot {
+		font-weight: bold;
+	}
 }
 table.table-bill-total {
 	width:auto;
