@@ -103,7 +103,9 @@ table.table-bill {
 	}
 	thead,
 	tfoot {
-		font-weight: bold;
+		th,td {
+			font-weight: bold;
+		}
 	}
 }
 table.table-bill-total {
