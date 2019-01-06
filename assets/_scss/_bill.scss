@@ -107,6 +107,9 @@ table.table-bill {
 			font-weight: bold;
 		}
 	}
+	tfoot{
+		border-top:2px solid #d5d5d5;
+	}
 }
 table.table-bill-total {
 	width:auto;
