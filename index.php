@@ -37,8 +37,12 @@
 <?php } ?>
 
 <?php if ( $page_post_type['slug'] != 'client' ) { ?>
-<th>件名</th>
-<th>カテゴリー</th>
+	<th>件名</th>
+	<?php if ( $post_type['slug'] != 'salary' ) { ?>
+		<th>カテゴリー</th>
+	<?php } elseif ( $post_type['slug'] == 'salary' ) { ?>
+		<th>支給分</th>
+	<?php } ?>
 <?php } ?>
 </tr>
 <?php
