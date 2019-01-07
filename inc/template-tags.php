@@ -195,7 +195,7 @@ function bill_get_post_type() {
 	global $wp_query;
 	if ( is_post_type_archive() || $wp_query->query_vars['post_type'] ) {
 		$post_type['slug'] = $wp_query->query_vars['post_type'];
-	} elseif ( is_tax() ) {
+	} elseif ( is_tax() || is_category() ) {
 		$taxonomy = get_queried_object()->taxonomy;
 		if ( $taxonomy ) {
 			$post_type['slug'] = get_taxonomy( $taxonomy )->object_type[0];
