@@ -11,6 +11,10 @@ body.single {
 .bill-wrap {
 	display:block; overflow:hidden;
 	padding: 2em 0;
+	page-break-after:always;
+	@media screen{
+		border-bottom:1px solid #e5e5e5; 
+	}
 }
 .bill-title {
 	line-height: 1em;
