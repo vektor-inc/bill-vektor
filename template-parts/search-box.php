@@ -5,8 +5,8 @@
 	<?php
 	$post_type       = ( isset( $_GET['post_type'] ) && $_GET['post_type'] ) ? esc_attr( $_GET['post_type'] ) : '';
 	$post_type_array = array(
-		'estimate' => '見積書',
 		'post'     => '請求書',
+		'estimate' => '見積書',
 	);
 	$post_type_array = apply_filters( 'bill_vektor_post_types', $post_type_array );
 	echo '<select name="post_type" id="post_type" class="form-control">';
