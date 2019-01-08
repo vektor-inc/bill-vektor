@@ -115,12 +115,13 @@ class VK_Custom_Field_Builder_Flexible_Table {
 
 		// nonce を確認し、値が書き換えられていれば、何もしない（CSRF対策）
 		if ( ! wp_verify_nonce( $noncename__bill_fields, wp_create_nonce( __FILE__ ) ) ) {
-			return $post_id;
+			return;
 		}
 
 		// 自動保存ルーチンかどうかチェック。そうだった場合は何もしない（記事の自動保存処理として呼び出された場合の対策）
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return $post_id; }
+			return;
+		}
 
 		$field       = $custom_fields_array['field_name'];
 		$field_value = ( isset( $_POST[ $field ] ) ) ? $_POST[ $field ] : '';
