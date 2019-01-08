@@ -12,7 +12,7 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 
 	class VK_Custom_Field_Builder {
 
-		public static $version = '0.1.1';
+		public static $version = '0.2.0';
 
 		// define( 'Bill_URL', get_template_directory_uri() );
 		public static function init() {
@@ -35,6 +35,7 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 			wp_enqueue_script( 'datepicker' );
 			wp_register_script( 'vk_mediauploader', self::admin_directory_url() . 'js/mediauploader.js', array( 'jquery' ), self::$version, true );
 			wp_enqueue_script( 'vk_mediauploader' );
+			wp_enqueue_script( 'flexible-table', self::admin_directory_url() . 'js/flexible-table.js', array( 'jquery', 'jquery-ui-sortable' ), self::$version, true );
 			wp_enqueue_style( 'cf-builder-style', self::admin_directory_url() . 'css/cf-builder.css', array(), self::$version, 'all' );
 		}
 
@@ -235,19 +236,10 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 			} // foreach ($custom_fields_all_array as $key => $value) {
 		}
 
-
-
-		/*
-		-------------------------------------------
-		実行
-		-------------------------------------------
-		*/
-		public function __construct() {
-			// add_action( 'init', array( $this, 'add_post_type' ),0 );
-		}
-
 	} // class Vk_custom_field_builder
 
 	VK_Custom_Field_Builder::init();
+
+	require_once( 'custom-field-flexible-table.php' );
 
 } // if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {

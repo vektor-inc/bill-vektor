@@ -88,8 +88,6 @@ add_action( 'wp_enqueue_scripts', 'bill_theme_scripts' );
 function bill_admin_scripts() {
 	// 管理画面用のcss
 	wp_enqueue_style( 'bill-admin-css', get_template_directory_uri() . '/assets/css/admin-style.css', BILLVEKTOR_THEME_VERSION, null );
-	// 管理画面用のjs
-	wp_enqueue_script( 'bill-js-bootstrap', get_template_directory_uri() . '/assets/js/admin.js', array( 'jquery', 'jquery-ui-sortable' ), BILLVEKTOR_THEME_VERSION, true );
 }
 add_action( 'admin_enqueue_scripts', 'bill_admin_scripts' );
 
