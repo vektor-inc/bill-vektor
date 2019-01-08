@@ -11,6 +11,10 @@ body.single {
 .bill-wrap {
 	display:block; overflow:hidden;
 	padding: 2em 0;
+	page-break-after:always;
+	@media screen{
+		border-bottom:1px solid #e5e5e5; 
+	}
 }
 .bill-title {
 	line-height: 1em;
@@ -101,6 +105,15 @@ table.table-bill {
 	thead tr th {
 		@include bill-th;
 	}
+	thead,
+	tfoot {
+		th,td {
+			font-weight: bold;
+		}
+	}
+	tfoot{
+		border-top:2px solid #d5d5d5;
+	}
 }
 table.table-bill-total {
 	width:auto;
@@ -137,6 +150,37 @@ table.table-bill-total {
 	height:3.5em;
 	margin-top:1em;
 	margin-right:1em;
+}
+
+.bill-content{
+	margin:3em 0;
+	h2,h3,h4,h5 {
+		font-weight: bold;
+		padding: 0;
+		background: none;
+		margin:1.5em 0 0.8em;
+	}
+	h2 {
+		font-size:18px;
+	}
+	h3 {
+		font-size:16px;
+	}
+	h4 {
+		font-size:14px;
+	}
+	p {
+		font-size:12px;
+		line-height: 1.7em;
+	}
+	table th {
+		background-color: #f5f5f5;
+	}
+}
+body.single-others .bill-remarks {
+	padding-top:2em;
+	border-top:1px solid #ccc;
+	font-size:12px;
 }
 
 .bill-no-print {

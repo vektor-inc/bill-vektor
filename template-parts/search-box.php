@@ -1,25 +1,26 @@
 <div class="search-box">
-<dl class="search-radio">
+<dl>
 <dt><label for="client">書類種別</label></dt>
 <dd>
-<?php
-$post_type       = ( isset( $_GET['post_type'] ) && $_GET['post_type'] ) ? esc_attr( $_GET['post_type'] ) : '';
-$post_type_array = array(
-	'estimate' => '見積書',
-	'post'     => '請求書',
-);
-$post_type_array = apply_filters( 'bill_vektor_post_types', $post_type_array );
+	<?php
+	$post_type_info  = bill_get_post_type();
+	$post_type       = $post_type_info['slug'];
+	$post_type_array = array(
+		'post'     => '請求書',
+		'estimate' => '見積書',
+	);
+	$post_type_array = apply_filters( 'bill_vektor_post_types', $post_type_array );
+	echo '<select name="post_type" id="post_type" class="form-control">';
 
-foreach ( $post_type_array as $key => $label ) {
-	echo '<label class="checkbox-inline">';
-	$selected = '';
-	if ( $post_type == $key ) {
-		$selected = ' checked="checked"';
+	foreach ( $post_type_array as $post_type_key => $post_type_name ) {
+		$selected = '';
+		if ( $post_type_key == $post_type ) {
+			$selected = ' selected';
+		}
+		echo '<option value="' . $post_type_key . '"' . $selected . '>' . esc_attr( $post_type_name ) . '</option>';
 	}
-	echo '<input type="radio" class="" name="post_type" id="post_type_' . $key . '" value="' . $key . '"' . $selected . '>　' . $label;
-	echo '</label>';
-}
-?>
+	echo '</select>';
+	?>
 </dd>
 </dl>
 
