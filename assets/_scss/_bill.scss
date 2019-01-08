@@ -13,7 +13,7 @@ body.single {
 	padding: 2em 0;
 	page-break-after:always;
 	@media screen{
-		border-bottom:1px solid #e5e5e5; 
+		border-bottom:1px solid #e5e5e5;
 	}
 }
 .bill-title {
@@ -93,6 +93,12 @@ body.single {
 	width:100px;
 	height:auto;
 }
+
+.bill-logo {
+	max-width:180px;
+	height:auto;
+}
+
 
 table.table-bill {
 	&.table-striped tbody tr:nth-of-type(odd) {
