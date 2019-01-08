@@ -59,7 +59,9 @@ before_script:
 
 script:
 #   # - phpcs --standard=phpcs.ruleset.xml $(find . -name '*.php')
-  - find . \( -name '*.php' \) -exec php -lf {} \;
+  - find ./ -name '*.php'|xargs -I {} php -l {}
+  - phpunit --version
+  - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.2" ]]; then ./vendor/bin/phpunit; else phpunit; fi
   - phpunit
 
 after_success:
