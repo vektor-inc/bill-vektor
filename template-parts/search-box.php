@@ -3,7 +3,8 @@
 <dt><label for="client">書類種別</label></dt>
 <dd>
 	<?php
-	$post_type       = ( isset( $_GET['post_type'] ) && $_GET['post_type'] ) ? esc_attr( $_GET['post_type'] ) : '';
+	$post_type_info  = bill_get_post_type();
+	$post_type       = $post_type_info['slug'];
 	$post_type_array = array(
 		'post'     => '請求書',
 		'estimate' => '見積書',
