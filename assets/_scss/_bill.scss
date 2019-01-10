@@ -21,6 +21,7 @@ body.single {
 	border-bottom:3px double #000;
 	text-align: center;
 	letter-spacing: 1em;
+	margin-top:10px;
 	margin-bottom:1em;
 	font-size:1.6em;
 }
@@ -94,8 +95,12 @@ body.single {
 	height:auto;
 }
 
-.bill-logo {
-	max-width:180px;
+.bill-footer {
+	margin-top:2em;
+	text-align: right;
+}
+.bill-footer-logo {
+	width:180px;
 	height:auto;
 }
 
