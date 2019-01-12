@@ -166,7 +166,8 @@ class VK_Custom_Field_Builder_Flexible_Table {
 	public static function get_view_table_body( $custom_fields_array ) {
 		global $post;
 
-		$table_values = get_post_meta( $post->ID, $custom_fields_array['field_name'], true );
+		$table_values    = get_post_meta( $post->ID, $custom_fields_array['field_name'], true );
+		$table_body_html = '';
 
 		foreach ( $table_values as $key => $cells ) {
 
@@ -180,16 +181,42 @@ class VK_Custom_Field_Builder_Flexible_Table {
 
 			// 値が存在するか、空の行の出力指定がされている場合のみ行を出力
 			if ( $exist_value || $custom_fields_array['row_empty_display'] ) {
-				echo '<tr>';
+
+				$table_body_html .= '<tr>';
+
 				foreach ( $cells as $cell_key => $cell_value ) {
 					if ( ! empty( $custom_fields_array['items'][ $cell_key ]['display_callback'] ) ) {
 						$cell_value = call_user_func( $custom_fields_array['items'][ $cell_key ]['display_callback'], $cell_value );
 					}
-					echo '<td class="text-' . esc_attr( $custom_fields_array['items'][ $cell_key ]['align'] ) . '">' . $cell_value . '</td>';
-				}
-			}
-			echo '</tr>';
+
+					$class = '';
+
+					// クラス指定があったらそのまま入れる
+					if ( ! empty( $custom_fields_array['items'][ $cell_key ]['class'] ) ) {
+						$class = $custom_fields_array['items'][ $cell_key ]['class'];
+					}
+
+					// align指定があったら追加する
+					if ( ! empty( $custom_fields_array['items'][ $cell_key ]['align'] ) ) {
+						if ( $class ) {
+							$class .= ' ';
+						}
+						$class .= 'text-' . $custom_fields_array['items'][ $cell_key ]['align'];
+					}
+
+					if ( $class ) {
+						$class = ' class="' . esc_attr( $class ) . '"';
+					}
+
+					$table_body_html .= '<td' . $class . '>' . $cell_value . '</td>';
+				} // foreach ( $cells as $cell_key => $cell_value ) {
+
+				$table_body_html .= '</tr>';
+
+			} // if ( $exist_value || $custom_fields_array['row_empty_display'] ) {
+
 		}
+		return $table_body_html;
 	}
 
 }
