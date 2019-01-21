@@ -202,6 +202,8 @@ function bill_get_post_type() {
 		}
 	} elseif ( is_front_page() ) {
 		$post_type['slug'] = 'post';
+	} else {
+		$post_type['slug'] = 'post';
 	}
 
 	// Get post type name
