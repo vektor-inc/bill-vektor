@@ -15,7 +15,6 @@
   新規複製 _ 保存する関数
 /*-------------------------------------------*/
 function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all', $duplicate_type = 'full' ) {
-
 	$post = get_post( $post_id );
 
 	if ( empty( $post ) ) {
@@ -91,8 +90,23 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 
 		// テーブルをそのまま複製する場合
 		$bill_items = get_post_meta( $post->ID, 'bill_items', true );
-		add_post_meta( $new_post, 'bill_items', $bill_items );
+		if ( $bill_items ) {
+			add_post_meta( $new_post, 'bill_items', $bill_items );
+		}
 
+		// 給与明細のテーブル内容複製
+		if ( $post_type == 'salary' ) {
+
+			$kazei_additional = get_post_meta( $post->ID, 'kazei_additional', true );
+
+			if ( $kazei_additional ) {
+				add_post_meta( $new_post, 'kazei_additional', $kazei_additional );
+			}
+			$hikazei_additional = get_post_meta( $post->ID, 'hikazei_additional', true );
+			if ( $hikazei_additional ) {
+				add_post_meta( $new_post, 'hikazei_additional', $hikazei_additional );
+			}
+		}
 	} else {
 
 		// 一括にしてテーブルを保存する
