@@ -52,7 +52,7 @@ if ( $post->client_doc_send_date ) {
 </p>
 <?php $options = get_option( 'bill-setting', Bill_Admin::options_default() ); ?>
 <div class="text-right"><?php echo nl2br( esc_textarea( $options['own-address'] ) ); ?></div>
-<h5 class="text-right"><?php echo esc_html( $options['own-name'] ); ?></h5>
+<h5 class="text-right"><?php echo nl2br( esc_textarea( $options['own-name'] ) ); ?></h5>
 <?php if ( $post->client_doc_tantou ) { ?>
 <div class="text-right">担当 : <?php echo esc_html( $post->client_doc_tantou ); ?></div>
 <?php } ?>

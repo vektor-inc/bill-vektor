@@ -33,7 +33,8 @@ class Bill_Admin {
 		<table class="form-table">
 		<tr>
 		<th>請求者名</th>
-		<td><input type="text" name="bill-setting[own-name]" value="<?php echo esc_attr( $options['own-name'] ); ?>"></td>
+		<td>
+		<textarea name="bill-setting[own-name]" rows="2"><?php echo esc_textarea( $options['own-name'] ); ?></textarea></td>
 		</tr>
 		<tr>
 		<th>住所</th>
