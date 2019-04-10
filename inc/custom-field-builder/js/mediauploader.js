@@ -24,10 +24,9 @@ jQuery(document).ready(function($){
         }
         custom_uploader = wp.media({
             title: '画像を選択',
-            // 以下のコメントアウトを解除すると画像のみに限定される。 → されないみたい
-            library: {
-                type: 'image'
-            },
+            // library: {
+            //     type: 'image'
+            // },
             button: {
                 text: '画像を選択'
             },
