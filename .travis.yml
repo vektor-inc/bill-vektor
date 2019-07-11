@@ -60,7 +60,7 @@ script:
   - find ./ -name '*.php'|xargs -I {} php -l {}
   - phpunit --version
   # - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.2" ]]; then ./vendor/bin/phpunit; else phpunit; fi
-  - phpunit
+  # - phpunit
 
 after_success:
   - bash ./bin/deploy.sh
