@@ -88,7 +88,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 
 					if ( $_GET['action'] == 'csv_mf' ) {
 
-						$c   = '';
+						$c   = array();
 						$c[] = '"' . $number . '"';         // 取引No
 						$c[] = '"' . $date . '"';           // 取引日
 						$c[] = '"売掛金"';             // 借方勘定科目
@@ -114,7 +114,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						// freee
 					} elseif ( $_GET['action'] == 'csv_freee' ) {
 
-						$c   = '';
+						$c   = array();
 						$c[] = '"収入"';                                  // 収支区分
 						$c[] = '"' . esc_html( $post->bill_id ) . '"';        // 管理番号
 						$c[] = '"' . $date . '"';                           // 発生日
@@ -159,7 +159,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 							$client_name = get_the_title( $post->bill_client );
 						}
 
-						$c   = '';
+						$c   = array();
 						$c[] = '"' . $number . '"';         // 取引No
 						$c[] = '"' . $date_pay . '"';       // 取引日
 						$c[] = '"普通預金"';                // 借方勘定科目
