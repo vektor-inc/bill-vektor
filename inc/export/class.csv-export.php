@@ -86,6 +86,8 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						$client_name = get_the_title( $post->bill_client );
 					}
 
+					$tax_rate = bill_tax_rate( $post->ID ) * 100;
+
 					if ( $_GET['action'] == 'csv_mf' ) {
 
 						$c   = array();
@@ -99,7 +101,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						$c[] = '""';                    // 借方税額
 						$c[] = '"売上高"';             // 貸方勘定科目
 						$c[] = '""';                    // 貸方補助科目
-						$c[] = '"課売 8% 五種"';            // 貸方税区分
+						$c[] = '"課売 ' . $tax_rate . '% 五種"';            // 貸方税区分
 						$c[] = '""';                    // 貸方部門
 						$c[] = '"' . $bill_total_add_tax . '"'; // 貸方金額(円)
 						$c[] = '""';                    // 貸方税額
@@ -121,7 +123,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						$c[] = '"' . $date_pay . '"';                       // 支払期日
 						$c[] = '"' . esc_html( $client_name ) . '"';        // 取引先
 						$c[] = '"売上高"';                             // 勘定科目
-						$c[] = '"課税8%"';                                // 税区分
+						$c[] = '"課税' . $tax_rate . '%"';                                // 税区分
 						$c[] = '"' . $bill_total_add_tax . '"';             // 金額(円)
 						$c[] = '"内税"';                                  // 税計算区分
 						$c[] = '"' . $tax . '"';                            // 税額
