@@ -1,10 +1,18 @@
 <?php
 /*
   bill_form_post_value()
+
+	8桁の数字で保存されているデータをUnixタイムスタンプに変換
   bill_raw_date()
+
   bill_item_number()
   bill_item_price_total()
+
+	書類の税抜き合計
   bill_total_no_tax()
+
+	// 消費税率
+	bill_tax_rate()
 
   消費税を計算
   bill_tax()
@@ -19,9 +27,6 @@
 /*-------------------------------------------*/
 
 
-/*
-  bill_form_post_value()
-/*-------------------------------------------*/
 function bill_form_post_value( $post_field, $type = false ) {
 	  $value = '';
 	  global $post;
@@ -40,14 +45,7 @@ function bill_form_post_value( $post_field, $type = false ) {
 
 
 
-
-/*
--------------------------------------------*/
-/*
-  bill_raw_date()
-/*
--------------------------------------------*/
-// 8桁の数字で保存されているデータを
+// 8桁の数字で保存されているデータをUnixタイムスタンプに変換
 function bill_raw_date( $date ) {
 	$year     = substr( $date, 0, 4 );
 	$month    = substr( $date, 4, 2 );
@@ -56,9 +54,6 @@ function bill_raw_date( $date ) {
 	return $raw_date;
 }
 
-/*
-  bill_item_number()
-/*-------------------------------------------*/
 function bill_item_number( $number = 0 ) {
 	// 全角を半額に変換
 	$number = mb_convert_kana( $number, 'a' );
@@ -67,19 +62,13 @@ function bill_item_number( $number = 0 ) {
 	return $number;
 }
 
-/*
-  bill_item_price_total()
-/*-------------------------------------------*/
 function bill_item_price_total( $count = 0, $price = 0 ) {
 	// 数量×単価
 	$item_price_total = round( $count * $price );
 	return $item_price_total;
 }
 
-/*
-  bill_total_no_tax()
-/*
--------------------------------------------*/
+
 // 書類の税抜き合計
 function bill_total_no_tax( $post ) {
 	// global $post;
@@ -126,10 +115,6 @@ function bill_total_no_tax( $post ) {
 	return $bill_total;
 }
 
-/*
--------------------------------------------*/
-/*
-  消費税を計算
 /*
   bill_tax()
 /*-------------------------------------------*/
