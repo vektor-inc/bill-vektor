@@ -23,15 +23,15 @@ define( 'BILLVEKTOR_THEME_VERSION', $theme_opt->Version );
   Load Module
 -------------------------------------------
 */
-require_once( 'inc/custom-field-builder-config.php' );
-require_once( 'inc/custom-field/custom-field-normal-bill.php' );
-require_once( 'inc/custom-field/custom-field-normal-estimate.php' );
-require_once( 'inc/custom-field/custom-field-normal-client.php' );
-require_once( 'inc/custom-field/custom-field-table.php' );
-require_once( 'inc/custom-field/custom-field-table-bill.php' );
-require_once( 'inc/setting-page/setting-page.php' );
-require_once( 'inc/duplicate-doc/duplicate-doc.php' );
-require_once( 'inc/export/class.csv-export.php' );
+require_once( dirname( __FILE__ ) . '/inc/custom-field-builder-config.php' );
+require_once( dirname( __FILE__ ) . '/inc/custom-field/custom-field-normal-bill.php' );
+require_once( dirname( __FILE__ ) . '/inc/custom-field/custom-field-normal-estimate.php' );
+require_once( dirname( __FILE__ ) . '/inc/custom-field/custom-field-normal-client.php' );
+require_once( dirname( __FILE__ ) . '/inc/custom-field/custom-field-table.php' );
+require_once( dirname( __FILE__ ) . '/inc/custom-field/custom-field-table-bill.php' );
+require_once( dirname( __FILE__ ) . '/inc/setting-page/setting-page.php' );
+require_once( dirname( __FILE__ ) . '/inc/duplicate-doc/duplicate-doc.php' );
+require_once( dirname( __FILE__ ) . '/inc/export/class.csv-export.php' );
 
 get_template_part( 'inc/template-tags' );
 get_template_part( 'inc/functions-limit-view' );
