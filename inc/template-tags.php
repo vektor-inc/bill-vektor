@@ -115,11 +115,39 @@ function bill_total_no_tax( $post ) {
 	return $bill_total;
 }
 
+
+// 消費税率
+function bill_tax_rate( $post_id ) {
+
+	$post = get_post( $post_id );
+
+	// 消費税率の指定がある場合は直接返す
+	$bill_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
+	if ( $bill_tax_rate ) {
+		$bill_tax_rate = intval( $bill_tax_rate ) / 100;
+		return $bill_tax_rate;
+	}
+
+	// 消費税の指定がない場合
+	$date                = new DateTime( $post->post_date );
+	$post_date_timestamp = $date->format( 'U' ) . PHP_EOL;
+	if ( 1569888000 <= $post_date_timestamp ) {
+		$rate = 0.1;
+	} else {
+		$rate = 0.08;
+	}
+	return $rate;
+}
+
 /*
   bill_tax()
 /*-------------------------------------------*/
-function bill_tax( $price = 0 ) {
-	$tax = floor( $price * 0.08 );
+function bill_tax( $price = 0, $rate = '' ) {
+	if ( ! $rate ) {
+		global $post;
+		$rate = bill_tax_rate( $post->ID );
+	}
+	$tax = floor( $price * $rate );
 	return $tax;
 }
 

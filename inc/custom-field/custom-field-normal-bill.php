@@ -82,6 +82,16 @@ class Bill_Normal_Custom_Fields {
 				'description' => '',
 				'required'    => true,
 			),
+			'bill_tax_rate'   => array(
+				'label'       => __( '消費税率', 'bill-vektor' ),
+				'type'        => 'radio',
+				'description' => '',
+				'required'    => false,
+				'options'     => array(
+					'10' => '10%',
+					'8'  => '8%',
+				),
+			),
 			'bill_tax_type'   => array(
 				'label'       => __( '消費税', 'bill-vektor' ),
 				'type'        => 'radio',
@@ -110,12 +120,6 @@ class Bill_Normal_Custom_Fields {
 				'description' => '客先に送付したPDFファイルを保存しておく場合に登録してください。',
 				'hidden'      => true,
 			),
-		// 'event_image_main' => array(
-		// 'label' => __('メインイメージ','bill-vektor'),
-		// 'type' => 'image',
-		// 'description' => '',
-		// 'hidden' => true,
-		// ),
 		);
 		return $custom_fields_array;
 	}
