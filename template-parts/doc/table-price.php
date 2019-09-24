@@ -17,7 +17,8 @@ $bill_total           = 0;
 if ( is_array( $bill_items ) ) {
 
 	// 行のループ
-	foreach ( $bill_items as $key => $value ) { ?>
+	foreach ( $bill_items as $key => $value ) {
+	?>
 
 		<tr>
 		<?php

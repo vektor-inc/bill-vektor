@@ -7,7 +7,14 @@
 /*
 $ cd $(wp theme path --dir bill-vektor)
 $ bash bin/install-wp-tests.sh wordpress_test root 'WordPress' localhost latest
- */
+
+/*
+cd /app
+bash setup-phpunit.sh
+source ~/.bashrc
+cd $(wp theme path --dir bill-vektor)
+phpunit
+*/
 
 /**
  * BillVektor test case.
@@ -89,38 +96,6 @@ class PriceTest extends WP_UnitTestCase {
 			print 'item_price_correct    :' . $test_value['item_price_correct'] . PHP_EOL;
 		} // foreach ( $test_array as $key => $test_value) {
 	} // function test_price() {
-
-
-	/**
-	 * 消費税の計算が正しいかどうか？
-	 */
-	function test_tax() {
-
-		$test_array = array(
-			// 消費税の端数が 0.4 以下だった場合
-			array(
-				'price'       => 92,
-				'tax_correct' => 7,
-			),
-			// 消費税の端数が 0.5 以上だった場合
-			array(
-				'price'       => 98,
-				'tax_correct' => 7,
-			),
-		);
-
-		foreach ( $test_array as $key => $test_value ) {
-
-			// 価格を取得
-			$tax = bill_tax( $test_value['price'] );
-						$this->assertEquals( $test_value['tax_correct'], $tax );
-
-			print PHP_EOL;
-			print 'price:' . $tax . PHP_EOL;
-			print 'tax_correct:' . $test_value['tax_correct'] . PHP_EOL;
-		} // foreach ( $test_array as $key => $test_value) {
-	} // function test_price() {
-
 
 	// 消費税が正しく計算されるかどうか
 	// function test_bill_total_add_tax() {
