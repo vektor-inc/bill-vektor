@@ -8,6 +8,8 @@ language: php
 branches:
   only:
     - master
+    - develop
+    - /^feature\/.*'
 
 sudo: false
 
@@ -55,7 +57,7 @@ before_script:
   - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.2" ]]; then composer install; fi
 
   - nvm install 4.2
-  - npm install
+  - npm install -D
 
 script:
 #   # - phpcs --standard=phpcs.ruleset.xml $(find . -name '*.php')
@@ -63,6 +65,7 @@ script:
   - phpunit --version
   - if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.2" ]]; then ./vendor/bin/phpunit; else phpunit; fi
   - phpunit
+  - npm run dist
 
 after_success:
   - bash ./bin/deploy.sh
