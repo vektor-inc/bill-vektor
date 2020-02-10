@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "devDependencies": {
     "del": "^2.2.2",
-    "gulp": "^3.8.11",
-    "run-sequence": "^1.2.2"
+    "gulp": "^3.8.11"
   },
   "scripts": {
-    "dist": "gulp dist"
-  }
+    "dist": "gulp copy"
+  },
+  "dependencies": {}
 }

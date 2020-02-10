@@ -7,3 +7,5 @@ node_modules/
 sftp-config.json
 _.ftpconfig
 .sass-cache
+dist/*
+sftp-config
