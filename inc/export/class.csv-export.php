@@ -74,6 +74,9 @@ if ( ! class_exists( 'CsvExport' ) ) {
 				売掛金用のレコード出力
 				/*-------------------------------------------*/
 				foreach ( $posts as $key => $post ) {
+
+				    setup_postdata($GLOBALS['post'] =& $post);
+
 					$date               = date_i18n( 'Y/n/j', strtotime( $post->post_date ) );
 					$bill_limit_date    = get_post_meta( $post->ID, 'bill_limit_date', true );
 					$date_pay           = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
@@ -144,6 +147,8 @@ if ( ! class_exists( 'CsvExport' ) ) {
 					}
 				}
 
+                wp_reset_postdata();
+
 				if ( $_GET['action'] == 'csv_mf' ) {
 					/*
 					-------------------------------------------*/
@@ -151,6 +156,9 @@ if ( ! class_exists( 'CsvExport' ) ) {
 					売掛金の入金用レコード
 					/*-------------------------------------------*/
 					foreach ( $posts as $key => $post ) {
+
+                        setup_postdata($GLOBALS['post'] =& $post);
+
 						$bill_limit_date    = get_post_meta( $post->ID, 'bill_limit_date', true );
 						$date_pay           = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
 						$bill_total_add_tax = bill_total_add_tax( $post );
@@ -189,6 +197,9 @@ if ( ! class_exists( 'CsvExport' ) ) {
 							$number ++;
 						}
 					}
+
+                    wp_reset_postdata();
+
 				} // if ( $_GET['action'] == 'csv_mf' ){
 
 				$full_csv = implode( "\r\n", $csv );
