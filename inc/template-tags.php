@@ -192,6 +192,10 @@ function bill_get_post_type() {
 		$post_type['slug'] = 'post';
 	}
 
+	if( !post_type_exists( $post_type['slug'] ) ) {
+	    $post_type['slug'] = "post";
+    }
+
 	// Get post type name
 	/*-------------------------------------------*/
 	$post_type_object = get_post_type_object( $post_type['slug'] );
