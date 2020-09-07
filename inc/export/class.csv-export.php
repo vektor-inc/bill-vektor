@@ -51,12 +51,12 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						),
 					),
 				);
-				if ( isset( $_GET['client'] ) && $_GET['client'] ) {
+				if ( isset( $_GET['bill_client'] ) && $_GET['bill_client'] ) {
 					$args['meta_query'] = array(
 						// 'relation' => 'AND',
 						array(
 							'key'     => 'bill_client',
-							'value'   => esc_html( $_GET['client'] ),
+							'value'   => esc_html( $_GET['bill_client'] ),
 							'type'    => 'NUMERIC',
 							'compare' => '=',
 						),
