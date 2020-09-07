@@ -81,7 +81,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 					} else {
 						$bill_total_price = bill_total_add_tax( $post );
 					}
-					$tax                = round( bill_total_no_tax( $post ) * 0.08 );
+					$tax                = bill_tax( bill_total_no_tax( $post ) );
 
 					// 取引先名（省略名があれば省略名で表示）
 					$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
