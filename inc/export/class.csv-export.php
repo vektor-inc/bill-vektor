@@ -13,8 +13,6 @@ if ( ! class_exists( 'CsvExport' ) ) {
 			if ( isset( $_GET['action'] ) && ( $_GET['action'] == 'csv_mf' || $_GET['action'] == 'csv_freee' ) ) {
 
 				/*
-				-------------------------------------------*/
-				/*
 				CSVに出力する項目と順番
 				/*-------------------------------------------*/
 
@@ -53,12 +51,12 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						),
 					),
 				);
-				if ( isset( $_GET['client'] ) && $_GET['client'] ) {
+				if ( isset( $_GET['bill_client'] ) && $_GET['bill_client'] ) {
 					$args['meta_query'] = array(
 						// 'relation' => 'AND',
 						array(
 							'key'     => 'bill_client',
-							'value'   => esc_html( $_GET['client'] ),
+							'value'   => esc_html( $_GET['bill_client'] ),
 							'type'    => 'NUMERIC',
 							'compare' => '=',
 						),
@@ -69,16 +67,21 @@ if ( ! class_exists( 'CsvExport' ) ) {
 				$number = ( isset( $_GET['number_start'] ) && $_GET['number_start'] ) ? esc_html( $_GET['number_start'] ) : '';
 
 				/*
-				-------------------------------------------*/
-				/*
 				売掛金用のレコード出力
 				/*-------------------------------------------*/
 				foreach ( $posts as $key => $post ) {
+
+				    setup_postdata($GLOBALS['post'] =& $post);
+
 					$date               = date_i18n( 'Y/n/j', strtotime( $post->post_date ) );
 					$bill_limit_date    = get_post_meta( $post->ID, 'bill_limit_date', true );
 					$date_pay           = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
-					$bill_total_add_tax = bill_total_add_tax( $post );
-					$tax                = round( bill_total_no_tax( $post ) * 0.08 );
+					if ( 'tax_not_auto' === get_post_meta( $post->ID, 'bill_tax_type', true ) ) {
+						$bill_total_price = bill_total_no_tax( $post );
+					} else {
+						$bill_total_price = bill_total_add_tax( $post );
+					}
+					$tax                = bill_tax( bill_total_no_tax( $post ) );
 
 					// 取引先名（省略名があれば省略名で表示）
 					$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
@@ -97,13 +100,13 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						$c[] = '""';                    // 借方補助科目
 						$c[] = '"対象外"';             // 借方税区分
 						$c[] = '""';                    // 借方部門
-						$c[] = '"' . $bill_total_add_tax . '"'; // 借方金額(円)
+						$c[] = '"' . $bill_total_price . '"'; // 借方金額(円)
 						$c[] = '""';                    // 借方税額
 						$c[] = '"売上高"';             // 貸方勘定科目
 						$c[] = '""';                    // 貸方補助科目
 						$c[] = '"課売 ' . $tax_rate . '% 五種"';            // 貸方税区分
 						$c[] = '""';                    // 貸方部門
-						$c[] = '"' . $bill_total_add_tax . '"'; // 貸方金額(円)
+						$c[] = '"' . $bill_total_price . '"'; // 貸方金額(円)
 						$c[] = '""';                    // 貸方税額
 						$c[] = '"[ ' . esc_html( $client_name ) . ' ] ' . esc_html( $post->post_title ) . '"';  // 摘要
 						$c[] = '""';                    // 仕訳メモ
@@ -124,7 +127,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						$c[] = '"' . esc_html( $client_name ) . '"';        // 取引先
 						$c[] = '"売上高"';                             // 勘定科目
 						$c[] = '"課税' . $tax_rate . '%"';                                // 税区分
-						$c[] = '"' . $bill_total_add_tax . '"';             // 金額(円)
+						$c[] = '"' . $bill_total_price . '"';             // 金額(円)
 						$c[] = '"内税"';                                  // 税計算区分
 						$c[] = '"' . $tax . '"';                            // 税額
 						$c[] = '""';                                    // 備考
@@ -144,17 +147,24 @@ if ( ! class_exists( 'CsvExport' ) ) {
 					}
 				}
 
+                wp_reset_postdata();
+
 				if ( $_GET['action'] == 'csv_mf' ) {
-					/*
-					-------------------------------------------*/
+
 					/*
 					売掛金の入金用レコード
 					/*-------------------------------------------*/
 					foreach ( $posts as $key => $post ) {
+
+                        setup_postdata($GLOBALS['post'] =& $post);
+
 						$bill_limit_date    = get_post_meta( $post->ID, 'bill_limit_date', true );
 						$date_pay           = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
-						$bill_total_add_tax = bill_total_add_tax( $post );
-
+						if ( 'tax_not_auto' === get_post_meta( $post->ID, 'bill_tax_type', true ) ) {
+							$bill_total_price = bill_total_no_tax( $post );
+						} else {
+							$bill_total_price = bill_total_add_tax( $post );
+						}
 						// 取引先名（省略名があれば省略名で表示）
 						$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
 						if ( ! $client_name ) {
@@ -168,13 +178,13 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						$c[] = '""';                    // 借方補助科目
 						$c[] = '"対象外"';             // 借方税区分
 						$c[] = '""';                    // 借方部門
-						$c[] = '"' . $bill_total_add_tax . '"'; // 借方金額(円)
+						$c[] = '"' . $bill_total_price . '"'; // 借方金額(円)
 						$c[] = '""';                    // 借方税額
 						$c[] = '"売掛金"';             // 貸方勘定科目
 						$c[] = '""';                    // 貸方補助科目
 						$c[] = '"対象外"';             // 貸方税区分
 						$c[] = '""';                    // 貸方部門
-						$c[] = '"' . $bill_total_add_tax . '"'; // 貸方金額(円)
+						$c[] = '"' . $bill_total_price . '"'; // 貸方金額(円)
 						$c[] = '""';                    // 貸方税額
 						$c[] = '"[ ' . esc_html( $client_name ) . ' ] ' . esc_html( $post->post_title ) . '"';  // 摘要
 						$c[] = '""';                    // 仕訳メモ
@@ -189,6 +199,9 @@ if ( ! class_exists( 'CsvExport' ) ) {
 							$number ++;
 						}
 					}
+
+                    wp_reset_postdata();
+
 				} // if ( $_GET['action'] == 'csv_mf' ){
 
 				$full_csv = implode( "\r\n", $csv );

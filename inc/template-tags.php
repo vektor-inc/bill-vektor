@@ -129,8 +129,9 @@ function bill_tax_rate( $post_id ) {
 	}
 
 	// 消費税の指定がない場合
-	$date                = new DateTime( $post->post_date );
-	$post_date_timestamp = $date->format( 'U' ) . PHP_EOL;
+	// $date                = new DateTime( $post->post_date );
+	// $post_date_timestamp = $date->format( 'U' ) . PHP_EOL;
+	$post_date_timestamp = strtotime( $post->post_date );
 	if ( 1569888000 <= $post_date_timestamp ) {
 		$rate = 0.1;
 	} else {
