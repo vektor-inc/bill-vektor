@@ -64,7 +64,7 @@ function bill_item_number( $number = 0 ) {
 
 function bill_item_price_total( $count = 0, $price = 0 ) {
 	// 数量×単価
-	$item_price_total = round( $count * $price );
+	$item_price_total = round( $count * $price, 0, PHP_ROUND_HALF_EVEN );
 	return $item_price_total;
 }
 
