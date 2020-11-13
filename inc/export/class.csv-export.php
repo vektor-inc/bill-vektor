@@ -86,7 +86,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 					// 取引先名（省略名があれば省略名で表示）
 					$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
 					if ( ! $client_name ) {
-						$client_name = get_the_title( $post->bill_client );
+						$client_name = bill_get_client_name( $post );
 					}
 
 					$tax_rate = bill_tax_rate( $post->ID ) * 100;
@@ -168,7 +168,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						// 取引先名（省略名があれば省略名で表示）
 						$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
 						if ( ! $client_name ) {
-							$client_name = get_the_title( $post->bill_client );
+							$client_name = bill_get_client_name( $post );
 						}
 
 						$c   = array();

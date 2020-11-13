@@ -67,12 +67,16 @@ echo '<a href="' . esc_url( $post_type['url'] ) . '">' . $post_type['name'] . '<
 <!-- [ 取引先 ] -->
 <td class="text-nowrap">
 <?php
-$client_id   = $post->bill_client;
-$client_name = get_post_meta( $client_id, 'client_short_name', true );
-if ( ! $client_name ) {
-	$client_name = get_the_title( $client_id );
+if ( $post->bill_client_name_manual ){
+	echo esc_html( $post->bill_client_name_manual );
+} else {
+	$client_id   = $post->bill_client;
+	$client_name = get_post_meta( $client_id, 'client_short_name', true );
+	if ( ! $client_name ) {
+		$client_name = get_the_title( $client_id );
+	}
+	echo '<a href="' . get_the_permalink( $client_id ) . '" target="_blank">' . esc_html( $client_name ) . '</a>';
 }
-echo '<a href="' . get_the_permalink( $client_id ) . '" target="_blank">' . esc_html( $client_name ) . '</a>';
 ?>
 </td>
 <?php } ?>

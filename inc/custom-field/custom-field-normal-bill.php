@@ -63,11 +63,17 @@ class Bill_Normal_Custom_Fields {
 		}
 
 		$custom_fields_array = array(
+			'bill_client_name_manual'     => array(
+				'label'       => __( '取引先（イレギュラー）', 'bill-vektor' ),
+				'type'        => 'text',
+				'description' => '複数回依頼の見込みのない取引先の場合はこちらに入力してください。<br>取引の多い取引先の場合は<a href="' . admin_url( '/post-new.php?post_type=client' ) . '" target="_blank">予め登録</a>すると便利です。',
+				'required'    => false,
+			),
 			'bill_client'     => array(
-				'label'       => __( '取引先', 'bill-vektor' ),
+				'label'       => __( '取引先（登録済）', 'bill-vektor' ),
 				'type'        => 'select',
 				'description' => '取引先は<a href="' . admin_url( '/post-new.php?post_type=client' ) . '" target="_blank">こちら</a>から登録してください。',
-				'required'    => true,
+				'required'    => '',
 				'options'     => $client,
 			),
 			'bill_id'         => array(
