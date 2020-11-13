@@ -219,7 +219,7 @@ function bill_title_custom( $title ) {
 			// 書類種別
 			$title = $post_type['name'] . '_';
 			// 取引先名
-			$title .= get_the_title( $post->bill_client );
+			$title .= bill_get_client_name( $post );
 			// 敬称
 			$client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
 			if ( $client_honorific ) {

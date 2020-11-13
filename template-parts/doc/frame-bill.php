@@ -5,7 +5,7 @@
 <h1 class="bill-title">御請求書</h1>
 <h2 class="bill-destination">
 <span class="bill-destination-client">
-<?php echo esc_html( get_the_title( $post->bill_client ) ); ?>
+<?php echo esc_html( bill_get_client_name( $post ) ); ?>
 </span>
 <span class="bill-destination-honorific">
 <?php
