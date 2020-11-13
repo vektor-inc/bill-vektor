@@ -43,7 +43,7 @@ $myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
 	__FILE__, // Full path to the main plugin file or functions.php.
 	'bill-vektor'
 );
-$myUpdateChecker->setBranch( 'dist' );
+$myUpdateChecker->setBranch( 'master' );
 
 /*
 -------------------------------------------
