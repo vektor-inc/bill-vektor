@@ -230,3 +230,12 @@ function bill_get_terms() {
 	$taxo_catelist = get_the_term_list( $post->ID, $taxonomySlug, ' ', ', ', '' );
 	return $taxo_catelist;
 }
+
+function bill_get_client_name( $post ) {
+	if ( $post->bill_client_name_manual ){
+		$client_name = $post->bill_client_name_manual;
+	} else {
+		$client_name = get_the_title( $post->bill_client );
+	}
+	return $client_name;
+}
