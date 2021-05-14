@@ -54,7 +54,9 @@
 <td class="text-nowrap">
 			<?php
 			$post_type = bill_get_post_type();
-			echo '<a href="' . esc_url( $post_type['url'] ) . '">' . $post_type['name'] . '</a>';
+			$post_type_slug = get_post_type();
+			$post_type_object = get_post_type_object( $post_type_slug );
+			echo '<a href="' . esc_url( get_post_type_archive_link( 'url' ) ) . '">' . esc_html( $post_type_object->labels->name ) . '</a>';
 			?>
 </td>
 

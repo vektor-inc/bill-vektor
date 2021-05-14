@@ -1,11 +1,10 @@
 <?php
 function bill_custom_home_post_type( $query ) {
 	if ( ! is_admin() && ! is_singular() && $query->is_main_query() ) {
-
 		$client_id = ( isset( $_GET['bill_client'] ) && $_GET['bill_client'] ) ? esc_attr( $_GET['bill_client'] ) : '';
-		$post_type = ( isset( $_GET['post_type'] ) && $_GET['post_type'] ) ? esc_attr( $_GET['post_type'] ) : '';
+		$post_type = ( isset( $_GET['post_type'] ) && $_GET['post_type'] ) ? esc_attr( $_GET['post_type'] ) : array( 'post', 'estimate' );
 
-		$query->set( 'post_type', $post_type );
+		$query->set( 'post_type',  $post_type );
 		if ( $client_id ) {
 			$meta_query[] = array(
 				'key'   => 'bill_client',
