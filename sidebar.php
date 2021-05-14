@@ -20,7 +20,7 @@
 	}
 	?>
 
-  <h3 class="sub-section-title"><a href="<?php echo get_post_type_archive_link( 'post' ); ?>">請求書<i class="fa fa-angle-right" aria-hidden="true"></i></a></h3>
+  <h3 class="sub-section-title"><a href="<?php echo home_url( '/?post_type=post' ); ?>">請求書<i class="fa fa-angle-right" aria-hidden="true"></i></a></h3>
 
 	<?php
 	$args     = array(
