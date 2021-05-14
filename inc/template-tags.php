@@ -239,3 +239,14 @@ function bill_get_client_name( $post ) {
 	}
 	return $client_name;
 }
+
+function bill_get_client_honorific( $post ){
+	if ( empty( $post->bill_client_name_manual ) ){
+		$client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
+		if ( $client_honorific ) {
+			echo $client_honorific;
+		} else {
+			echo '御中';
+		}
+	}
+}

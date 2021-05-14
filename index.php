@@ -18,70 +18,72 @@
 <form action="" method="get">
 
 <div class="section" id="search-box">
-<?php get_template_part( 'template-parts/search-box' ); ?>
+	<?php get_template_part( 'template-parts/search-box' ); ?>
 </div>
 
-<?php $post_type = bill_get_post_type(); ?>
+	<?php $post_type = bill_get_post_type(); ?>
 
 <div class="section">
-<?php if ( have_posts() ) { ?>
+	<?php if ( have_posts() ) { ?>
 <table class="table table-striped table-borderd">
 <tr>
 <th>書類</th>
-<?php if ( $page_post_type['slug'] != 'client' ) { ?>
+		<?php if ( $page_post_type['slug'] != 'client' ) { ?>
 <th>発行日</th>
 <?php } ?>
 
-<?php if ( $post_type['slug'] != 'salary' ) { ?>
+		<?php if ( $post_type['slug'] != 'salary' ) { ?>
 <th>取引先</th>
 <?php } ?>
 
-<?php if ( $page_post_type['slug'] != 'client' ) { ?>
+		<?php if ( $page_post_type['slug'] != 'client' ) { ?>
 	<th>件名</th>
-	<?php if ( $post_type['slug'] != 'salary' ) { ?>
+			<?php if ( $post_type['slug'] != 'salary' ) { ?>
 		<th>カテゴリー</th>
 	<?php } elseif ( $post_type['slug'] == 'salary' ) { ?>
 		<th>支給分</th>
 	<?php } ?>
 <?php } ?>
 </tr>
-<?php
-while ( have_posts() ) :
-	the_post();
-?>
+		<?php
+		while ( have_posts() ) :
+			the_post();
+			?>
 <tr>
 <!-- [ 書類 ] -->
 <td class="text-nowrap">
-<?php
-$post_type = bill_get_post_type();
-echo '<a href="' . esc_url( $post_type['url'] ) . '">' . $post_type['name'] . '</a>';
-?>
+			<?php
+			$post_type = bill_get_post_type();
+			$post_type_slug = get_post_type();
+			$post_type_object = get_post_type_object( $post_type_slug );
+			echo '<a href="' . esc_url( get_post_type_archive_link( 'url' ) ) . '">' . esc_html( $post_type_object->labels->name ) . '</a>';
+			?>
 </td>
 
-<?php if ( $page_post_type['slug'] != 'client' ) { ?>
+			<?php if ( $page_post_type['slug'] != 'client' ) { ?>
 <!-- [ 発行日 ] -->
 <td><?php echo esc_html( get_the_date( 'Y.m.d' ) ); ?></td>
 <?php } ?>
 
-<?php if ( $post_type['slug'] != 'salary' ) { ?>
+			<?php if ( $post_type['slug'] != 'salary' ) { ?>
 <!-- [ 取引先 ] -->
 <td class="text-nowrap">
-<?php
-if ( $post->bill_client_name_manual ){
-	echo esc_html( $post->bill_client_name_manual );
-} else {
-	$client_id   = $post->bill_client;
-	$client_name = get_post_meta( $client_id, 'client_short_name', true );
-	if ( ! $client_name ) {
-		$client_name = get_the_title( $client_id );
-	}
-	echo '<a href="' . get_the_permalink( $client_id ) . '" target="_blank">' . esc_html( $client_name ) . '</a>';
-}
-?>
+				<?php
+				if ( $post->bill_client_name_manual ) {
+					echo esc_html( $post->bill_client_name_manual );
+				} else {
+					$client_id   = $post->bill_client;
+					$client_name = get_post_meta( $client_id, 'client_short_name', true );
+					if ( ! $client_name ) {
+							$client_name = get_the_title( $client_id );
+					}
+					echo '<a href="' . get_the_permalink( $client_id ) . '" target="_blank">' . esc_html( $client_name ) . '</a>';
+				}
+				?>
 </td>
 <?php } ?>
 
-<?php if ( $page_post_type['slug'] != 'client' ) { ?>
+			<?php if ( $page_post_type['slug'] != 'client' ) { ?>
 
 <!-- [ 件名 ] -->
 <td><a href="<?php the_permalink(); ?>" target="_blank"><?php the_title(); ?></a></td>
@@ -93,48 +95,48 @@ if ( $post->bill_client_name_manual ){
 </tr>
 <?php endwhile; ?>
 </table>
-<?php the_posts_pagination(); ?>
-<?php
-} else {
-	echo '<p>該当の書類はありません。</p>';
-} // if ( have_posts() ) {
-?>
+		<?php the_posts_pagination(); ?>
+		<?php
+	} else {
+		echo '<p>該当の書類はありません。</p>';
+	} // if ( have_posts() ) {
+	?>
 </div>
 
 <div id="news" class="section">
 <h3>お知らせ</h3>
 <ul class="post-list" id="newsEntries">
-<?php
-$rss     = 'https://billvektor.com/feed/';
-$content = wp_safe_remote_get( $rss );
-if ( ! isset( $content->errors ) ) {
-	$count = 0;
-	if ( $content['response']['code'] != 200 ) {
-		return;
-	}
-	$xml = @simplexml_load_string( $content['body'] );
-	foreach ( $xml->channel->item as $entry ) {
-		$rss_date = $entry->pubDate;
-		date_default_timezone_set( 'Asia/Tokyo' );
-		$post_date = strtotime( $rss_date );
-		echo '<li>';
-		echo '<span class="post-date">' . date( 'Y.m.d', $post_date ) . '</span>';
-		echo '<span class="post-cate">' . esc_html( $entry->category ) . '</span>';
-		echo '<span class="post-title"><a href="' . esc_url( $entry->link ) . '?rel=rss" target="_blank">' . esc_html( $entry->title ) . '</a></span>';
-		echo '</li>';
-		$count++;
-		if ( $count > 4 ) {
-			break; }
-	}
-} else {
-	echo '<p>お知らせの取得に失敗しました。</p>';
-}// if ( !isset( $content->errors ) ) {
-?>
+	<?php
+	$rss     = 'https://billvektor.com/feed/';
+	$content = wp_safe_remote_get( $rss );
+	if ( ! isset( $content->errors ) ) {
+		$count = 0;
+		if ( $content['response']['code'] != 200 ) {
+			return;
+		}
+		$xml = @simplexml_load_string( $content['body'] );
+		foreach ( $xml->channel->item as $entry ) {
+			$rss_date = $entry->pubDate;
+			date_default_timezone_set( 'Asia/Tokyo' );
+			$post_date = strtotime( $rss_date );
+			echo '<li>';
+			echo '<span class="post-date">' . date( 'Y.m.d', $post_date ) . '</span>';
+			echo '<span class="post-cate">' . esc_html( $entry->category ) . '</span>';
+			echo '<span class="post-title"><a href="' . esc_url( $entry->link ) . '?rel=rss" target="_blank">' . esc_html( $entry->title ) . '</a></span>';
+			echo '</li>';
+			$count++;
+			if ( $count > 4 ) {
+				break; }
+		}
+	} else {
+		echo '<p>お知らせの取得に失敗しました。</p>';
+	}// if ( !isset( $content->errors ) ) {
+	?>
 </ul>
 </div>
 
 <div id="csv-export" class="section">
-<?php get_template_part( 'template-parts/export-box' ); ?>
+	<?php get_template_part( 'template-parts/export-box' ); ?>
 </div>
 
 </form>
@@ -142,10 +144,10 @@ if ( ! isset( $content->errors ) ) {
 <?php } else { ?>
 
 	<?php if ( have_posts() ) { ?>
-	<?php
-	while ( have_posts() ) :
-		the_post();
-?>
+		<?php
+		while ( have_posts() ) :
+			the_post();
+			?>
 	 <article class="section">
 	  <header class="page-header">
 	  <h1><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h1>
@@ -156,7 +158,7 @@ if ( ! isset( $content->errors ) ) {
 	  </header>
 	  <div>
 	  <!-- [ 記事の本文 ] -->
-		<?php the_content(); ?>
+			<?php the_content(); ?>
 	  <!-- [ /記事の本文 ] -->
 	  </div>
 	</article>
