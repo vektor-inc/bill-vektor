@@ -76,11 +76,17 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 	}
 
 	/*
-	  投稿meta情報の保存 _ 顧客名
+	  投稿meta情報の保存 _ 顧客名・消費税率・消費税
 	/*-------------------------------------------*/
 	$bill_client = get_post_meta( $post->ID, 'bill_client', true );
 	add_post_meta( $new_post, 'bill_client', $bill_client );
 
+	$bill_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
+	add_post_meta( $new_post, 'bill_tax_rate', $bill_tax_rate );
+
+	$bill_tax_type = get_post_meta( $post->ID, 'bill_tax_type', true );
+	add_post_meta( $new_post, 'bill_tax_type', $bill_tax_type );
+	
 	/*
 	  投稿meta情報の保存 _ 品目テーブル
 	/*-------------------------------------------*/
