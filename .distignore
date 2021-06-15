@@ -25,3 +25,4 @@ vendor
 node_modules
 *.zip
 *.tar.gz
+*.override.json
