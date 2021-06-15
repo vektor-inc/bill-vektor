@@ -2,11 +2,16 @@
   "name": "bill-vektor",
   "version": "1.0.0",
   "devDependencies": {
-    "del": "^2.2.2",
-    "gulp": "^3.8.11",
-    "run-sequence": "^1.2.2"
+    "del": "^6.0.0",
+    "gulp": "^4.0.2",
+    "run-sequence": "^2.2.1"
   },
   "scripts": {
-    "dist": "gulp dist"
+    "dist": "gulp dist",
+	"phpunit": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/phpunit.xml.dist --verbose'"
+  },
+  "dependencies": {
+    "@wordpress/env": "^4.0.5",
+    "npm-check-updates": "^11.6.0"
   }
 }
