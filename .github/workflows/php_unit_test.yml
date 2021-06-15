@@ -51,12 +51,11 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php }}
-    - name: install npm scripts
+    - name: Prepare for Tests
       run: |
         npm install
-        npm install -g @wordpress/env
-    - name: install composer packages
-      run: wp-env destroy
-    - run: wp-env start
-    - run: wp-env run composer 'composer install'
-    - run: wp-env run phpunit 'phpunit -c /var/www/html/wp-content/plugins/vk-blocks-pro/phpunit.xml.dist --verbose'
+        composer install
+        ./node_modules/@wordpress/env/bin/wp-env destroy
+        ./node_modules/@wordpress/env/bin/wp-env start
+    - name: PHP Unit Test
+      run: ./node_modules/@wordpress/env/bin/wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/phpunit.xml.dist --verbose'
