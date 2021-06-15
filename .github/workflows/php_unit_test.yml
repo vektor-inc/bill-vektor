@@ -1,0 +1,61 @@
+name: PHP Unit Test
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+      - ^feature/.+
+
+jobs:
+  php_unit:
+    name: php unit test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: [7.2, 7.3, 7.4]
+    services:
+      mysql:
+        image: mysql:5.7
+        ports:
+          - 3306
+        env:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+    steps:
+    - uses: actions/checkout@v2
+
+    # get the node version from the .node-version file
+    - name: Read .node-version
+      run: echo "##[set-output name=NODEVERSION;]$(cat .node-version)"
+      id: nodenv
+
+    # setup node based on the version from the .node-version file, fetched in the previous step
+    - name: Setup Node.js (.node-version)
+      uses: actions/setup-node@v1
+      with:
+        node-version: "${{ steps.nodenv.outputs.NODEVERSION }}"
+
+    - name: Cache multiple paths
+      uses: actions/cache@v2
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php${{ matrix.php }}-${{ hashFiles('**/composer.lock') }}
+    - name: Setup PHP ${{ matrix.php }}
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
+    - name: Prepare for Tests
+      run: |
+        npm install
+        composer install
+        ./node_modules/@wordpress/env/bin/wp-env destroy
+        ./node_modules/@wordpress/env/bin/wp-env start
+    - name: PHP Unit Test
+      run: ./node_modules/@wordpress/env/bin/wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/phpunit.xml.dist --verbose'
