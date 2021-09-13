@@ -209,7 +209,7 @@ add_filter( 'register_post_type_args', 'bill_change_post_type_args_post' );
 -------------------------------------------
 */
 function bill_title_custom( $title ) {
-	$target_post_types = array( 'post', 'estimate' );
+	$target_post_types = array( 'post', 'estimate' , 'receipt' );
 
 	if ( is_single() ) {
 		global $post;
