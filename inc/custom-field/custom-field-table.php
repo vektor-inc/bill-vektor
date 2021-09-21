@@ -31,9 +31,9 @@ class Bill_Item_Custom_Fields {
 		$form_table .= '<tbody class="sortable">';
 
 		$bill_item_sub_fields = array(
-			'name' => 'text',
+			'name'  => 'text',
 			'count' => 'number',
-			'unit' => 'text',
+			'unit'  => 'text',
 			'price' => 'number'
 		);
 
