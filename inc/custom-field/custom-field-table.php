@@ -30,7 +30,12 @@ class Bill_Item_Custom_Fields {
 		$form_table .= '<thead><tr><th></th><th></th><th>品目</th><th>数量</th><th>単位</th><th>単価</th><th></th></tr></thead>';
 		$form_table .= '<tbody class="sortable">';
 
-		$bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
+		$bill_item_sub_fields = array(
+			'name' => 'text',
+			'count' => 'number',
+			'unit' => 'text',
+			'price' => 'number'
+		);
 
 		// 品目の登録がない場合には8行分の配列を用意しておく
 		if ( ! $bill_items ) {
@@ -58,10 +63,10 @@ class Bill_Item_Custom_Fields {
 			$form_table .= '<th class="text-center vertical-middle"><span class="cell-number">' . $number . '</span></th>';
 
 			// 列をループ
-			foreach ( $bill_item_sub_fields as $sub_field ) {
+			foreach ( $bill_item_sub_fields as $sub_field => $input_type ) {
 				// php noindex 用に isset （ isset( $value[$sub_field] ) && $value[$sub_field] にすると 0円の時に0が表示されなくなる ）
 				$bill_item_value[ $sub_field ] = ( isset( $value[ $sub_field ] ) ) ? $value[ $sub_field ] : '';
-				$form_table                   .= '<td class="cell-' . $sub_field . '"><input class="flexible-field-item" type="text" id="bill_items[' . $key . '][' . $sub_field . ']" name="bill_items[' . $key . '][' . $sub_field . ']" value="' . esc_attr( $bill_item_value[ $sub_field ] ) . '"></td>';
+				$form_table                   .= '<td class="cell-' . $sub_field . '"><input class="flexible-field-item" type="'. $input_type . '" id="bill_items[' . $key . '][' . $sub_field . ']" name="bill_items[' . $key . '][' . $sub_field . ']" value="' . esc_attr( $bill_item_value[ $sub_field ] ) . '"></td>';
 			}
 			$form_table .= '<td class="cell-control">
 			<input type="button" class="add-row button button-primary" value="行を追加" />
