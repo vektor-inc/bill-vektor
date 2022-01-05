@@ -150,7 +150,8 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 		$metas['copy_master_id'][0] = $post_id;
 
 		$copy_metas = array();
-		while ( list($k,$v) = each( $metas ) ) {
+		foreach ( $metas as $k => $v ) {
+	
 			if ( $k == '_wp_page_template' ) {
 				$copy_metas[ $k ] = $v;
 			}
@@ -160,12 +161,14 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 			if ( ! preg_match( '/^_/', $k ) ) {
 				$copy_metas[ $k ] = $v;
 			}
+
 		}
 
-		while ( list($k,$v) = each( $copy_metas ) ) {
+		foreach ( $copy_metas as $k => $v ) {
 			foreach ( $v as $vv ) {
 				add_post_meta( $new_post, $k, $vv );
 			}
+
 		}
 
 		$bill_total_price_display = get_post_meta( $post_id, 'bill_total_price_display', true );
