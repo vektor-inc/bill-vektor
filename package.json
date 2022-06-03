@@ -2,13 +2,12 @@
   "name": "bill-vektor",
   "version": "1.0.0",
   "devDependencies": {
-    "del": "^6.0.0",
-    "gulp": "^4.0.2",
-    "run-sequence": "^2.2.1"
+    "sass": "^1.50.0"
   },
   "scripts": {
     "dist": "gulp dist",
-	"phpunit": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/phpunit.xml.dist --verbose'"
+    "sass": "sass --watch --style=compressed --no-source-map assets/_scss:assets/css",
+    "phpunit": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/phpunit.xml.dist --verbose'"
   },
   "dependencies": {
     "@wordpress/env": "^4.0.5",
