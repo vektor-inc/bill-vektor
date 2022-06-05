@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@wordpress/env": "^4.0.5",
-    "npm-check-updates": "^11.6.0"
+    "gulp": "^4.0.2",
+    "npm-check-updates": "^11.6.0",
+    "run-sequence": "^2.2.1"
   }
 }
