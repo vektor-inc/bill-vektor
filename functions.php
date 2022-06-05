@@ -23,15 +23,15 @@ define( 'BILLVEKTOR_THEME_VERSION', $theme_opt->Version );
   Load Module
 -------------------------------------------
 */
-require_once( dirname( __FILE__ ) . '/inc/custom-field-builder-config.php' );
-require_once( dirname( __FILE__ ) . '/inc/custom-field/custom-field-normal-bill.php' );
-require_once( dirname( __FILE__ ) . '/inc/custom-field/custom-field-normal-estimate.php' );
-require_once( dirname( __FILE__ ) . '/inc/custom-field/custom-field-normal-client.php' );
-require_once( dirname( __FILE__ ) . '/inc/custom-field/custom-field-table.php' );
-require_once( dirname( __FILE__ ) . '/inc/custom-field/custom-field-table-bill.php' );
-require_once( dirname( __FILE__ ) . '/inc/setting-page/setting-page.php' );
-require_once( dirname( __FILE__ ) . '/inc/duplicate-doc/duplicate-doc.php' );
-require_once( dirname( __FILE__ ) . '/inc/export/class.csv-export.php' );
+require_once dirname( __FILE__ ) . '/inc/custom-field-builder-config.php';
+require_once dirname( __FILE__ ) . '/inc/custom-field/custom-field-normal-bill.php';
+require_once dirname( __FILE__ ) . '/inc/custom-field/custom-field-normal-estimate.php';
+require_once dirname( __FILE__ ) . '/inc/custom-field/custom-field-normal-client.php';
+require_once dirname( __FILE__ ) . '/inc/custom-field/custom-field-table.php';
+require_once dirname( __FILE__ ) . '/inc/custom-field/custom-field-table-bill.php';
+require_once dirname( __FILE__ ) . '/inc/setting-page/setting-page.php';
+require_once dirname( __FILE__ ) . '/inc/duplicate-doc/duplicate-doc.php';
+require_once dirname( __FILE__ ) . '/inc/export/class.csv-export.php';
 
 get_template_part( 'inc/template-tags' );
 get_template_part( 'inc/functions-limit-view' );
@@ -76,7 +76,6 @@ function bill_theme_scripts() {
 	wp_enqueue_script( 'bill-js-bootstrap', get_template_directory_uri() . '/assets/js/bootstrap.min.js', array( 'jquery' ), BILLVEKTOR_THEME_VERSION, true );
 	wp_register_script( 'datepicker', get_template_directory_uri() . '/inc/custom-field-builder/js/datepicker.js', array( 'jquery', 'jquery-ui-datepicker' ), BILLVEKTOR_THEME_VERSION, true );
 	wp_enqueue_script( 'datepicker' );
-
 }
 add_action( 'wp_enqueue_scripts', 'bill_theme_scripts' );
 
@@ -209,7 +208,7 @@ add_filter( 'register_post_type_args', 'bill_change_post_type_args_post' );
 -------------------------------------------
 */
 function bill_title_custom( $title ) {
-	$target_post_types = array( 'post', 'estimate' , 'receipt' );
+	$target_post_types = array( 'post', 'estimate', 'receipt' );
 
 	if ( is_single() ) {
 		global $post;
@@ -274,6 +273,6 @@ function custom_login_logo() { ?>
 	  background: url(<?php echo get_template_directory_uri(); ?>/assets/images/head_logo.png) no-repeat 0 0;
 	}
   </style>
-<?php
+	<?php
 }
 add_action( 'login_enqueue_scripts', 'custom_login_logo' );

@@ -217,5 +217,8 @@ table.table-attendance {
 	tr.bg-danger > td {
 		background-color: #f2dede !important;
 	}
+	tr.bg-warning > td {
+		background-color: #f2dede !important;
+	}
 }
 } // @media print {

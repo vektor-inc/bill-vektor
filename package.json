@@ -5,8 +5,8 @@
     "sass": "^1.50.0"
   },
   "scripts": {
-    "dist": "npx gulp dist && cd dist && zip -r bill-vektor.zip bill-vektor",
-    "sass": "sass --watch --style=compressed --no-source-map assets/_scss:assets/css",
+    "dist": "sass --style=compressed --no-source-map assets/_scss:assets/css && npx gulp dist && cd dist && zip -r bill-vektor.zip bill-vektor",
+    "sass": "sass --watch assets/_scss:assets/css",
     "phpunit": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/phpunit.xml.dist --verbose'"
   },
   "dependencies": {
