@@ -21,7 +21,7 @@ gulp.task('copy', function() {
             ],
             { base: './' }
         )
-        .pipe( gulp.dest( 'dist' ) ); // distディレクトリに出力
+        .pipe( gulp.dest( 'dist/bill-vektor' ) ); // distディレクトリに出力
 } );
 
 gulp.task('build:dist',function(){
