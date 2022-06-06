@@ -135,6 +135,12 @@ table.table-bill-total {
 		@include bill-th;
 	}
 }
+table.table-attendance {
+	tbody>tr>th,
+	tbody>tr>td {
+		padding:4px;
+	}
+}
 
 .bill-remarks {
 	dt {
@@ -203,5 +209,19 @@ body.single-others .bill-remarks {
 .no-print,
 .bill-no-print {
 	display: none;
+}
+table.table-attendance {
+	tr.bg-info > td {
+		background-color: #d9edf7 !important;
+	}
+	tr.bg-danger > td {
+		background-color: #f2dede !important;
+	}
+	tr.bg-warning > td {
+		background-color: #fcf8e3 !important;
+	}
+	tr.bg-success > td {
+		background-color: #dff0d8 !important;
+	}
 }
 } // @media print {
