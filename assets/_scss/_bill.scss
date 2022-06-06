@@ -218,7 +218,10 @@ table.table-attendance {
 		background-color: #f2dede !important;
 	}
 	tr.bg-warning > td {
-		background-color: #f2dede !important;
+		background-color: #fcf8e3 !important;
+	}
+	tr.bg-success > td {
+		background-color: #dff0d8 !important;
 	}
 }
 } // @media print {
