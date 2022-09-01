@@ -4,7 +4,7 @@
 <a href="<?php echo home_url(); ?>/#search-box">※エクスポートしたい期間など必要に応じて上部検索ボックスで指定してください。</a></p>
 <h4>MFクラウド会計</h4>
 <p>仕分帳用に出力する最初の取引Noを入力した上でCSVエクスポートボタンを押してください。</p>
-<p>MFクラウド会計でのインポートは「<a href="https://biz.moneyforward.com/books/" target="_blank">会計帳簿 > 仕訳帳</a>」より行います。</p>
+<p>MFクラウド会計でのインポートは「<a href="https://accounting.moneyforward.com/books" target="_blank">会計帳簿 > 仕訳帳</a>」より行います。</p>
 <div class="row">
 <div class="col-sm-3">
 <dl>
