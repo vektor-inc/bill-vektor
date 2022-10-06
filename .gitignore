@@ -9,4 +9,4 @@ _.ftpconfig
 .sass-cache
 vendor/
 *.override.json
-
+dist/
