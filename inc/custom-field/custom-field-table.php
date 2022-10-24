@@ -74,7 +74,7 @@ class Bill_Item_Custom_Fields {
 			$form_table .= '<select id="bill_items[' . $key . '][tax-rate]" name="bill_items[' . $key . '][tax-rate]">';
 			$form_table .= '<option value="">選択してください</option>';
 			foreach ( $tax_array as $tax_rate ) {
-				$form_table .= '<option value="' . $tax_rate . '" ' . selected( ! empty( $value['tax-rate'] ) && $tax_rate ===  $value['tax-rate'] ) . '>' . $tax_rate . '</option>';
+				$form_table .= '<option value="' . $tax_rate . '" ' . selected( ! empty( $value['tax-rate'] ) && $tax_rate ===  $value['tax-rate'], true, false ) . '>' . $tax_rate . '</option>';
 			}
 			$form_table .= '</select>';
 			$form_table .= '<td class="cell-control">
