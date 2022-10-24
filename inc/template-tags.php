@@ -183,9 +183,10 @@ function bill_invoice_total_tax( $post ) {
 		foreach ( $bill_items as $key => $value ) {
 			if ( 
 				! empty( $bill_items[ $key ]['name'] ) &&
-				! empty( $bill_items[ $key ]['price'] ) &&
 				! empty( $bill_items[ $key ]['count'] ) &&
-				! empty( $bill_items[ $key ]['tax-rate'] )
+				! empty( $bill_items[ $key ]['unit'] ) &&
+				! empty( $bill_items[ $key ]['price'] ) &&
+				! empty( $bill_items[ $key ]['tax-rate'] ) 
 			) {
 				// 単価
 				if ( ! empty( $bill_items[ $key ]['price'] ) ) {

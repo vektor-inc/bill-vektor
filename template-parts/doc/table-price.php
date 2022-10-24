@@ -34,8 +34,7 @@ if ( is_array( $bill_items ) ) {
 			! empty( $bill_items[ $key ]['count'] ) &&
 			! empty( $bill_items[ $key ]['unit'] ) &&
 			! empty( $bill_items[ $key ]['price'] ) &&
-			! empty( $bill_items[ $key ]['tax-rate'] ) &&
-			! empty( $bill_items[ $key ]['tax-rate'] )
+			! empty( $bill_items[ $key ]['tax-rate'] ) 
 		) :
 			// 品目
 			if ( $bill_items[ $key ]['tax-rate'] !== $tax_array[0] ) {
@@ -105,7 +104,6 @@ if ( is_array( $bill_items ) ) {
 				! empty( $bill_items[ $key ]['count'] ) &&
 				! empty( $bill_items[ $key ]['unit'] ) &&
 				! empty( $bill_items[ $key ]['price'] ) &&
-				! empty( $bill_items[ $key ]['tax-rate'] ) &&
 				! empty( $bill_items[ $key ]['tax-rate'] ) &&
 				$item_tax_rate === $tax_rate
 			) {
