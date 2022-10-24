@@ -77,18 +77,19 @@ class Estimate_Normal_Custom_Fields {
 				'required'    => '',
 				'options'     => $client,
 			),
-			// 'bill_id' => array(
-			// 'label' => __('受け渡し期間','bill-vektor'),
-			// 'type' => 'text',
-			// 'description' => '',
-			// 'required' => false,
-			// ),
-			// 'bill_Issue_date' => array(
-			// 'label' => __('発行日','bill-vektor'),
-			// 'type' => 'datepicker',
-			// 'description' => '',
-			// 'required' => true,
-			// ),
+			/*
+			'bill_id' => array(
+				'label' => __('受け渡し期間','bill-vektor'),
+				'type' => 'text',
+				'description' => '',
+				'required' => false,
+			),
+			'bill_Issue_date' => array(
+				'label' => __('発行日','bill-vektor'),
+				'type' => 'datepicker',
+				'description' => '',
+				'required' => true,
+			),
 			'bill_tax_rate'            => array(
 				'label'       => __( '消費税率', 'bill-vektor' ),
 				'type'        => 'radio',
@@ -109,6 +110,7 @@ class Estimate_Normal_Custom_Fields {
 					'tax_not_auto' => '品目毎に予め消費税込の金額で入力する',
 				),
 			),
+			*/
 			'bill_total_price_display' => array(
 				'label'       => __( '合計の表示', 'bill-vektor' ),
 				'type'        => 'checkbox',

@@ -37,6 +37,11 @@ class Bill_Admin {
 		<textarea name="bill-setting[own-name]" rows="2"><?php echo esc_textarea( $options['own-name'] ); ?></textarea></td>
 		</tr>
 		<tr>
+		<th>インボイス制度の登録番号</th>
+		<td>
+		<input type="number" name="bill-setting[invoice-number]" value="<?php echo esc_attr($options['invoice-number'] ) ?>"/></td>
+		</tr>
+		<tr>
 		<th>住所</th>
 		<td><textarea name="bill-setting[own-address]" rows="4"><?php echo esc_textarea( $options['own-address'] ); ?></textarea></td>
 		</tr>

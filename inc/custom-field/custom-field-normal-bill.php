@@ -88,6 +88,7 @@ class Bill_Normal_Custom_Fields {
 				'description' => '',
 				'required'    => true,
 			),
+			/*
 			'bill_tax_rate'   => array(
 				'label'       => __( '消費税率', 'bill-vektor' ),
 				'type'        => 'radio',
@@ -108,6 +109,7 @@ class Bill_Normal_Custom_Fields {
 					'tax_not_auto' => '品目毎に予め消費税込の金額で入力する',
 				),
 			),
+			*/
 			'bill_remarks'    => array(
 				'label'       => __( '備考', 'bill-vektor' ),
 				'type'        => 'textarea',

@@ -18,6 +18,14 @@
 $theme_opt = wp_get_theme( get_template() );
 define( 'BILLVEKTOR_THEME_VERSION', $theme_opt->Version );
 
+/**
+ * 税率の配列
+ */
+function bill_vektor_tax_array() {
+	$tax_array = array( '10%', '8%' );
+	return $tax_array;
+}
+
 /*
 -------------------------------------------
   Load Module
