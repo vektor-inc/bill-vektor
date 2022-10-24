@@ -173,7 +173,7 @@ function bill_total_add_tax( $post ) {
 /**
  * インボイス対応の合計金額
  */
-function bill_total_tax( $post ) {
+function bill_invoice_total_tax( $post ) {
 	$bill_items           = get_post_meta( $post->ID, 'bill_items', true );
 	$bill_total           = 0;
 

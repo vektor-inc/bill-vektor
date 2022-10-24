@@ -19,7 +19,7 @@
 <dt>合計金額</dt>
 <?php
 global $post;
-$bill_total = bill_total_tax( $post );
+$bill_total = bill_invoice_total_tax( $post );
 ?>
 <dd id="bill-frame-total-price">￥ <?php echo number_format( $bill_total ); ?><span class="caption">(消費税含)</span></dd>
 </dl>
