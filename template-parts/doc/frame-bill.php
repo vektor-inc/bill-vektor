@@ -19,11 +19,7 @@
 <dt>合計金額</dt>
 <?php
 global $post;
-if ( isset( $post->bill_tax_type ) && $post->bill_tax_type == 'tax_not_auto' ) {
-	$bill_total = bill_total_no_tax( $post );
-} else {
-	$bill_total = bill_total_add_tax( $post );
-}
+$bill_total = bill_total_tax( $post );
 ?>
 <dd id="bill-frame-total-price">￥ <?php echo number_format( $bill_total ); ?><span class="caption">(消費税含)</span></dd>
 </dl>

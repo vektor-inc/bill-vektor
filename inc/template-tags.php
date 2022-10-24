@@ -170,6 +170,52 @@ function bill_total_add_tax( $post ) {
 	return $bill_total_add_tax;
 }
 
+/**
+ * インボイス対応の合計金額
+ */
+function bill_total_tax( $post ) {
+	$bill_items           = get_post_meta( $post->ID, 'bill_items', true );
+	$bill_total           = 0;
+
+	if ( is_array( $bill_items ) ) {
+
+		// 行のループ
+		foreach ( $bill_items as $key => $value ) {
+			if ( ! empty( $bill_items[ $key ]['name'] ) ) {
+				// 単価
+				if ( ! empty( $bill_items[ $key ]['price'] ) ) {
+					$item_price       = bill_item_number( $bill_items[ $key ]['price'] );
+				}
+
+				// 個数
+				if ( ! empty( $bill_items[ $key ]['count'] ) ) {
+					$item_count = bill_item_number( $bill_items[ $key ]['count'] );
+				}
+
+				// 税率
+				if ( ! empty( $bill_items[ $key ]['tax-rate'] ) ) {
+					$item_rate = 0.01 * intval( str_replace( '%', '', $bill_items[ $key ]['tax-rate'] ) );				
+				}
+
+				// $item_total
+				if ( ! empty( $item_count ) && ! empty( $item_price ) && ! empty( $item_rate ) ) {
+					$item_price_total = $item_price * $item_count * ( 1 + $item_rate );
+				} 
+
+				// 小計
+				if ( ! empty( $item_price_total ) ) {
+					$bill_total += $item_price_total;
+				}
+			}
+			
+
+		} // foreach ($bill_items as $key => $value) {
+
+	} // if ( is_array( $bill_items ) ) {
+
+	return $bill_total;
+}
+
 /*
 	Chack post type info
   bill_get_post_type()
