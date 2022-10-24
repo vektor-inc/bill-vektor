@@ -181,7 +181,12 @@ function bill_invoice_total_tax( $post ) {
 
 		// 行のループ
 		foreach ( $bill_items as $key => $value ) {
-			if ( ! empty( $bill_items[ $key ]['name'] ) ) {
+			if ( 
+				! empty( $bill_items[ $key ]['name'] ) &&
+				! empty( $bill_items[ $key ]['price'] ) &&
+				! empty( $bill_items[ $key ]['count'] ) &&
+				! empty( $bill_items[ $key ]['tax-rate'] )
+			) {
 				// 単価
 				if ( ! empty( $bill_items[ $key ]['price'] ) ) {
 					$item_price       = bill_item_number( $bill_items[ $key ]['price'] );

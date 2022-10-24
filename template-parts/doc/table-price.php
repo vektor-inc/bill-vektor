@@ -26,75 +26,74 @@ if ( is_array( $bill_items ) ) {
 	$tax_total = array();
 	// 行のループ
 	foreach ( $bill_items as $key => $value ) {
-	?>
-
+		?>
 		<tr>
 		<?php
-	    // 品目
-		if ( $bill_items[ $key ]['name'] ) {
-			if ( ! empty( $bill_items[ $key ]['tax-rate'] ) ) {
-				if ( $bill_items[ $key ]['tax-rate'] !== $tax_array[0] ) {
-					$bill_item_name = $bill_items[ $key ]['name'] . '＊';
-				} else {
-					$bill_item_name = $bill_items[ $key ]['name'];
-				}
-			}			
-		} else {
-			$bill_item_name = '　';
-		}
+		if ( 
+			! empty( $bill_items[ $key ]['name'] ) &&
+			! empty( $bill_items[ $key ]['count'] ) &&
+			! empty( $bill_items[ $key ]['unit'] ) &&
+			! empty( $bill_items[ $key ]['price'] ) &&
+			! empty( $bill_items[ $key ]['tax-rate'] ) &&
+			! empty( $bill_items[ $key ]['tax-rate'] )
+		) :
+			// 品目
+			if ( $bill_items[ $key ]['tax-rate'] !== $tax_array[0] ) {
+				$bill_item_name = $bill_items[ $key ]['name'] . '＊';
+			} else {
+				$bill_item_name = $bill_items[ $key ]['name'];
+			}
 
-
-		// $item_count
-		if ( $bill_items[ $key ]['count'] === '' ) {
-			$item_count = '';
-		} else {
-			// intvalだと小数点が切り捨てられるので使用していない
+			// $item_count
 			$item_count = bill_item_number( $bill_items[ $key ]['count'] );
-		}
 
-		// $item_price
-		if ( $bill_items[ $key ]['price'] === '' ) {
-			$item_price       = '';
-			$item_price_print = '';
-		} else {
+			// $item_price
 			$item_price = bill_item_number( $bill_items[ $key ]['price'] );
 			$item_price_print = '¥ ' . number_format( $item_price, $digits );
-		}
 
-		// $item_total
-		if ( is_numeric( $item_count ) && is_numeric( $item_price ) ) {
-			$item_price_total       = $item_count * $item_price;
-			$item_price_total_print = '¥ ' . number_format( $item_price_total, $digits );
-		} else {
-			$item_price_total       = '';
-			$item_price_total_print = '';
-		}
+			// $item_total
+			if ( is_numeric( $item_count ) && is_numeric( $item_price ) ) {
+				$item_price_total       = $item_count * $item_price;
+				$item_price_total_print = '¥ ' . number_format( $item_price_total, $digits );
+			} else {
+				$item_price_total       = '';
+				$item_price_total_print = '';
+			}
 
-		// 消費税率
-		$item_tax_rate       = ! empty( $bill_items[ $key ]['tax-rate'] ) ? $bill_items[ $key ]['tax-rate'] : '';
-		$item_tax_rate_value = ! empty( $item_tax_rate ) ? 0.01 * intval( str_replace( '%', '', $item_tax_rate ) ) : '';
-		if ( ! empty( $bill_items[ $key ]['name'] ) && $item_tax_rate !== $tax_array[0] ) {
-			$lite_tax_flag = true;
-		}
-		
+			// 消費税率
+			$item_tax_rate       = ! empty( $bill_items[ $key ]['tax-rate'] ) ? $bill_items[ $key ]['tax-rate'] : '';
+			$item_tax_rate_value = ! empty( $item_tax_rate ) ? 0.01 * intval( str_replace( '%', '', $item_tax_rate ) ) : '';
+			if ( ! empty( $bill_items[ $key ]['name'] ) && $item_tax_rate !== $tax_array[0] ) {
+				$lite_tax_flag = true;
+			}			
 
-		// 消費税額
-		$item_tax_value       = ( is_numeric( $item_price_total ) && is_numeric( $item_tax_rate_value ) ) ? $item_price_total * $item_tax_rate_value : '';
-		$item_tax_value_print = ( is_numeric( $item_price_total ) && is_numeric( $item_tax_rate_value ) ) ? '¥ ' . number_format( $item_tax_value, $digits ) : '';
+			// 消費税額
+			$item_tax_value       = ( is_numeric( $item_price_total ) && is_numeric( $item_tax_rate_value ) ) ? $item_price_total * $item_tax_rate_value : '';
+			$item_tax_value_print = ( is_numeric( $item_price_total ) && is_numeric( $item_tax_rate_value ) ) ? '¥ ' . number_format( $item_tax_value, $digits ) : '';
 
-		// 税込金額
-		$item_total = ( is_numeric( $item_price_total ) && is_numeric( $item_tax_value ) ) ? $item_price_total + $item_tax_value : '';
-		$item_total_print = ( is_numeric( $item_price_total ) && is_numeric( $item_tax_value ) ) ? '¥ ' . number_format( $item_total, $digits ) : '';
+			// 税込金額
+			$item_total = ( is_numeric( $item_price_total ) && is_numeric( $item_tax_value ) ) ? $item_price_total + $item_tax_value : '';
+			$item_total_print = ( is_numeric( $item_price_total ) && is_numeric( $item_tax_value ) ) ? '¥ ' . number_format( $item_total, $digits ) : '';
 
-	?>
-		<td><?php echo esc_html( $bill_item_name ); ?></td>
-		<td class="text-center" id="bill-item-count-<?php echo $key; ?>"><?php echo esc_html( $item_count ); ?></td>
-		<td class="text-center"><?php echo esc_html( $bill_items[ $key ]['unit'] ); ?></td>
-		<td class="price"><?php echo esc_html( $item_price_print ); ?></td>
-		<td class="price"><?php echo esc_html( $item_price_total_print ); ?></td>
-		<td class="price"><?php echo esc_html( $item_tax_rate ); ?></td>
-		<td class="price"><?php echo esc_html( $item_tax_value_print ); ?></td>
-		<td class="price"><?php echo esc_html( $item_total_print ); ?></td>
+			?>
+			<td><?php echo esc_html( $bill_item_name ); ?></td>
+			<td class="text-center" id="bill-item-count-<?php echo $key; ?>"><?php echo esc_html( $item_count ); ?></td>
+			<td class="text-center"><?php echo esc_html( $bill_items[ $key ]['unit'] ); ?></td>
+			<td class="price"><?php echo esc_html( $item_price_print ); ?></td>
+			<td class="price"><?php echo esc_html( $item_price_total_print ); ?></td>
+			<td class="price"><?php echo esc_html( $item_tax_rate ); ?></td>
+			<td class="price"><?php echo esc_html( $item_tax_value_print ); ?></td>
+			<td class="price"><?php echo esc_html( $item_total_print ); ?></td>
+		<?php else : ?>
+			<td></td>
+			<td class="text-center" id="bill-item-count-<?php echo $key; ?>">　</td>
+			<td class="text-center">　</td>
+			<td class="price">　</td>
+			<td class="price">　</td>
+			<td class="price">　</td>
+			<td class="price">　</td>
+			<td class="price">　</td>
+		<?php endif; ?>
 		</tr>
 		<?php
 		// 小計
@@ -108,6 +107,7 @@ if ( is_array( $bill_items ) ) {
 				$tax_total[$tax_rate]['total'] = ! empty( $tax_total[$tax_rate]['total'] ) ? $tax_total[$tax_rate]['total'] + $item_total : $item_total;
 			}
 		}
+			
 	} // foreach ($bill_items as $key => $value) {
 
 } // if ( is_array( $bill_items ) ) {
