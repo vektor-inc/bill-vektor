@@ -16,7 +16,10 @@
 $bill_items           = get_post_meta( $post->ID, 'bill_items', true );
 $bill_item_sub_fields = array( 'name', 'count', 'unit', 'price' );
 $bill_total           = 0;
+// 消費税率の配列
 $tax_array = bill_vektor_tax_array();
+// 軽減税率対象があるか
+$lite_tax_flag = false;
 // 金額の小数点以下の桁数
 $digits = apply_filters( 'item_price_print_digits', 0 );
 if ( is_array( $bill_items ) ) {
@@ -50,8 +53,6 @@ if ( is_array( $bill_items ) ) {
 		}
 
 		// $item_price
-
-
 		if ( $bill_items[ $key ]['price'] === '' ) {
 			$item_price       = '';
 			$item_price_print = '';
@@ -72,6 +73,10 @@ if ( is_array( $bill_items ) ) {
 		// 消費税率
 		$item_tax_rate       = ! empty( $bill_items[ $key ]['tax-rate'] ) ? $bill_items[ $key ]['tax-rate'] : '';
 		$item_tax_rate_value = ! empty( $item_tax_rate ) ? 0.01 * intval( str_replace( '%', '', $item_tax_rate ) ) : '';
+		if ( ! empty( $bill_items[ $key ]['name'] ) && $item_tax_rate !== $tax_array[0] ) {
+			$lite_tax_flag = true;
+		}
+		
 
 		// 消費税額
 		$item_tax_value       = ( is_numeric( $item_price_total ) && is_numeric( $item_tax_rate_value ) ) ? $item_price_total * $item_tax_rate_value : '';
@@ -109,8 +114,15 @@ if ( is_array( $bill_items ) ) {
 ?>
 
 </tbody>
+<?php if ( true === $lite_tax_flag ) : ?>
+<tfoot>
+	<tr><td>＊：軽減税率対象</td></tr>
+</tfoot>
+<?php endif; ?>
 </table>
+
 <?php
+
 global $post;
 $bill_total_price_display = ( isset( $post->bill_total_price_display[0] ) ) ? $post->bill_total_price_display[0] : '';
 if ( $bill_total_price_display != 'hidden' ) {
