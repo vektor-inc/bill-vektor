@@ -100,7 +100,15 @@ if ( is_array( $bill_items ) ) {
 		$tax_array = bill_vektor_tax_array();
 		
 		foreach( $tax_array as $tax_rate ) {
-			if ( $item_tax_rate === $tax_rate ) {
+			if ( 
+				! empty( $bill_items[ $key ]['name'] ) &&
+				! empty( $bill_items[ $key ]['count'] ) &&
+				! empty( $bill_items[ $key ]['unit'] ) &&
+				! empty( $bill_items[ $key ]['price'] ) &&
+				! empty( $bill_items[ $key ]['tax-rate'] ) &&
+				! empty( $bill_items[ $key ]['tax-rate'] ) &&
+				$item_tax_rate === $tax_rate
+			) {
 				$tax_total[$tax_rate]['rate']  = $item_tax_rate . '％対象';
 				$tax_total[$tax_rate]['price'] = ! empty( $tax_total[$tax_rate]['price'] ) ? $tax_total[$tax_rate]['price'] + $item_price_total : $item_price_total;
 				$tax_total[$tax_rate]['tax']   = ! empty( $tax_total[$tax_rate]['tax'] )   ? $tax_total[$tax_rate]['tax'] + $item_tax_value : $item_tax_value;
