@@ -20,6 +20,8 @@ define( 'BILLVEKTOR_THEME_VERSION', $theme_opt->Version );
 
 /**
  * 税率の配列
+ * 
+ * 消費税率の高い順に並べた配列。2番目以降は軽減税率フラグが立つ
  */
 function bill_vektor_tax_array() {
 	$tax_array = array( '10%', '8%' );
