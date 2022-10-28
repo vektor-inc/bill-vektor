@@ -76,12 +76,19 @@ if ( ! class_exists( 'CsvExport' ) ) {
 					$date               = date_i18n( 'Y/n/j', strtotime( $post->post_date ) );
 					$bill_limit_date    = get_post_meta( $post->ID, 'bill_limit_date', true );
 					$date_pay           = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
+
+
+					/*
 					if ( 'tax_not_auto' === get_post_meta( $post->ID, 'bill_tax_type', true ) ) {
 						$bill_total_price = bill_total_no_tax( $post );
 					} else {
 						$bill_total_price = bill_total_add_tax( $post );
 					}
 					$tax                = bill_tax( bill_total_no_tax( $post ) );
+					*/
+
+					$bill_total_price = bill_vektor_invoice_total_tax( $post );
+					$bill_tax_each    = bill_vektor_invoice_each_tax( $post );
 
 					// 取引先名（省略名があれば省略名で表示）
 					$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
@@ -89,61 +96,64 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						$client_name = bill_get_client_name( $post );
 					}
 
-					$tax_rate = bill_tax_rate( $post->ID ) * 100;
+					// $tax_rate = bill_tax_rate( $post->ID ) * 100;
 
-					if ( $_GET['action'] == 'csv_mf' ) {
+					foreach ( $bill_tax_each  as $key => $value ) {
 
-						$c   = array();
-						$c[] = '"' . $number . '"';         // 取引No
-						$c[] = '"' . $date . '"';           // 取引日
-						$c[] = '"売掛金"';             // 借方勘定科目
-						$c[] = '""';                    // 借方補助科目
-						$c[] = '"対象外"';             // 借方税区分
-						$c[] = '""';                    // 借方部門
-						$c[] = '"' . $bill_total_price . '"'; // 借方金額(円)
-						$c[] = '""';                    // 借方税額
-						$c[] = '"売上高"';             // 貸方勘定科目
-						$c[] = '""';                    // 貸方補助科目
-						$c[] = '"課売 ' . $tax_rate . '% 五種"';            // 貸方税区分
-						$c[] = '""';                    // 貸方部門
-						$c[] = '"' . $bill_total_price . '"'; // 貸方金額(円)
-						$c[] = '""';                    // 貸方税額
-						$c[] = '"[ ' . esc_html( $client_name ) . ' ] ' . esc_html( $post->post_title ) . '"';  // 摘要
-						$c[] = '""';                    // 仕訳メモ
-						$c[] = '"BillVektor"';                  // タグ
-						$c[] = '""';                    // MF仕訳タイプ
-						$c[] = '""';                    // 決算整理仕訳
-						$c[] = '"' . date( 'Y/n/j H:i:s' ) . '"'; // 作成日時
-						$c[] = '""';                    // 最終更新日時
+						if ( $_GET['action'] == 'csv_mf' ) {
 
-						// freee
-					} elseif ( $_GET['action'] == 'csv_freee' ) {
+							$c   = array();
+							$c[] = '"' . $number . '"';         // 取引No
+							$c[] = '"' . $date . '"';           // 取引日
+							$c[] = '"売掛金"';             // 借方勘定科目
+							$c[] = '""';                    // 借方補助科目
+							$c[] = '"対象外"';             // 借方税区分
+							$c[] = '""';                    // 借方部門
+							$c[] = '"' . number_format( $value['total'] ) . '"'; // 借方金額(円)
+							$c[] = '""';                    // 借方税額
+							$c[] = '"売上高"';             // 貸方勘定科目
+							$c[] = '""';                    // 貸方補助科目
+							$c[] = '"課売 ' . $key . ' 五種"';            // 貸方税区分
+							$c[] = '""';                    // 貸方部門
+							$c[] = '"' . number_format( $value['total'] ) . '"'; // 貸方金額(円)
+							$c[] = '""';                    // 貸方税額
+							$c[] = '"[ ' . esc_html( $client_name ) . ' ] ' . esc_html( $post->post_title ) . '"';  // 摘要
+							$c[] = '""';                    // 仕訳メモ
+							$c[] = '"BillVektor"';                  // タグ
+							$c[] = '""';                    // MF仕訳タイプ
+							$c[] = '""';                    // 決算整理仕訳
+							$c[] = '"' . date( 'Y/n/j H:i:s' ) . '"'; // 作成日時
+							$c[] = '""';                    // 最終更新日時
 
-						$c   = array();
-						$c[] = '"収入"';                                  // 収支区分
-						$c[] = '"' . esc_html( $post->bill_id ) . '"';        // 管理番号
-						$c[] = '"' . $date . '"';                           // 発生日
-						$c[] = '"' . $date_pay . '"';                       // 支払期日
-						$c[] = '"' . esc_html( $client_name ) . '"';        // 取引先
-						$c[] = '"売上高"';                             // 勘定科目
-						$c[] = '"課税' . $tax_rate . '%"';                                // 税区分
-						$c[] = '"' . $bill_total_price . '"';             // 金額(円)
-						$c[] = '"内税"';                                  // 税計算区分
-						$c[] = '"' . $tax . '"';                            // 税額
-						$c[] = '""';                                    // 備考
-						$c[] = '"' . esc_html( $post->post_title ) . '"';   // 品目
-						$c[] = '""';                                    // 部門
-						$c[] = '"BillVektor"';                          // メモタグ（複数指定可、カンマ区切り）
-						$c[] = '""';                                    // 支払日
-						$c[] = '""';                                    // 支払口座
-						$c[] = '""';                                    // 支払金額
+							// freee
+						} elseif ( $_GET['action'] == 'csv_freee' ) {
 
-					}
+							$c   = array();
+							$c[] = '"収入"';                                  // 収支区分
+							$c[] = '"' . esc_html( $post->bill_id ) . '"';        // 管理番号
+							$c[] = '"' . $date . '"';                           // 発生日
+							$c[] = '"' . $date_pay . '"';                       // 支払期日
+							$c[] = '"' . esc_html( $client_name ) . '"';        // 取引先
+							$c[] = '"売上高"';                             // 勘定科目
+							$c[] = '"課税' . $key . '"';                                // 税区分
+							$c[] = '"' . number_format( $value['total'] ) . '"';             // 金額(円)
+							$c[] = '"内税"';                                  // 税計算区分
+							$c[] = '"' . $key . '"';                            // 税額
+							$c[] = '""';                                    // 備考
+							$c[] = '"' . esc_html( $post->post_title ) . '"';   // 品目
+							$c[] = '""';                                    // 部門
+							$c[] = '"BillVektor"';                          // メモタグ（複数指定可、カンマ区切り）
+							$c[] = '""';                                    // 支払日
+							$c[] = '""';                                    // 支払口座
+							$c[] = '""';                                    // 支払金額
 
-					// 配列を , 区切りで格納
-					$csv[] = implode( ',', $c );
-					if ( $number ) {
-						$number ++;
+						}
+
+						// 配列を , 区切りで格納
+						$csv[] = implode( ',', $c );
+						if ( $number ) {
+							$number ++;
+						}
 					}
 				}
 
@@ -160,11 +170,14 @@ if ( ! class_exists( 'CsvExport' ) ) {
 
 						$bill_limit_date    = get_post_meta( $post->ID, 'bill_limit_date', true );
 						$date_pay           = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
+						/*
 						if ( 'tax_not_auto' === get_post_meta( $post->ID, 'bill_tax_type', true ) ) {
 							$bill_total_price = bill_total_no_tax( $post );
 						} else {
 							$bill_total_price = bill_total_add_tax( $post );
 						}
+						*/
+						$bill_total_price = bill_vektor_invoice_total_tax( $post );
 						// 取引先名（省略名があれば省略名で表示）
 						$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
 						if ( ! $client_name ) {
