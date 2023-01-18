@@ -93,7 +93,7 @@ class Bill_Item_Custom_Fields {
 				$selected = false;
 				if (  ! empty( $value['tax-type'] ) && $tax_type['value'] === $value['tax-type'] ) {
 					$selected = true;
-				} elseif( ! empty( $old_tax_rate ) && $tax_type['old_type'] === $old_tax_type ) {
+				} elseif ( ! empty( $old_tax_rate ) && $tax_type['old_type'] === $old_tax_type ) {
 					$selected = true;
 				}
 				$form_table .= '<option value="' . $tax_type['value'] . '" ' . selected( $selected, true, false ) . '>' . $tax_type['label'] . '</option>';
@@ -108,7 +108,7 @@ class Bill_Item_Custom_Fields {
 				$selected = false;
 				if (  ! empty( $value['tax-rate'] ) && $tax_rate ===  $value['tax-rate'] ) {
 					$selected = true;
-				} elseif( ! empty( $old_tax_rate ) && $tax_rate === $old_tax_rate . '%' ) {
+				} elseif ( ! empty( $old_tax_rate ) && $tax_rate === $old_tax_rate . '%' ) {
 					$selected = true;
 				}
 				$form_table .= '<option value="' . $tax_rate . '" ' . selected( $selected, true, false ) . '>' . $tax_rate . '</option>';
@@ -163,13 +163,6 @@ class Bill_Item_Custom_Fields {
 			// 入力がなかったら消す
 		} elseif ( $field_value == '' ) {
 			delete_post_meta( $post_id, $field, get_post_meta( $post_id, $field, true ) );
-		}
-
-		// 昔のデータを削除
-		if ( empty( get_post_meta( $post_id, 'fix_invoice', true ) ) ) {
-			delete_post_meta( $post_id, 'bill_tax_rate' );
-			delete_post_meta( $post_id, 'bill_tax_type' );
-			add_post_meta( $post_id, 'fix_invoice', true );
 		}
 	}
 
