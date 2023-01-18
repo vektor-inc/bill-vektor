@@ -2,7 +2,7 @@
 	"name": "bill-vektor",
 	"version": "1.0.0",
 	"devDependencies": {
-		"sass": "^1.50.0"
+		"sass": "^1.57.1"
 	},
 	"scripts": {
 		"dist": "sass --style=compressed --no-source-map assets/_scss:assets/css && npx gulp dist && cd dist && zip -r bill-vektor.zip bill-vektor",
@@ -11,9 +11,12 @@
 		"phpunit:salary": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/plugins/bill-vektor-salary/phpunit.xml.dist --verbose'"
 	},
 	"dependencies": {
-		"@wordpress/env": "^4.0.5",
+		"@wordpress/env": "^5.10.0",
 		"gulp": "^4.0.2",
-		"npm-check-updates": "^11.6.0",
+		"npm-check-updates": "^16.6.2",
 		"run-sequence": "^2.2.1"
+	},
+	"volta": {
+		"node": "18.13.0"
 	}
 }
