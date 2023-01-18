@@ -81,8 +81,8 @@ class Bill_Item_Custom_Fields {
 					'old_type' => 'tax_auto',
 				),
 				array( 
-					'label' => '税込',
-					'value' => 'tax_included',
+					'label'    => '税込',
+					'value'    => 'tax_included',
 					'old_type' => 'tax_not_auto',
 				)
 			);
@@ -90,7 +90,7 @@ class Bill_Item_Custom_Fields {
 			$form_table .= '<select id="bill_items[' . $key . '][tax-type]" name="bill_items[' . $key . '][tax-type]">';
 			$form_table .= '<option value="">選択してください</option>';
 			foreach ( $tax_type_array as $tax_type ) {
-				$selected = ! empty( $value['tax-type'] ) && $tax_type ===  $value['tax-type'] || ! empty( $old_tax_rate ) && $tax_type['old_type'] === $old_tax_type;
+				$selected = ! empty( $value['tax-type'] ) && $tax_type['value'] ===  $value['tax-type'] || ! empty( $old_tax_rate ) && $tax_type['old_type'] === $old_tax_type;
 				$form_table .= '<option value="' . $tax_type['value'] . '" ' . selected( $selected, true, false ) . '>' . $tax_type['label'] . '</option>';
 			}
 			$form_table .= '</select>';

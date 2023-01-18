@@ -189,22 +189,28 @@ function bill_vektor_invoice_each_tax( $post ) {
 				! empty( $bill_item['count'] ) &&
 				! empty( $bill_item['unit'] ) &&
 				! empty( $bill_item['price'] ) &&
-				! empty( $bill_item['tax-rate'] ) 
+				! empty( $bill_item['tax-rate'] ) &&
+				! empty( $bill_item['tax-type'] ) 
 			) {
 				// 税率ごとのループ
 				foreach( $tax_array as $tax_rate ) {
 					// 税率のループとカスタムフィールドのループが同じ値の場合
 					if ( $bill_item['tax-rate'] === $tax_rate ) {
-						// 単価を数値に変換
-						$item_price = bill_item_number( $bill_item['price'] );
-						// 個数を数値に変換						
-						$item_count = bill_item_number( $bill_item['count'] );
+
 						// 税率を数値に変換
 						$item_tax_rate  = 0.01 * intval( str_replace( '%', '', $bill_item['tax-rate'] ) );
+						// 単価を数値に変換
+						$item_price = bill_item_number( $bill_item['price'] );
+						if ( 'tax_included' === $bill_item['tax-type'] ) {
+							$item_price = $item_price / ( 1 + $item_tax_rate );
+						}
+						// 個数を数値に変換						
+						$item_count = bill_item_number( $bill_item['count'] );
+
 						// 上記３つが数値なら
 						if ( is_numeric( $item_count ) && is_numeric( $item_price ) && is_numeric( $item_tax_rate ) ) {
-							// 品目ごとの税抜き合計金額
-							$item_total     = $item_price * $item_count;
+							// 税抜か税込かで合計金額を算出
+							$item_total     = $item_price * $item_count;						
 							// 品目ごとの消費税額
 							$item_tax_value = $item_total * $item_tax_rate;
 							// 品目ごとの税込合計金額
@@ -245,17 +251,29 @@ function bill_vektor_invoice_total_tax( $post ) {
 				! empty( $bill_item['count'] ) &&
 				! empty( $bill_item['unit'] ) &&
 				! empty( $bill_item['price'] ) &&
-				! empty( $bill_item['tax-rate'] ) 
+				! empty( $bill_item['tax-rate'] ) &&
+				! empty( $bill_item['tax-type'] ) 
 			) {
-				// 単価を数値に変換
-				$item_price = bill_item_number( $bill_item['price'] );
-				// 個数を数値に変換						
-				$item_count = bill_item_number( $bill_item['count'] );
 				// 税率を数値に変換
 				$item_tax_rate  = 0.01 * intval( str_replace( '%', '', $bill_item['tax-rate'] ) );
+				// 単価を数値に変換
+				$item_price = bill_item_number( $bill_item['price'] );
+				if ( 'tax_included' === $bill_item['tax-type'] ) {
+					$item_price = $item_price / ( 1 + $item_tax_rate );
+				}
+				// 個数を数値に変換						
+				$item_count = bill_item_number( $bill_item['count'] );
+
 				// 上記３つが数値なら合計金額を算出
 				if ( is_numeric( $item_count ) && is_numeric( $item_price ) && is_numeric( $item_tax_rate ) ) {
-					$bill_total += $item_price * $item_count * ( 1 + $item_tax_rate );
+					// 税抜か税込かで合計金額を算出
+					if ( 'tax_included' === $bill_item['tax-type'] ) {
+						// 品目ごとの税抜き合計金額
+						$bill_total += $item_price * $item_count;
+					} else {
+						// 品目ごとの税抜き合計金額
+						$bill_total += $item_price * $item_count * ( 1 + $item_tax_rate );
+					}					
 				}
 			}
 		} // foreach ($bill_items as $key => $value) {

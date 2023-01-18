@@ -35,7 +35,8 @@ if ( is_array( $bill_items ) ) {
 			! empty( $bill_item['count'] ) &&
 			! empty( $bill_item['unit'] ) &&
 			! empty( $bill_item['price'] ) &&
-			! empty( $bill_item['tax-rate'] ) 
+			! empty( $bill_item['tax-rate'] ) &&
+			! empty( $bill_item['tax-type'] )
 		) :
 			// 品目
 			// 軽減税率対象なら＊を付加
@@ -46,24 +47,29 @@ if ( is_array( $bill_items ) ) {
 				$bill_item_name = $bill_item['name'];
 			}
 
+			// 対象品目の消費税率
+			$item_tax_rate       = $bill_item['tax-rate'];							
+			$item_tax_rate_value = 0.01 * intval( str_replace( '%', '', $item_tax_rate ) );
+
 			// 個数を数値にフォーマット
 			$item_count = bill_item_number( $bill_item['count'] );
 
 			// 単価を数値にフォーマット
 			$item_price = bill_item_number( $bill_item['price'] );
+			if ( 'tax_included' === $bill_item['tax-type'] ) {
+				$item_price = $item_price / ( 1 + $item_tax_rate_value );
+			}
 
 			// 単価と個数が数値なら続行
-			if ( is_numeric( $item_count ) && is_numeric( $item_price ) ) :
+			if ( is_numeric( $item_count ) && is_numeric( $item_price ) && is_numeric( $item_tax_rate_value ) ) :
 				// 単価の表示
 				$item_price_print = '¥ ' . number_format( $item_price, $digits );
 
 				// 対象品目の税抜き合計金額
-				$item_price_total       = $item_count * $item_price;
+				$item_price_total =  $item_price * $item_count;
 				$item_price_total_print = '¥ ' . number_format( $item_price_total, $digits );
 	
-				// 対象品目の消費税率
-				$item_tax_rate       = $bill_item['tax-rate'];
-				$item_tax_rate_value = 0.01 * intval( str_replace( '%', '', $item_tax_rate ) );
+
 				if ( $item_tax_rate !== $tax_array[0] ) {
 					$lite_tax_flag = true;
 				}			
