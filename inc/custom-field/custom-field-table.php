@@ -136,7 +136,7 @@ class Bill_Item_Custom_Fields {
 			delete_post_meta( $post_id, $field, get_post_meta( $post_id, $field, true ) );
 		}
 
-		if ( ! empty( get_post_meta( $post_id, 'invoice_fixed' ) ) ) {
+		if ( empty( get_post_meta( $post_id, 'invoice_fixed' ) ) ) {
 			delete_post_meta( $post_id, 'bill_tax_rate' );
 			delete_post_meta( $post_id, 'bill_tax_type' );
 			add_post_meta( $post_id, 'invoice_fixed', true );
