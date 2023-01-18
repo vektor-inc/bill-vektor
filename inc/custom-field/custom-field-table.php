@@ -68,8 +68,8 @@ class Bill_Item_Custom_Fields {
 
 			// 列をループ
 			foreach ( $bill_item_sub_fields as $sub_field => $input_type ) {
-				if ( ! empty( $old_tax_rate ) && ! empty( $old_tax_type ) ) {
-
+				if ( ! empty( $old_tax_rate ) && ! empty( $old_tax_type ) && 'tax_not_auto' ===  $old_tax_type ) {
+					$value[ $sub_field ] = $value[ $sub_field ] / ( 1 + $old_tax_rate * 0.01 );
 				}
 				// php noindex 用に isset （ isset( $value[$sub_field] ) && $value[$sub_field] にすると 0円の時に0が表示されなくなる ）
 				$bill_item_value[ $sub_field ] = ( isset( $value[ $sub_field ] ) ) ? $value[ $sub_field ] : '';
