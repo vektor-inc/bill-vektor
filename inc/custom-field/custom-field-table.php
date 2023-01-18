@@ -17,7 +17,9 @@ class Bill_Item_Custom_Fields {
 		wp_nonce_field( wp_create_nonce( __FILE__ ), 'noncename__bill_fields' );
 
 		global $post;
-		$bill_items = get_post_meta( $post->ID, 'bill_items', true );
+		$bill_items   = get_post_meta( $post->ID, 'bill_items', true );
+		$old_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
+		$old_tax_type = get_post_meta( $post->ID, 'bill_tax_type', true );
 
 		// $bill_items が空の時、配列にしておかないと PHP 7.1 でエラーになる
 		if ( ! is_array( $bill_items ) ) {
@@ -74,7 +76,8 @@ class Bill_Item_Custom_Fields {
 			$form_table .= '<select id="bill_items[' . $key . '][tax-rate]" name="bill_items[' . $key . '][tax-rate]">';
 			$form_table .= '<option value="">選択してください</option>';
 			foreach ( $tax_array as $tax_rate ) {
-				$form_table .= '<option value="' . $tax_rate . '" ' . selected( ! empty( $value['tax-rate'] ) && $tax_rate ===  $value['tax-rate'], true, false ) . '>' . $tax_rate . '</option>';
+				$selected = ! empty( $value['tax-rate'] ) && $tax_rate ===  $value['tax-rate'] || ! empty( $old_tax_rate ) && $tax_rate === $old_tax_rate;
+				$form_table .= '<option value="' . $tax_rate . '" ' . selected( $selected, true, false ) . '>' . $tax_rate . '</option>';
 			}
 			$form_table .= '</select>';
 			$form_table .= '<td class="cell-control">
