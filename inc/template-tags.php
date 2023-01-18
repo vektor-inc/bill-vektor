@@ -180,9 +180,21 @@ function bill_vektor_invoice_each_tax( $post ) {
 	$tax_array = bill_vektor_tax_array();
 	// 税率ごとに税込み金額・消費税額・合計金額を算出した配列を初期化
 	$tax_total = array();
+	// 古い消費税率
+	$old_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
+	// 古い税込・税抜
+	$old_tax_type = get_post_meta( $post->ID, 'bill_tax_type', true );
 	if ( is_array( $bill_items ) ) {
 		// 行のループ
 		foreach ( $bill_items as $bill_item ) {
+			$bill_item['tax-rate'] = ! empty( $bill_item['tax-rate'] ) ? $bill_item['tax-rate'] : $old_tax_rate . '%';
+			if ( empty( $bill_item['tax-type'] ) ) {
+				if ( 'tax_not_auto' === $old_tax_type ) {
+					$bill_item['tax-type'] = 'tax_included';
+				} else {
+					$bill_item['tax-type'] = 'tax_excluded';
+				}
+			}
 			// すべてが埋まっていない行は算出対象外に
 			if ( 
 				! empty( $bill_item['name'] ) &&
@@ -241,10 +253,22 @@ function bill_vektor_invoice_total_tax( $post ) {
 	$bill_items           = get_post_meta( $post->ID, 'bill_items', true );
 	// 支払い総額を初期化
 	$bill_total           = 0;
+	// 古い消費税率
+	$old_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
+	// 古い税込・税抜
+	$old_tax_type = get_post_meta( $post->ID, 'bill_tax_type', true );
 
 	if ( is_array( $bill_items ) ) {
 		// 行のループ
 		foreach ( $bill_items as $bill_item ) {
+			$bill_item['tax-rate'] = ! empty( $bill_item['tax-rate'] ) ? $bill_item['tax-rate'] : $old_tax_rate . '%';
+			if ( empty( $bill_item['tax-type'] ) ) {
+				if ( 'tax_not_auto' === $old_tax_type ) {
+					$bill_item['tax-type'] = 'tax_included';
+				} else {
+					$bill_item['tax-type'] = 'tax_excluded';
+				}
+			}
 			// すべてが埋まっていない行は算出対象外に
 			if ( 
 				! empty( $bill_item['name'] ) &&
@@ -266,14 +290,7 @@ function bill_vektor_invoice_total_tax( $post ) {
 
 				// 上記３つが数値なら合計金額を算出
 				if ( is_numeric( $item_count ) && is_numeric( $item_price ) && is_numeric( $item_tax_rate ) ) {
-					// 税抜か税込かで合計金額を算出
-					if ( 'tax_included' === $bill_item['tax-type'] ) {
-						// 品目ごとの税抜き合計金額
-						$bill_total += $item_price * $item_count;
-					} else {
-						// 品目ごとの税抜き合計金額
-						$bill_total += $item_price * $item_count * ( 1 + $item_tax_rate );
-					}					
+					$bill_total += $item_price * $item_count * ( 1 + $item_tax_rate );			
 				}
 			}
 		} // foreach ($bill_items as $key => $value) {
