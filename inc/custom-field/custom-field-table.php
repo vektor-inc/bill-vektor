@@ -76,19 +76,21 @@ class Bill_Item_Custom_Fields {
 			// 税抜きか税込みか
 			$tax_type_array = array(
 				array( 
-					'label' => '税抜',
-					'value' => 'tax_excluded',
+					'label'    => '税抜',
+					'value'    => 'tax_excluded',
+					'old_type' => 'tax_auto',
 				),
 				array( 
 					'label' => '税込',
 					'value' => 'tax_included',
+					'old_type' => 'tax_not_auto',
 				)
 			);
 			$form_table .= '<td class="cell-tax-type">';
 			$form_table .= '<select id="bill_items[' . $key . '][tax-type]" name="bill_items[' . $key . '][tax-type]">';
 			$form_table .= '<option value="">選択してください</option>';
 			foreach ( $tax_type_array as $tax_type ) {
-				$selected = ! empty( $value['tax-type'] ) && $tax_type ===  $value['tax-type'] || ! empty( $old_tax_rate ) && 'tax_included' === $tax_type && 'tax_not_auto' ===  $old_tax_type || ! empty( $old_tax_rate ) &&  ! empty( $old_tax_rate ) && 'tax_excluded' === $tax_type && 'tax_auto' ===  $old_tax_type;
+				$selected = ! empty( $value['tax-type'] ) && $tax_type ===  $value['tax-type'] || ! empty( $old_tax_rate ) && $tax_type['old_type'] === $old_tax_type;
 				$form_table .= '<option value="' . $tax_type['value'] . '" ' . selected( $selected, true, false ) . '>' . $tax_type['label'] . '</option>';
 			}
 			$form_table .= '</select>';
@@ -151,12 +153,6 @@ class Bill_Item_Custom_Fields {
 			// 入力がなかったら消す
 		} elseif ( $field_value == '' ) {
 			delete_post_meta( $post_id, $field, get_post_meta( $post_id, $field, true ) );
-		}
-
-		if ( empty( get_post_meta( $post_id, 'invoice_fixed' ) ) ) {
-			delete_post_meta( $post_id, 'bill_tax_rate' );
-			delete_post_meta( $post_id, 'bill_tax_type' );
-			add_post_meta( $post_id, 'invoice_fixed', true );
 		}
 	}
 
