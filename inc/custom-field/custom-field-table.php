@@ -68,6 +68,9 @@ class Bill_Item_Custom_Fields {
 
 			// 列をループ
 			foreach ( $bill_item_sub_fields as $sub_field => $input_type ) {
+				if ( ! empty( $old_tax_rate ) && ! empty( $old_tax_type ) ) {
+
+				}
 				// php noindex 用に isset （ isset( $value[$sub_field] ) && $value[$sub_field] にすると 0円の時に0が表示されなくなる ）
 				$bill_item_value[ $sub_field ] = ( isset( $value[ $sub_field ] ) ) ? $value[ $sub_field ] : '';
 				$form_table                   .= '<td class="cell-' . $sub_field . '"><input class="flexible-field-item" type="'. $input_type . '" id="bill_items[' . $key . '][' . $sub_field . ']" name="bill_items[' . $key . '][' . $sub_field . ']" value="' . esc_attr( $bill_item_value[ $sub_field ] ) . '"></td>';
@@ -76,7 +79,7 @@ class Bill_Item_Custom_Fields {
 			$form_table .= '<select id="bill_items[' . $key . '][tax-rate]" name="bill_items[' . $key . '][tax-rate]">';
 			$form_table .= '<option value="">選択してください</option>';
 			foreach ( $tax_array as $tax_rate ) {
-				$selected = ! empty( $value['tax-rate'] ) && $tax_rate ===  $value['tax-rate'] || ! empty( $old_tax_rate ) && $tax_rate === $old_tax_rate;
+				$selected = ! empty( $value['tax-rate'] ) && $tax_rate ===  $value['tax-rate'] || ! empty( $old_tax_rate ) && $tax_rate === $old_tax_rate . '%';
 				$form_table .= '<option value="' . $tax_rate . '" ' . selected( $selected, true, false ) . '>' . $tax_rate . '</option>';
 			}
 			$form_table .= '</select>';
