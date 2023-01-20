@@ -9,6 +9,7 @@
     "require-dev": {
 		"sirbrillig/phpcs-variable-analysis": "^2.8",
 		"wp-phpunit/wp-phpunit": "^5.4",
-        "yoast/phpunit-polyfills": "^1.0"
+        "yoast/phpunit-polyfills": "^1.0",
+        "phpunit/phpunit": "^9.5"
     }
 }
