@@ -7,7 +7,7 @@
         }
     ],
     "require-dev": {
-		"sirbrillig/phpcs-variable-analysis": "^2.8",
+		"sirbrillig/phpcs-variable-analysis": "^2.11",
 		"wp-phpunit/wp-phpunit": "^6.1",
         "yoast/phpunit-polyfills": "^1.0",
         "phpunit/phpunit": "^9.4",
