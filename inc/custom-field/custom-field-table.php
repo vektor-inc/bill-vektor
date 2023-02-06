@@ -149,6 +149,12 @@ class Bill_Item_Custom_Fields {
 		$field       = 'bill_items';
 		$field_value = ( isset( $_POST[ $field ] ) ) ? $_POST[ $field ] : '';
 
+		// 古いカスタムフィールドを削除する
+		if ( ! empty( get_post_meta( $post->ID, 'bill_tax_rate', true ) ) || ! empty( get_post_meta( $post->ID, 'bill_tax_type', true ) ) ) {
+			delete_post_meta( $post->ID, 'bill_tax_rate' );
+			delete_post_meta( $post->ID, 'bill_tax_type' );
+		}
+
 		// 配列の空の行を削除する
 		if ( is_array( $field_value ) ) {
 			// $field_value = Bill_Item_Custom_Fields::delete_null_row( $field_value );

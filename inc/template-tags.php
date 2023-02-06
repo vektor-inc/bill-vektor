@@ -170,7 +170,7 @@ function bill_vektor_invoice_each_tax( $post ) {
 							$item_tax_total = $item_total + $item_tax_value;
 
 							// 税率何％の対象か
-							$tax_total[$tax_rate]['rate']  = $bill_item['tax-rate'] . '％対象';
+							$tax_total[$tax_rate]['rate']  = $bill_item['tax-rate'] . '対象';
 							// 対象税率の税抜き合計金額
 							$tax_total[$tax_rate]['price'] = ! empty( $tax_total[$tax_rate]['price'] ) ? $tax_total[$tax_rate]['price'] + $item_total : $item_total;
 							// 対象税率の消費税額
