@@ -128,6 +128,7 @@ function bill_vektor_invoice_each_tax( $post ) {
 	if ( is_array( $bill_items ) ) {
 		// 行のループ
 		foreach ( $bill_items as $bill_item ) {
+			// 古いカスタムフィールドがある場合それを新仕様に対応
 			$bill_item['tax-rate'] = ! empty( $bill_item['tax-rate'] ) ? $bill_item['tax-rate'] : $old_tax_rate . '%';
 			if ( empty( $bill_item['tax-type'] ) ) {
 				if ( 'tax_not_auto' === $old_tax_type ) {
