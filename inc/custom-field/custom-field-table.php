@@ -45,10 +45,12 @@ class Bill_Item_Custom_Fields {
 		if ( ! $bill_items ) {
 			for ( $i = 0; $i <= 7;$i++ ) {
 				$bill_items[ $i ] = array(
-					'name'  => '',
-					'count' => '',
-					'unit'  => '',
-					'price' => '',
+					'name'     => '',
+					'count'    => '',
+					'unit'     => '',
+					'price'    => '',
+					'tax-rate' => '10%',
+					'tax-type' => 'tax_excluded',
 				);
 			}
 		}

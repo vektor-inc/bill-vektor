@@ -113,28 +113,38 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 				add_post_meta( $new_post, 'hikazei_additional', $hikazei_additional );
 			}
 		}
-	} else {
+	}
+	else {
 
 		// 一括にしてテーブルを保存する
 		//
 		// 合計金額を算出する
-		$bill_total = bill_total_no_tax( $post );
+		$old_bill_items = bill_vektor_invoice_total_tax( $post );
+		$new_bill_items = array();
 
-		$new_bill_items[0] = array(
-			'name'  => $post->post_title,
-			'count' => 1,
-			'unit'  => '式',
-			'price' => $bill_total,
-		);
+		foreach ( $old_bill_items as $bill_item ) {
+			$new_bill_item[] = array(
+				'name'     => $bill_item['rate'],
+				'count'    => $bill_item['price'],
+				'unit'     => '式',
+				'price'    => $bill_total,
+				'tax-rate' => str_replace( '対象', '', $bill_item['rate'] ),
+				'tax-type' => 'tax_excluded',
+			);
+		}
+
 		// 余白分数行追加しておく
 		for ( $i = 1; $i <= 7;$i++ ) {
 			$new_bill_items[ $i ] = array(
-				'name'  => '',
-				'count' => '',
-				'unit'  => '',
-				'price' => '',
+				'name'     => '',
+				'count'    => '',
+				'unit'     => '',
+				'price'    => '',
+				'tax-rate' => '10%',
+				'tax-type' => 'tax_excluded',
 			);
 		}
+	
 
 		add_post_meta( $new_post, 'bill_items', $new_bill_items );
 	}
