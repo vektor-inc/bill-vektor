@@ -122,7 +122,7 @@ class InvoiceTest extends WP_UnitTestCase {
             ),
         );
 
-        // 新仕様
+        // インボイスのごちゃまぜ仕様
         $bill_item_invoice = array(
             array(
                 'name'     => 'item-001',
