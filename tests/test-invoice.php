@@ -163,7 +163,7 @@ class InvoiceTest extends WP_UnitTestCase {
             array(
                 'post_title'   => 'Old 8% Tax Exclude',
                 'post_content' => '',
-                'post_type'    =>  'estimate',
+                'post_type'    => 'estimate',
                 'post_status'  => 'publish'
             )
         );
@@ -176,7 +176,7 @@ class InvoiceTest extends WP_UnitTestCase {
             array(
                 'post_title'   => 'Old 10% Tax Exclude',
                 'post_content' => '',
-                'post_type'    =>  'estimate',
+                'post_type'    => 'estimate',
                 'post_status'  => 'publish'
             )
         );
@@ -189,7 +189,7 @@ class InvoiceTest extends WP_UnitTestCase {
             array(
                 'post_title'   => 'Old 8% Tax Exclude',
                 'post_content' => '',
-                'post_type'    =>  'estimate',
+                'post_type'    => 'estimate',
                 'post_status'  => 'publish'
             )
         );
@@ -202,7 +202,7 @@ class InvoiceTest extends WP_UnitTestCase {
             array(
                 'post_title'   => 'Old 10% Tax Exclude',
                 'post_content' => '',
-                'post_type'    =>  'estimate',
+                'post_type'    => 'estimate',
                 'post_status'  => 'publish'
             )
         );
@@ -215,7 +215,7 @@ class InvoiceTest extends WP_UnitTestCase {
             array(
                 'post_title'   => 'New Type',
                 'post_content' => '',
-                'post_type'    =>  'estimate',
+                'post_type'    => 'estimate',
                 'post_status'  => 'publish'
             )
         );
