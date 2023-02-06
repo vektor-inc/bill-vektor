@@ -77,16 +77,6 @@ if ( ! class_exists( 'CsvExport' ) ) {
 					$bill_limit_date    = get_post_meta( $post->ID, 'bill_limit_date', true );
 					$date_pay           = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
 
-
-					/*
-					if ( 'tax_not_auto' === get_post_meta( $post->ID, 'bill_tax_type', true ) ) {
-						$bill_total_price = bill_total_no_tax( $post );
-					} else {
-						$bill_total_price = bill_total_add_tax( $post );
-					}
-					$tax                = bill_tax( bill_total_no_tax( $post ) );
-					*/
-
 					$bill_total_price = bill_vektor_invoice_total_tax( $post );
 					$bill_tax_each    = bill_vektor_invoice_each_tax( $post );
 
@@ -95,8 +85,6 @@ if ( ! class_exists( 'CsvExport' ) ) {
 					if ( ! $client_name ) {
 						$client_name = bill_get_client_name( $post );
 					}
-
-					// $tax_rate = bill_tax_rate( $post->ID ) * 100;
 
 					foreach ( $bill_tax_each  as $key => $value ) {
 
@@ -170,13 +158,6 @@ if ( ! class_exists( 'CsvExport' ) ) {
 
 						$bill_limit_date    = get_post_meta( $post->ID, 'bill_limit_date', true );
 						$date_pay           = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
-						/*
-						if ( 'tax_not_auto' === get_post_meta( $post->ID, 'bill_tax_type', true ) ) {
-							$bill_total_price = bill_total_no_tax( $post );
-						} else {
-							$bill_total_price = bill_total_add_tax( $post );
-						}
-						*/
 						$bill_total_price = bill_vektor_invoice_total_tax( $post );
 						// 取引先名（省略名があれば省略名で表示）
 						$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );

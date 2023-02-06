@@ -58,7 +58,7 @@ class PriceTest extends WP_UnitTestCase {
 
 			// 価格を取得
 			$number = bill_item_number( $test_value['number_input'] );
-						$this->assertEquals( $test_value['number_correct'], $number );
+			$this->assertEquals( $test_value['number_correct'], $number );
 
 			print PHP_EOL;
 			print 'number         :' . $number . PHP_EOL;
@@ -89,7 +89,7 @@ class PriceTest extends WP_UnitTestCase {
 
 			// 価格を取得
 			$item_price_total = bill_item_price_total( bill_item_number( $test_value['item_count'] ), bill_item_number( $test_value['item_price'] ) );
-						$this->assertEquals( $test_value['item_price_correct'], $item_price_total );
+			$this->assertEquals( $test_value['item_price_correct'], $item_price_total );
 
 			print PHP_EOL;
 			print 'item_price            :' . $item_price_total . PHP_EOL;
@@ -97,17 +97,4 @@ class PriceTest extends WP_UnitTestCase {
 		} // foreach ( $test_array as $key => $test_value) {
 	} // function test_price() {
 
-	// 消費税が正しく計算されるかどうか
-	// function test_bill_total_add_tax() {
-	// $test_array = array(
-	// 消費税を計算した時の端数が0.4以下のとき
-	// array(
-	//
-	// ),
-	// 消費税を計算した時の端数が0.5以下のとき
-	// array(
-	//
-	// ),
-	// );
-	// }
 }

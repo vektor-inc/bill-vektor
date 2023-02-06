@@ -11,14 +11,9 @@
 	書類の税抜き合計
   bill_total_no_tax()
 
-	// 消費税率
-	bill_tax_rate()
-
   消費税を計算
   bill_tax()
 
-  消費税込みの書類の合計金額
-  bill_total_add_tax()
 
   Chack post type info
   bill_get_post_type()
@@ -115,60 +110,6 @@ function bill_total_no_tax( $post ) {
 	return $bill_total;
 }
 
-
-// 消費税率
-function bill_tax_rate( $post_id ) {
-
-	$post = get_post( $post_id );
-
-	// 消費税率の指定がある場合は直接返す
-	$bill_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
-	if ( $bill_tax_rate ) {
-		$bill_tax_rate = intval( $bill_tax_rate ) / 100;
-		return $bill_tax_rate;
-	}
-
-	// 消費税の指定がない場合
-	// $date                = new DateTime( $post->post_date );
-	// $post_date_timestamp = $date->format( 'U' ) . PHP_EOL;
-	$post_date_timestamp = strtotime( $post->post_date );
-	if ( 1569888000 <= $post_date_timestamp ) {
-		$rate = 0.1;
-	} else {
-		$rate = 0.08;
-	}
-	return $rate;
-}
-
-/*
-  bill_tax()
-/*-------------------------------------------*/
-function bill_tax( $price = 0, $rate = '' ) {
-	if ( ! $rate ) {
-		global $post;
-		$rate = bill_tax_rate( $post->ID );
-	}
-	$tax = floor( $price * $rate );
-	return $tax;
-}
-
-/*
--------------------------------------------*/
-/*
-  消費税込みの書類の合計金額
-/*
-  bill_total_add_tax()
-/*-------------------------------------------*/
-function bill_total_add_tax( $post ) {
-
-	// 消費税抜きの合計金額
-	$bill_total_no_tax = bill_total_no_tax( $post );
-
-	// 税込合計金額 = 消費税抜きの合計金額 + 消費税
-	$bill_total_add_tax = $bill_total_no_tax + bill_tax( $bill_total_no_tax );
-
-	return $bill_total_add_tax;
-}
 
 /**
  * インボイス対応の税率ごとの合計金額
