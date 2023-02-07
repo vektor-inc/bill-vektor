@@ -66,31 +66,27 @@ if ( is_array( $bill_items ) ) {
 			$item_count = bill_item_number( $bill_item['count'] );
 
 			// 単価を数値にフォーマット
-			$item_price = bill_item_number( $bill_item['price'] );
-			if ( 'tax_included' === $bill_item['tax-type'] ) {
-				$item_price = $item_price / ( 1 + $item_tax_rate_value );
-			}
-
-			// 単価と個数が数値なら続行
+			$item_price = bill_vektor_invoice_unit_plice( bill_item_number( $bill_item['price'] ), $item_tax_rate_value, $bill_item['tax-type'] );
+	
+			// 単価と個数と税率が数値なら続行
 			if ( is_numeric( $item_count ) && is_numeric( $item_price ) && is_numeric( $item_tax_rate_value ) ) :
 				// 単価の表示
 				$item_price_print = '¥ ' . number_format( $item_price, $digits );
 
 				// 対象品目の税抜き合計金額
-				$item_price_total =  $item_price * $item_count;
-				$item_price_total_print = '¥ ' . number_format( $item_price_total, $digits );
-	
+				$item_price_total       =  bill_vektor_invoice_total_plice( $item_price, $item_count );
+				$item_price_total_print = '¥ ' . number_format( $item_price_total, $digits );	
 
 				if ( $item_tax_rate !== $tax_array[0] ) {
 					$lite_tax_flag = true;
 				}			
 	
 				// 対象品目の合計消費税額
-				$item_tax_value       = $item_price_total * $item_tax_rate_value;
+				$item_tax_value       = bill_vektor_invoice_tax_plice(  $item_price_total, $item_tax_rate_value );
 				$item_tax_value_print = '¥ ' . number_format( $item_tax_value, $digits );
 	
 				// 対象品目の合計税込金額
-				$item_total = $item_price_total + $item_tax_value;
+				$item_total = bill_vektor_invoice_full_plice( $item_price_total, $item_tax_value );
 				$item_total_print = '¥ ' . number_format( $item_total, $digits );
 	
 				?>
@@ -152,31 +148,34 @@ if ( $bill_total_price_display != 'hidden' ) {
 <table class="table table-bordered table-bill table-bill-total">
 <tr><th>税率</th><th>税抜金額</th><th>消費税額</th><th>税込金額</th></tr>
 <!-- // 税率ごとに各種金額を算出 -->
-<?php foreach ( $tax_total as $total ) : ?>
-	<?php
-	// 税抜金額
-	$bill_total['price'] = ! empty( $bill_total['price'] ) ? $bill_total['price'] + $total['price'] : $total['price'];
-	// 消費税額
-	$bill_total['tax']   = ! empty( $bill_total['tax'] )   ? $bill_total['tax'] + $total['tax'] : $total['tax'];
-	// 税込金額
-	$bill_total['total'] = ! empty( $bill_total['total'] ) ? $bill_total['total'] + $total['total'] : $total['total'];
-	?>
-	<?php if( ! empty( $total['price'] ) && ! empty( $total['tax'] ) && ! empty( $total['total'] ) ) : ?>
-		<tr>
-			<th><?php echo esc_html( $total['rate'] ) ?></th>
-			<td class="price">¥ <?php echo number_format( $total['price'], $digits ) ?></td>
-			<td class="price">¥ <?php echo number_format( $total['tax'], $digits ) ?></td>
-			<td class="price">¥ <?php echo number_format( $total['total'], $digits ) ?></td>
-		</tr>
-	<?php endif; ?>
-<?php endforeach; ?>
+<?php if ( ! empty( $tax_total ) && is_array( $tax_total ) ) : ?>
+	<?php foreach ( $tax_total as $total ) : ?>
+		<?php
+		// 税抜金額
+		$bill_total['price'] = ! empty( $bill_total['price'] ) ? $bill_total['price'] + $total['price'] : $total['price'];
+		// 消費税額
+		$bill_total['tax']   = ! empty( $bill_total['tax'] )   ? $bill_total['tax'] + $total['tax'] : $total['tax'];
+		// 税込金額
+		$bill_total['total'] = ! empty( $bill_total['total'] ) ? $bill_total['total'] + $total['total'] : $total['total'];
+		?>
+		<?php if( ! empty( $total['price'] ) && ! empty( $total['tax'] ) && ! empty( $total['total'] ) ) : ?>
+			<tr>
+				<th><?php echo esc_html( $total['rate'] ) ?></th>
+				<td class="price">¥ <?php echo number_format( $total['price'], $digits ) ?></td>
+				<td class="price">¥ <?php echo number_format( $total['tax'], $digits ) ?></td>
+				<td class="price">¥ <?php echo number_format( $total['total'], $digits ) ?></td>
+			</tr>
+		<?php endif; ?>
+	<?php endforeach; ?>
 
-<tr>
-	<th>合計金額</th>
-	<td class="price">¥ <?php echo number_format( $bill_total['price'], $digits ); ?></td>
-	<td class="price">¥ <?php echo number_format( $bill_total['tax'], $digits ); ?></td>
-	<td class="price">¥ <?php echo number_format( $bill_total['total'], $digits ); ?></td>
-</tr>
+	<tr>
+		<th>合計金額</th>
+		<td class="price">¥ <?php echo number_format( $bill_total['price'], $digits ); ?></td>
+		<td class="price">¥ <?php echo number_format( $bill_total['tax'], $digits ); ?></td>
+		<td class="price">¥ <?php echo number_format( $bill_total['total'], $digits ); ?></td>
+	</tr>
+
+<?php endif; ?>
 </table>
 
 <?php } // if ( $post->bill_total_price_display[0] != 'hidden' ) { ?>

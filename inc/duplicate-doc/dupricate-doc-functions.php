@@ -124,7 +124,7 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 
 		foreach ( $old_bill_items as $bill_item ) {
 			$new_bill_item[] = array(
-				'name'     => $bill_item['rate'],
+				'name'     => $new_post->post_title . ' ( ' . $bill_item['rate'] . ' ) ',
 				'count'    => $bill_item['price'],
 				'unit'     => '式',
 				'price'    => $bill_total,
