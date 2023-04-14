@@ -6,9 +6,15 @@
             "email": "info@vektor-inc.co.jp"
         }
     ],
-    "require": {},
+    "require": {
+        "yahnis-elsts/plugin-update-checker": "^5.0"
+    },
     "require-dev": {
-		"sirbrillig/phpcs-variable-analysis": "^2.8",
-		"wp-phpunit/wp-phpunit": "^5.4"
-    }
+		"sirbrillig/phpcs-variable-analysis": "^2.9",
+		"wp-phpunit/wp-phpunit": "^5.5",
+		"phpcompatibility/phpcompatibility-wp": "^2.1",
+		"yoast/phpunit-polyfills": "^1.0",
+		"vektor-inc/vk-wp-unit-test-tools": "^0.10.0",
+		"doctrine/instantiator": "^1.5.0"
+	}
 }
