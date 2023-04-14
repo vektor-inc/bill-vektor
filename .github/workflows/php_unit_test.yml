@@ -60,8 +60,6 @@ jobs:
               run: WP_ENV_PHP_VERSION=${{ matrix.php-versions }} WP_ENV_CORE=WordPress/WordPress#${{ matrix.wp-versions }} npm run wp-env start --update
             - name: Check WordPress Version
               run: npm run wp-env run cli wp core version
-            - name: Install Themes
-              run: bash bin/install-theme.sh
             - name: Build
               run: npm run build
             - name: Start Environment
