@@ -31,10 +31,11 @@ if ( file_exists( $autoload_path ) ) {
 // Update Checker
 if ( class_exists( 'YahnisElsts\PluginUpdateChecker\v5\PucFactory' ) ){
 	$my_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-		'https://vws.vektor-inc.co.jp/updates/?action=get_metadata&slug=bill-vektor',
+		'https://github.com/vektor-inc/bill-vektor',
 		__FILE__,
 		'bill-vektor'
 	);
+	$my_update_checker->getVcsApi()->enableReleaseAssets();
 }
 
 /*
