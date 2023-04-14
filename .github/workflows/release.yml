@@ -1,0 +1,119 @@
+name: Release
+on:
+    push:
+        tags:
+            - '[0-9]+.[0-9]+.[0-9]+'
+
+env:
+    theme_name: bill-vektor
+
+jobs:
+    php_unit:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php-versions: ['7.4', '8.0', '8.1']
+                wp-versions: ['6.0.3', '6.1.1', '6.2']
+        name: PHP Unit Test on PHP ${{ matrix.php-versions }} / WP ${{ matrix.wp-versions }} Test on ${{ matrix.operating-system }}
+        services:
+            mysql:
+                image: mysql:5.7
+                ports:
+                    - 3306
+                env:
+                    MYSQL_ROOT_PASSWORD: wordpress
+                    MYSQL_DATABASE: wordpress
+                    MYSQL_USER: wordpress
+                    MYSQL_PASSWORD: wordpress
+        steps:
+            - uses: actions/checkout@v3
+            - name: Read .node-version
+              run: echo "{NODEVERSION}={$(cat .node-version)}" >> $GITHUB_OUTPUT
+              id: nodenv
+            - name: Setup Node.js (.node-version)
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '${{ steps.nodenv.outputs.NODEVERSION }}'
+            - name: Cache multiple paths
+              uses: actions/cache@v3
+              with:
+                  path: vendor
+                  key: ${{ runner.os }}-php${{ matrix.php-versions }}-${{ hashFiles('**/composer.lock') }}
+            - name: Setup PHP ${{ matrix.php-versions }}
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php-versions }}
+            - name: install npm scripts
+              run: npm install
+            - name: Install Composer Packages
+              run: composer install
+            - name: Install WP-CLI
+              run: |
+                  curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+                  chmod +x wp-cli.phar
+                  mv wp-cli.phar /usr/local/bin/wp
+            - name: Install several WordPress version by wp-env.override.json
+              run: WP_ENV_PHP_VERSION=${{ matrix.php-versions }} WP_ENV_CORE=WordPress/WordPress#${{ matrix.wp-versions }} npm run wp-env start --update
+            - name: Check WordPress Version
+              run: npm run wp-env run cli wp core version
+            - name: Install Themes
+              run: bash bin/install-theme.sh
+            - name: Build
+              run: npm run build
+            - name: Start Environment
+              run: npx wp-env start && sudo chmod -R 777 ~/wp-env
+            - name: Run PHP Unit Test
+              run: npm run phpunit
+    release:
+        runs-on: ubuntu-latest
+        needs: [php_unit]
+        steps:
+            - uses: actions/checkout@v3
+            - name: Read .node-version
+              run: echo "{NODEVERSION}={$(cat .node-version)}" >> $GITHUB_OUTPUT
+              id: nodenv
+            - name: Setup Node.js (.node-version)
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '${{ steps.nodenv.outputs.NODEVERSION }}'
+            - name: Setup PHP 7.4
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: 7.4
+            - name: Install NPM Scripts
+              run: npm install
+            - name: Install Composer Packages
+              run: composer install
+            - name: Install WP-CLI
+              run: |
+                  curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+                  chmod +x wp-cli.phar
+                  mv wp-cli.phar /usr/local/bin/wp
+            - name: Build
+              run: npm run build
+            - name: Make Distribution
+              # "npm run dist" の中で composer install --no-dev & npx gulp dist してるが、毎回「ちゃんと --no-dev 処理されてるのか？」と心配になるので直書きに変更
+              run: |
+                  composer install --no-dev
+                  npx gulp dist
+                  cd dist/ && zip -r ${{ env.theme_name }}.zip ${{ env.theme_name }}/ && mv ${{ env.theme_name }}.zip ${GITHUB_WORKSPACE}
+            - name: Create GitHub Release
+              id: create_release
+              uses: actions/create-release@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  tag_name: ${{ github.ref }}
+                  release_name: Release ${{ github.ref }}
+                  draft: false
+                  prerelease: false
+            - name: Upload Release Asset
+              id: upload-release-asset
+              uses: actions/upload-release-asset@v1.0.1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ${{ env.theme_name }}.zip
+                  asset_name: ${{ env.theme_name }}.zip
+                  asset_content_type: application/zip

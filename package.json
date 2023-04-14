@@ -8,7 +8,7 @@
     "start": "npm install && composer install && npm run build && wp-env start",
     "wp-env": "wp-env",
     "build": "sass --style=compressed --no-source-map assets/_scss:assets/css",
-    "dist": "gulp dist && cd dist && zip -r bill-vektor.zip bill-vektor",
+    "dist": "gulp dist",
     "sass": "sass --watch assets/_scss:assets/css",
     "phpunit": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/.phpunit.xml --verbose'"
   },
