@@ -10,4 +10,3 @@ _.ftpconfig
 vendor/
 *.override.json
 dist/
-.wp-env.json

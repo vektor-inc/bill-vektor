@@ -19,6 +19,26 @@ $theme_opt = wp_get_theme( get_template() );
 define( 'BILLVEKTOR_THEME_VERSION', $theme_opt->Version );
 
 /**
+ * Composer Autoload
+ */
+$autoload_path = plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
+// vendor ディレクトリがない状態で誤配信された場合に Fatal Error にならないようにファイルの存在確認.
+if ( file_exists( $autoload_path ) ) {
+	// Composer のファイルを読み込み ( composer install --no-dev )
+	require_once $autoload_path;
+}
+
+// Update Checker
+if ( class_exists( 'YahnisElsts\PluginUpdateChecker\v5\PucFactory' ) ){
+	$my_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+		'https://github.com/vektor-inc/bill-vektor',
+		__FILE__,
+		'bill-vektor'
+	);
+	$my_update_checker->getVcsApi()->enableReleaseAssets();
+}
+
+/**
  * 税率の配列
  * 
  * 消費税率の高い順に並べた配列。2番目以降は軽減税率フラグが立つ
@@ -47,13 +67,6 @@ get_template_part( 'inc/template-tags' );
 get_template_part( 'inc/functions-limit-view' );
 get_template_part( 'inc/functions-pre-get-posts' );
 
-require 'inc/plugin-update-checker/plugin-update-checker.php';
-$myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
-	'https://github.com/vektor-inc/bill-vektor/',
-	__FILE__, // Full path to the main plugin file or functions.php.
-	'bill-vektor'
-);
-$myUpdateChecker->setBranch( 'master' );
 
 /*
 -------------------------------------------
