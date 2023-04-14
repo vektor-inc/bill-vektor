@@ -1,19 +1,24 @@
 {
-	"name": "bill-vektor",
-	"version": "1.0.0",
-	"devDependencies": {
-		"sass": "^1.50.0"
-	},
-	"scripts": {
-		"dist": "sass --style=compressed --no-source-map assets/_scss:assets/css && npx gulp dist && cd dist && zip -r bill-vektor.zip bill-vektor",
-		"sass": "sass --watch assets/_scss:assets/css",
-		"phpunit": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/phpunit.xml.dist --verbose'",
-		"phpunit:salary": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/plugins/bill-vektor-salary/phpunit.xml.dist --verbose'"
-	},
-	"dependencies": {
-		"@wordpress/env": "^4.0.5",
-		"gulp": "^4.0.2",
-		"npm-check-updates": "^11.6.0",
-		"run-sequence": "^2.2.1"
-	}
+  "name": "bill-vektor",
+  "version": "1.0.0",
+  "devDependencies": {
+    "sass": "^1.62.0"
+  },
+  "scripts": {
+    "start": "npm install && composer install && npm run build && wp-env start",
+    "wp-env": "wp-env",
+    "build": "sass --style=compressed --no-source-map assets/_scss:assets/css",
+    "dist": "gulp dist",
+    "sass": "sass --watch assets/_scss:assets/css",
+    "phpunit": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/.phpunit.xml --verbose'"
+  },
+  "dependencies": {
+    "@wordpress/env": "^5.16.0",
+    "gulp": "^4.0.2",
+    "npm-check-updates": "^16.10.8",
+    "run-sequence": "^2.2.1"
+  },
+  "volta": {
+    "node": "18.16.0"
+  }
 }
