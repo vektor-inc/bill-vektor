@@ -95,7 +95,9 @@ class Bill_Item_Custom_Fields {
 				$selected = false;
 				if (  ! empty( $value['tax-type'] ) && $tax_type['value'] === $value['tax-type'] ) {
 					$selected = true;
-				} elseif ( ! empty( $old_tax_rate ) && $tax_type['old_type'] === $old_tax_type ) {
+				} elseif ( ! empty( $old_tax_type ) && $tax_type['old_type'] === $old_tax_type ) {
+					$selected = true;
+				} elseif( empty( $value['tax-type'] ) && empty( $old_tax_type ) && 'tax_excluded' === $tax_type['value'] ) {
 					$selected = true;
 				}
 				$form_table .= '<option value="' . $tax_type['value'] . '" ' . selected( $selected, true, false ) . '>' . $tax_type['label'] . '</option>';
@@ -111,6 +113,9 @@ class Bill_Item_Custom_Fields {
 				if (  ! empty( $value['tax-rate'] ) && $tax_rate ===  $value['tax-rate'] ) {
 					$selected = true;
 				} elseif ( ! empty( $old_tax_rate ) && $tax_rate === $old_tax_rate . '%' ) {
+					$selected = true;
+				}
+				elseif( empty( $value['tax-rate'] ) && empty( $old_tax_rate ) && '10%' === $tax_rate ) {
 					$selected = true;
 				}
 				$form_table .= '<option value="' . $tax_rate . '" ' . selected( $selected, true, false ) . '>' . $tax_rate . '</option>';
