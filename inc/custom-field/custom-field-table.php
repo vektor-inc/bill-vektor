@@ -65,14 +65,14 @@ class Bill_Item_Custom_Fields {
 		foreach ( $bill_items as $key => $value ) {
 			$form_table .= '<tr>';
 			$number      = intval( $key ) + 1;
-			$form_table .= '<th class="text-center vertical-middle"><span class="icon-drag"></span></th>';
-			$form_table .= '<th class="text-center vertical-middle"><span class="cell-number">' . $number . '</span></th>';
+			$form_table .= '<th class="text-center vertical-middle bill-cell-toggle"><span class="icon-drag"></span></th>';
+			$form_table .= '<th class="text-center vertical-middle bill-cell-number"><span class="bill-cell-number">' . $number . '</span></th>';
 
 			// 列をループ
 			foreach ( $bill_item_sub_fields as $sub_field => $input_type ) {
 				// php noindex 用に isset （ isset( $value[$sub_field] ) && $value[$sub_field] にすると 0円の時に0が表示されなくなる ）
 				$bill_item_value[ $sub_field ] = ( isset( $value[ $sub_field ] ) ) ? $value[ $sub_field ] : '';
-				$form_table                   .= '<td class="cell-' . $sub_field . '"><input class="flexible-field-item" type="'. $input_type . '" id="bill_items[' . $key . '][' . $sub_field . ']" name="bill_items[' . $key . '][' . $sub_field . ']" value="' . esc_attr( $bill_item_value[ $sub_field ] ) . '"></td>';
+				$form_table                   .= '<td class="bill-cell-' . $sub_field . '"><input class="flexible-field-item" type="'. $input_type . '" id="bill_items[' . $key . '][' . $sub_field . ']" name="bill_items[' . $key . '][' . $sub_field . ']" value="' . esc_attr( $bill_item_value[ $sub_field ] ) . '"></td>';
 			}
 
 			// 税抜きか税込みか
@@ -88,7 +88,7 @@ class Bill_Item_Custom_Fields {
 					'old_type' => 'tax_not_auto',
 				)
 			);
-			$form_table .= '<td class="cell-tax-type">';
+			$form_table .= '<td class="bill-cell-tax-type">';
 			$form_table .= '<select id="bill_items[' . $key . '][tax-type]" name="bill_items[' . $key . '][tax-type]">';
 			$form_table .= '<option value="">選択してください</option>';
 			foreach ( $tax_type_array as $tax_type ) {
@@ -105,7 +105,7 @@ class Bill_Item_Custom_Fields {
 			$form_table .= '</select>';
 
 			// 消費税率
-			$form_table .= '<td class="cell-tax-rate">';
+			$form_table .= '<td class="bill-cell-tax-rate">';
 			$form_table .= '<select id="bill_items[' . $key . '][tax-rate]" name="bill_items[' . $key . '][tax-rate]">';
 			$form_table .= '<option value="">選択してください</option>';
 			foreach ( $tax_rate_array as $tax_rate ) {
@@ -121,7 +121,7 @@ class Bill_Item_Custom_Fields {
 				$form_table .= '<option value="' . $tax_rate . '" ' . selected( $selected, true, false ) . '>' . $tax_rate . '</option>';
 			}
 			$form_table .= '</select>';
-			$form_table .= '<td class="cell-control">
+			$form_table .= '<td class="bill-cell-control">
 			<input type="button" class="add-row button button-primary" value="行を追加" />
 			<input type="button" class="del-row button" value="行を削除" />
 			</td>';

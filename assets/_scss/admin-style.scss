@@ -12,3 +12,25 @@
 	text-align: center;
 	margin-bottom:4px;
 }
+.bill-cell-name{
+ width: 30%;
+}
+
+.bill-cell-toggle,
+.bill-cell-number {
+	width: 5.5%;
+}
+.bill-cell-count,
+.bill-cell-unit,
+.bill-cell-price,
+.bill-cell-tax-type,
+.bill-cell-tax-rate,
+.bill-cell-control{
+	width: 11%;
+	select{
+		width: 100%;
+	}
+	input[button]{ 
+		margin-bottom: 10px;
+	}
+}
