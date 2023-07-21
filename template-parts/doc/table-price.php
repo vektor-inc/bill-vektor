@@ -96,8 +96,8 @@ if ( is_array( $bill_items ) ) {
 				<td class="price"><?php echo esc_html( $item_price_print ); ?></td>
 				<td class="price"><?php echo esc_html( $item_price_total_print ); ?></td>
 				<td class="price"><?php echo esc_html( $item_tax_rate ); ?></td>
-				<td class="price"><?php echo esc_html( $item_tax_value_print ); ?></td>
-				<td class="price"><?php echo esc_html( $item_total_print ); ?></td>
+				<td class="price">-</td>
+				<td class="price">-</td>
 			<!-- // 数値でなければ計算しようがないので空欄に -->
 			<?php else : ?>
 					<td>　</td>
