@@ -29,12 +29,20 @@ class Bill_Admin {
 		<h2>BillVektor設定</h2>
 		<form id="bill-setting-form" method="post" action="">
 		<?php wp_nonce_field( 'bill-nonce-key', 'bill-setting-page' ); ?>
-		<?php $options = get_option( 'bill-setting', Bill_Admin::options_default() ); ?>
+		<?php
+		$options = get_option( 'bill-setting', self::options_default() );
+		$options = wp_parse_args( $options, self::options_default() );
+		?>
 		<table class="form-table">
 		<tr>
 		<th>請求者名</th>
 		<td>
 		<textarea name="bill-setting[own-name]" rows="2"><?php echo esc_textarea( $options['own-name'] ); ?></textarea></td>
+		</tr>
+		<tr>
+		<th>インボイス制度の登録番号</th>
+		<td>
+		<input type="number" name="bill-setting[invoice-number]" value="<?php echo esc_attr( $options['invoice-number'] ); ?>"/></td>
 		</tr>
 		<tr>
 		<th>住所</th>
@@ -129,6 +137,7 @@ TEL : 000-000-0000',
 			'remarks-estimate'   => '本見積もりの有効期限は3ヶ月となります。',
 			'client-doc-message' => '平素は格別のお引き立てにあずかり、厚く御礼申し上げます。
 早速ではございますが下記書類をお送りします。御査収の上よろしく御取計らいの程お願い申し上げます。',
+			'invoice-number'     => '',
 		);
 		return $default;
 	}
