@@ -34,7 +34,7 @@ class Bill_Item_Custom_Fields {
 
 		$bill_item_sub_fields = array(
 			'name'  => 'text',
-			'count' => 'number',
+			'count' => 'text', // number にすると 0.5 人日 などが使えなくなるため
 			'unit'  => 'text',
 			'price' => 'number',
 		);
