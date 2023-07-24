@@ -100,7 +100,7 @@ if ( is_array( $bill_items ) ) {
 				<td class="price">-</td>
 			<!-- // 数値でなければ計算しようがないので空欄に -->
 			<?php else : ?>
-					<td>　</td>
+					<td><?php echo esc_html( $bill_item_name ); ?></td>
 					<td class="text-center" id="bill-item-count-<?php echo $key; ?>">　</td>
 					<td class="text-center">　</td>
 					<td class="price">　</td>
@@ -109,6 +109,16 @@ if ( is_array( $bill_items ) ) {
 					<td class="price">　</td>
 					<td class="price">　</td>
 			<?php endif; ?>
+		<!-- // 品目のみ入力されている場合 -->
+		<?php elseif ( ! empty( $bill_item['name'] ) ) : ?>
+			<td><?php echo esc_html( $bill_item['name'] ); ?></td>
+			<td class="text-center" id="bill-item-count-<?php echo $key; ?>">　</td>
+			<td class="text-center">　</td>
+			<td class="price">　</td>
+			<td class="price">　</td>
+			<td class="price">　</td>
+			<td class="price">　</td>
+			<td class="price">　</td>
 		<!-- // 値が埋まっていなければ表示のしようががないので空欄に -->
 		<?php else : ?>
 			<td>　</td>
