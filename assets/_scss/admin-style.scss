@@ -12,25 +12,44 @@
 	text-align: center;
 	margin-bottom:4px;
 }
-.bill-cell-name{
- width: 30%;
+
+.admin-bill-table {
+	thead th {
+		font-size:10px;
+	}
 }
 
-.bill-cell-toggle,
-.bill-cell-number {
-	width: 5.5%;
-}
-.bill-cell-count,
-.bill-cell-unit,
-.bill-cell-price,
-.bill-cell-tax-type,
-.bill-cell-tax-rate,
-.bill-cell-control{
-	width: 11%;
+td[class*="bill-cell-"] {
 	select{
 		width: 100%;
+		font-size:11px;
 	}
 	input[button]{ 
 		margin-bottom: 10px;
+	}
+}
+.bill-cell-name{
+	min-width: 7em;
+   }
+   
+   .bill-cell-toggle,
+   .bill-cell-number {
+	   width: 5.5%;
+   }
+.bill-cell-price {
+	width:6em;
+}
+.bill-cell-count,
+.bill-cell-unit,
+.bill-cell-tax-type,
+.bill-cell-tax-rate{
+	width:5em;
+}
+.bill-cell-control-cols {
+	display: flex;
+	gap: 4px;
+	flex-wrap: nowrap;
+	.button {
+		font-size:11px;
 	}
 }

@@ -27,9 +27,9 @@ class Bill_Item_Custom_Fields {
 		}
 
 		$form_table  = '<div class="vk-custom-field-builder">';
-		$form_table .= '<table class="table table-striped table-bordered row-control">';
+		$form_table .= '<table class="table admin-bill-table table-striped table-bordered row-control">';
 
-		$form_table .= '<thead><tr><th></th><th></th><th>品目</th><th>数量</th><th>単位</th><th>単価</th><th>税抜/税込</th><th>消費税率</th><th></th></tr></thead>';
+		$form_table .= '<thead><tr><th></th><th></th><th>品目</th><th>数量</th><th>単位</th><th>単価</th><th>税抜/税込</th><th >消費税率</th><th>行の追加・削除</th></tr></thead>';
 		$form_table .= '<tbody class="sortable">';
 
 		$bill_item_sub_fields = array(
@@ -122,8 +122,10 @@ class Bill_Item_Custom_Fields {
 			}
 			$form_table .= '</select>';
 			$form_table .= '<td class="bill-cell-control">
-			<input type="button" class="add-row button button-primary" value="行を追加" />
-			<input type="button" class="del-row button" value="行を削除" />
+			<div class="bill-cell-control-cols">
+			<input type="button" class="add-row button button-primary" value="追加" />
+			<input type="button" class="del-row button" value="削除" />
+			</div>
 			</td>';
 			$form_table .= '</tr>';
 		}
