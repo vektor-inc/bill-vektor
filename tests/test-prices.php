@@ -54,11 +54,17 @@ class PriceTest extends WP_UnitTestCase {
 			),
 		);
 
+		print PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print 'Test Bill Vektor Item Number' . PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print PHP_EOL;
+
 		foreach ( $test_array as $key => $test_value ) {
 
 			// 価格を取得
 			$number = bill_item_number( $test_value['number_input'] );
-						$this->assertEquals( $test_value['number_correct'], $number );
+			$this->assertEquals( $test_value['number_correct'], $number );
 
 			print PHP_EOL;
 			print 'number         :' . $number . PHP_EOL;
@@ -67,47 +73,160 @@ class PriceTest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * 価格テスト.
+	 * 単価テスト.
 	 */
-	function test_price() {
+	function test_bill_vektor_invoice_unit_plice() {
 
 		$test_array = array(
 			array(
-				'item_count'         => 2,
-				'item_price'         => 400,
-				'item_price_correct' => 800,
+				'price'    => 1080,
+				'tax_rate' => 0.08,
+				'tax_type' => 'tax_included',
+				'correct'  => 1000
 			),
-			// 価格の四捨五入
 			array(
-				'item_count'         => '2.７５',
-				'item_price'         => '５',
-				'item_price_correct' => 14,
+				'price'    => 1100,
+				'tax_rate' => 0.1,
+				'tax_type' => 'tax_included',
+				'correct'  => 1000
+			),
+			array(
+				'price'    => 1000,
+				'tax_rate' => 0.08,
+				'tax_type' => 'tax_excluded',
+				'correct'  => 1000
+			),
+			array(
+				'price'    => 1000,
+				'tax_rate' => 0.10,
+				'tax_type' => 'tax_excluded',
+				'correct'  => 1000
 			),
 		);
 
-		foreach ( $test_array as $key => $test_value ) {
+        print PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print 'Test Bill Vektor Invoice Unit Plice' . PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print PHP_EOL;
+
+		foreach ( $test_array as $test_value ) {
 
 			// 価格を取得
-			$item_price_total = bill_item_price_total( bill_item_number( $test_value['item_count'] ), bill_item_number( $test_value['item_price'] ) );
-						$this->assertEquals( $test_value['item_price_correct'], $item_price_total );
+			$return  = bill_vektor_invoice_unit_plice( $test_value['price'], $test_value['tax_rate'], $test_value['tax_type'] );
+			$correct = $test_value['correct'];
+			$this->assertEquals( $correct, $return );
 
 			print PHP_EOL;
-			print 'item_price            :' . $item_price_total . PHP_EOL;
-			print 'item_price_correct    :' . $test_value['item_price_correct'] . PHP_EOL;
-		} // foreach ( $test_array as $key => $test_value) {
-	} // function test_price() {
+			print 'return  :' . $return . PHP_EOL;
+			print 'correct :' . $correct . PHP_EOL;
+		}
+	}
 
-	// 消費税が正しく計算されるかどうか
-	// function test_bill_total_add_tax() {
-	// $test_array = array(
-	// 消費税を計算した時の端数が0.4以下のとき
-	// array(
-	//
-	// ),
-	// 消費税を計算した時の端数が0.5以下のとき
-	// array(
-	//
-	// ),
-	// );
-	// }
+	/**
+	 * 税抜金額テスト.
+	 */
+	function test_bill_vektor_invoice_total_plice() {
+
+		$test_array = array(
+			array(
+				'unit_price' => 1000,
+				'count'      => 10,
+				'correct'    => 10000
+			),
+		);
+
+        print PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print 'Test Bill Vektor Invoice Total Plice' . PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print PHP_EOL;
+
+		foreach ( $test_array as $test_value ) {
+
+			// 価格を取得
+			$return  = bill_vektor_invoice_total_plice( $test_value['unit_price'], $test_value['count'] );
+			$correct = $test_value['correct'];
+			$this->assertEquals( $correct, $return );
+
+			print PHP_EOL;
+			print 'return  :' . $return . PHP_EOL;
+			print 'correct :' . $correct . PHP_EOL;
+		}
+	}
+
+	/**
+	 * 消費税額テスト.
+	 */
+	function test_bill_vektor_invoice_tax_plice() {
+
+		$test_array = array(
+			array(
+				'total_price' => 10000,
+				'tax_rate'    => 0.08,
+				'correct'     => 800
+			),
+			array(
+				'total_price' => 10000,
+				'tax_rate'    => 0.1,
+				'correct'     => 1000
+			),
+		);
+
+        print PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print 'Test Bill Vektor Invoice Total Plice' . PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print PHP_EOL;
+
+		foreach ( $test_array as $test_value ) {
+
+			// 価格を取得
+			$return  = bill_vektor_invoice_total_plice( $test_value['total_price'], $test_value['tax_rate'] );
+			$correct = $test_value['correct'];
+			$this->assertEquals( $correct, $return );
+
+			print PHP_EOL;
+			print 'return  :' . $return . PHP_EOL;
+			print 'correct :' . $correct . PHP_EOL;
+		}
+	}
+
+	/**
+	 * 税込金額テスト.
+	 */
+	function test_bill_vektor_invoice_full_plice() {
+
+		$test_array = array(
+			array(
+				'total_price' => 10000,
+				'tax_price'   => 800,
+				'correct'     => 10800
+			),
+			array(
+				'total_price' => 10000,
+				'tax_price'   => 1000,
+				'correct'     => 11000
+			),
+		);
+
+        print PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print 'Test Bill Vektor Invoice Total Plice' . PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print PHP_EOL;
+
+		foreach ( $test_array as $test_value ) {
+
+			// 価格を取得
+			$return  = bill_vektor_invoice_full_plice( $test_value['total_price'], $test_value['tax_price'] );
+			$correct = $test_value['correct'];
+			$this->assertEquals( $correct, $return );
+
+			print PHP_EOL;
+			print 'return  :' . $return . PHP_EOL;
+			print 'correct :' . $correct . PHP_EOL;
+		}
+	}
+
 }

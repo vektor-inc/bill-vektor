@@ -19,11 +19,7 @@
 <dt>合計金額</dt>
 <?php
 global $post;
-if ( isset( $post->bill_tax_type ) && $post->bill_tax_type == 'tax_not_auto' ) {
-	$bill_total = bill_total_no_tax( $post );
-} else {
-	$bill_total = bill_total_add_tax( $post );
-}
+$bill_total = bill_vektor_invoice_total_tax( $post );
 ?>
 <dd id="bill-frame-total-price">￥ <?php echo number_format( $bill_total ); ?><span class="caption">(消費税含)</span></dd>
 </dl>
@@ -58,6 +54,10 @@ if ( isset( $options['own-seal'] ) && $options['own-seal'] ) {
 	);
 	echo wp_get_attachment_image( $options['own-seal'], 'medium', false, $attr );
 }
+if ( ! empty( $options['invoice-number'] ) ) {
+	echo '登録番号:' . nl2br( esc_textarea( $options['invoice-number'] ) );
+}
+
 ?>
 </div><!-- [ /.address-own ] -->
 </div><!-- [ /.col-xs-5 col-xs-offset-1 ] -->
