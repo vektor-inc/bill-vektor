@@ -68,7 +68,7 @@ if ( is_array( $bill_items ) ) {
 			// 単価を数値にフォーマット
 			$item_price = bill_vektor_invoice_unit_plice( bill_item_number( $bill_item['price'] ), $item_tax_rate_value, $bill_item['tax-type'] );
 	
-			// 単価と個数と税率が数値なら続行
+			// 単価と個数と税率が数値なら続行 ///////////////////////////////////////////////////////
 			if ( is_numeric( $item_count ) && is_numeric( $item_price ) && is_numeric( $item_tax_rate_value ) ) :
 				// 単価の表示
 				$item_price_print = '¥ ' . number_format( $item_price, $digits );
@@ -109,6 +109,7 @@ if ( is_array( $bill_items ) ) {
 					<td class="price">　</td>
 					<td class="price">　</td>
 			<?php endif; ?>
+
 		<!-- // 品目のみ入力されている場合 -->
 		<?php elseif ( ! empty( $bill_item['name'] ) ) : ?>
 			<td><?php echo esc_html( $bill_item['name'] ); ?></td>
