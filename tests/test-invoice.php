@@ -158,7 +158,7 @@ class InvoiceTest extends WP_UnitTestCase {
             ),
         );
 
-        // 古い消費税率（8%）と消費税（最後にまとめて自動計算する）を選んでいた場合
+        // 消費税率と税込・税抜が空の場合
         $posts['empty'] = wp_insert_post(
             array(
                 'post_title'   => 'Old 8% Tax Exclude',
