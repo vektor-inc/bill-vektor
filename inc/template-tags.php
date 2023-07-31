@@ -106,6 +106,47 @@ function bill_vektor_invoice_full_plice( $total_price, $tax_price ) {
 }
 
 /**
+ * 消費税率を処理
+ * 
+ * @param string $tax_rate  現在設定されている税率
+ * @param int $old_tax_rate 過去に設定された税率
+ * @param string $post_date 投稿日時
+ * 
+ * @return string $tax_rate 税率
+ */
+function bill_vektor_fix_tax_rate( $old_tax_rate, $post_date ) {
+	if ( ! empty( $old_tax_rate ) ) {
+		$tax_rate = $old_tax_rate . '%';
+	} else {
+		$post_date = date( $post_date );		
+		$ten_start = date( '2019-10-01 00:00:00' );
+		if ( strtotime( $post_date ) >= strtotime( $ten_start ) ) {
+			$tax_rate = '10%';
+		} else {
+			$tax_rate = '8%';
+		}
+	}
+	return $tax_rate;
+}
+
+/**
+ * 税込・税抜を処理
+ * 
+ * @param string $tax_type     現在設定されている税込・税抜
+ * @param string $old_tax_type 過去に設定された税込・税抜
+ * 
+ * @return string $tax_type 税込・税抜
+ */
+function bill_vektor_fix_tax_type( $old_tax_type ) {
+	if ( 'tax_not_auto' === $old_tax_type ) {
+		$tax_type = 'tax_included';
+	} else {
+		$tax_type = 'tax_excluded';
+	}
+	return $tax_type;
+}
+
+/**
  * インボイス対応の税率ごとの合計金額
  */
 function bill_vektor_invoice_each_tax( $post ) {
@@ -120,23 +161,17 @@ function bill_vektor_invoice_each_tax( $post ) {
 	// 古い税込・税抜
 	$old_tax_type = get_post_meta( $post->ID, 'bill_tax_type', true );
 	if ( is_array( $bill_items ) ) {
+
 		// 行のループ
 		foreach ( $bill_items as $bill_item ) {
 			// 古いカスタムフィールドがある場合それを新仕様に対応
 			if ( empty( $bill_item['tax-rate'] ) ) {
-				if ( ! empty( $old_tax_rate ) ) {
-					$bill_item['tax-rate'] = $old_tax_rate . '%';
-				} else {
-					$bill_item['tax-rate'] = $tax_array[0];
-				}
+				$bill_item['tax-rate'] = bill_vektor_fix_tax_rate( $old_tax_rate, $post->post_date );
 			}
 			if ( empty( $bill_item['tax-type'] ) ) {
-				if ( 'tax_not_auto' === $old_tax_type ) {
-					$bill_item['tax-type'] = 'tax_included';
-				} else {
-					$bill_item['tax-type'] = 'tax_excluded';
-				}
+				$bill_item['tax-type'] = bill_vektor_fix_tax_type( $old_tax_type );
 			}
+
 			// すべてが埋まっていない行は算出対象外に
 			if ( 
 				! empty( $bill_item['name'] ) &&
@@ -205,19 +240,12 @@ function bill_vektor_invoice_total_tax( $post ) {
 	if ( is_array( $bill_items ) ) {
 		// 行のループ
 		foreach ( $bill_items as $bill_item ) {
+			// 古いカスタムフィールドがある場合それを新仕様に対応
 			if ( empty( $bill_item['tax-rate'] ) ) {
-				if ( ! empty( $old_tax_rate ) ) {
-					$bill_item['tax-rate'] = $old_tax_rate . '%';
-				} else {
-					$bill_item['tax-rate'] = $tax_array[0];
-				}
+				$bill_item['tax-rate'] = bill_vektor_fix_tax_rate( $old_tax_rate, $post->post_date );
 			}
 			if ( empty( $bill_item['tax-type'] ) ) {
-				if ( 'tax_not_auto' === $old_tax_type ) {
-					$bill_item['tax-type'] = 'tax_included';
-				} else {
-					$bill_item['tax-type'] = 'tax_excluded';
-				}
+				$bill_item['tax-type'] = bill_vektor_fix_tax_type( $old_tax_type );
 			}
 			// すべてが埋まっていない行は算出対象外に
 			if ( 

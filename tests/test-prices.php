@@ -175,7 +175,7 @@ class PriceTest extends WP_UnitTestCase {
 
         print PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
-		print 'Test Bill Vektor Invoice Total Plice' . PHP_EOL;
+		print 'Test Bill Vektor Invoice Tax Plice' . PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
 		print PHP_EOL;
 
@@ -212,7 +212,7 @@ class PriceTest extends WP_UnitTestCase {
 
         print PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
-		print 'Test Bill Vektor Invoice Total Plice' . PHP_EOL;
+		print 'Test Bill Vektor Invoice Full Plice' . PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
 		print PHP_EOL;
 
@@ -220,6 +220,92 @@ class PriceTest extends WP_UnitTestCase {
 
 			// 価格を取得
 			$return  = bill_vektor_invoice_full_plice( $test_value['total_price'], $test_value['tax_price'] );
+			$correct = $test_value['correct'];
+			$this->assertEquals( $correct, $return );
+
+			print PHP_EOL;
+			print 'return  :' . $return . PHP_EOL;
+			print 'correct :' . $correct . PHP_EOL;
+		}
+	}
+
+	/**
+	 * 税率修正テスト.
+	 */
+	function test_bill_vektor_fix_tax_rate() {
+
+		$test_array = array(
+			array(
+				'old_tax_rate' => 10,
+				'post_date'    => '2019-10-01 00:00:00',
+				'correct'      => '10%'
+			),
+			array(
+				'old_tax_rate' => 8,
+				'post_date'    => '2019-09-30 23:59:59',
+				'correct'      => '8%'
+			),
+			array(
+				'old_tax_rate' => null,
+				'post_date'    => '2019-10-01 00:00:00',
+				'correct'      => '10%'
+			),
+			array(
+				'old_tax_rate' => null,
+				'post_date'    => '2019-09-30 23:59:59',
+				'correct'      => '8%'
+			),
+		);
+
+        print PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print 'Test Bill Vektor Fix Tax Rate' . PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print PHP_EOL;
+
+		foreach ( $test_array as $test_value ) {
+
+			// 価格を取得
+			$return  = bill_vektor_fix_tax_rate( $test_value['old_tax_rate'], $test_value['post_date'] );
+			$correct = $test_value['correct'];
+			$this->assertEquals( $correct, $return );
+
+			print PHP_EOL;
+			print 'return  :' . $return . PHP_EOL;
+			print 'correct :' . $correct . PHP_EOL;
+		}
+	}
+
+	/**
+	 * 税抜・税込修正テスト.
+	 */
+	function test_bill_vektor_fix_tax_type() {
+
+		$test_array = array(
+			array(
+				'old_tax_type' => 'tax_not_auto',
+				'correct'      => 'tax_included'
+			),
+			array(
+				'old_tax_type' => 'tax_auto',
+				'correct'      => 'tax_excluded'
+			),
+			array(
+				'old_tax_type' => null,
+				'correct'      => 'tax_excluded'
+			),
+		);
+
+        print PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print 'Test Bill Vektor Fix Tax Type' . PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print PHP_EOL;
+
+		foreach ( $test_array as $test_value ) {
+
+			// 価格を取得
+			$return  = bill_vektor_fix_tax_type( $test_value['old_tax_type'] );
 			$correct = $test_value['correct'];
 			$this->assertEquals( $correct, $return );
 

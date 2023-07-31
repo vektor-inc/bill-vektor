@@ -32,22 +32,12 @@ if ( is_array( $bill_items ) ) {
 		?>
 		<tr>
 		<?php
-		// 消費税率を設定
+		// 古いカスタムフィールドがある場合それを新仕様に対応
 		if ( empty( $bill_item['tax-rate'] ) ) {
-			if ( ! empty ( $old_tax_rate ) ) {
-				$bill_item['tax-rate'] = $old_tax_rate . '%';
-			} else {
-				$bill_item['tax-rate'] = $tax_array[0];
-			}
-		} 
-	
-		// 税込・税抜を設定
+			$bill_item['tax-rate'] = bill_vektor_fix_tax_rate( $old_tax_rate, $post->post_date );
+		}
 		if ( empty( $bill_item['tax-type'] ) ) {
-			if ( 'tax_not_auto' === $old_tax_type ) {
-				$bill_item['tax-type'] = 'tax_included';
-			} else {
-				$bill_item['tax-type'] = 'tax_excluded';
-			}
+			$bill_item['tax-type'] = bill_vektor_fix_tax_type( $old_tax_type );
 		}
 
 		if ( 
