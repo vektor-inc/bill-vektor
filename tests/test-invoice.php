@@ -159,6 +159,17 @@ class InvoiceTest extends WP_UnitTestCase {
         );
 
         // 古い消費税率（8%）と消費税（最後にまとめて自動計算する）を選んでいた場合
+        $posts['empty'] = wp_insert_post(
+            array(
+                'post_title'   => 'Old 8% Tax Exclude',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['empty'], 'bill_items', $old_bill_item_tax_exclude );
+
+        // 古い消費税率（8%）と消費税（最後にまとめて自動計算する）を選んでいた場合
         $posts['old-8tax-exclude'] = wp_insert_post(
             array(
                 'post_title'   => 'Old 8% Tax Exclude',
@@ -230,6 +241,17 @@ class InvoiceTest extends WP_UnitTestCase {
         $data = self::setup_data();
 
         $test_array = array(
+            array(
+                'post_id'  => $data['empty'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 14000,
+                        'tax'   => 1400,
+                        'total' => 15400,
+                    )
+                )
+            ),
             array(
                 'post_id'  => $data['old-8tax-exclude'],
                 'cortrect' => array(
@@ -316,6 +338,10 @@ class InvoiceTest extends WP_UnitTestCase {
         $data = self::setup_data();
 
         $test_array = array(
+            array(
+                'post_id'  => $data['empty'],
+                'cortrect' => 15400
+            ),
             array(
                 'post_id'  => $data['old-8tax-exclude'],
                 'cortrect' => 15120
