@@ -16,6 +16,7 @@
 /*-------------------------------------------*/
 function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all', $duplicate_type = 'full' ) {
 	$post = get_post( $post_id );
+	$tax_array = bill_vektor_tax_array();
 
 	if ( empty( $post ) ) {
 		return null;
@@ -140,7 +141,7 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 				'count'    => '',
 				'unit'     => '',
 				'price'    => '',
-				'tax-rate' => '10%',
+				'tax-rate' => $tax_array[0],
 				'tax-type' => 'tax_excluded',
 			);
 		}

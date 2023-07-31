@@ -32,7 +32,16 @@ if ( is_array( $bill_items ) ) {
 		?>
 		<tr>
 		<?php
-		$bill_item['tax-rate'] = ! empty( $bill_item['tax-rate'] ) ? $bill_item['tax-rate'] : $old_tax_rate . '%';
+		// 消費税率を設定
+		if ( empty( $bill_item['tax-rate'] ) ) {
+			if ( ! empty ( $old_tax_rate ) ) {
+				$bill_item['tax-rate'] = $old_tax_rate . '%';
+			} else {
+				$bill_item['tax-rate'] = $tax_array[0];
+			}
+		} 
+	
+		// 税込・税抜を設定
 		if ( empty( $bill_item['tax-type'] ) ) {
 			if ( 'tax_not_auto' === $old_tax_type ) {
 				$bill_item['tax-type'] = 'tax_included';
