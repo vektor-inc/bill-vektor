@@ -158,19 +158,19 @@ class InvoiceTest extends WP_UnitTestCase {
             ),
         );
 
-        // 消費税率と税込・税抜が空の場合（10%前）
+        // 消費税率と税込・税抜が空の場合（10%前 / 2019-10-01 より前 ）
         $posts['empty-10-before'] = wp_insert_post(
             array(
                 'post_title'   => 'empty-10-before',
                 'post_content' => '',
                 'post_type'    => 'estimate',
                 'post_status'  => 'publish',
-                'post_date'    => '2019-09-30 23:59:59',                
+                'post_date'    => '2019-09-30 23:59:59',
             )
         );
         add_post_meta( $posts['empty-10-before'], 'bill_items', $old_bill_item_tax_exclude );
 
-        // 消費税率と税込・税抜が空の場合（10%後）
+        // 消費税率と税込・税抜が空の場合（10%後 / 2019-10-01 以降 )
         $posts['empty-10-after'] = wp_insert_post(
             array(
                 'post_title'   => 'empty-10-after',
