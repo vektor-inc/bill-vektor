@@ -63,7 +63,7 @@ class Bill_Item_Custom_Fields {
 		}
 
 		// 行のループ
-		foreach ( $bill_items as $key => $value ) {
+		foreach ( $bill_items as $key => $bill_item ) {
 			$form_table .= '<tr>';
 			$number      = intval( $key ) + 1;
 			$form_table .= '<th class="text-center vertical-middle bill-cell-toggle"><span class="icon-drag"></span></th>';
@@ -71,8 +71,8 @@ class Bill_Item_Custom_Fields {
 
 			// 列をループ
 			foreach ( $bill_item_sub_fields as $sub_field => $input_type ) {
-				// php noindex 用に isset （ isset( $value[$sub_field] ) && $value[$sub_field] にすると 0円の時に0が表示されなくなる ）
-				$bill_item_value[ $sub_field ] = ( isset( $value[ $sub_field ] ) ) ? $value[ $sub_field ] : '';
+				// php noindex 用に isset （ isset( $bill_item[$sub_field] ) && $bill_item[$sub_field] にすると 0円の時に0が表示されなくなる ）
+				$bill_item_value[ $sub_field ] = ( isset( $bill_item[ $sub_field ] ) ) ? $bill_item[ $sub_field ] : '';
 				$form_table                   .= '<td class="bill-cell-' . $sub_field . '"><input class="flexible-field-item" type="'. $input_type . '" id="bill_items[' . $key . '][' . $sub_field . ']" name="bill_items[' . $key . '][' . $sub_field . ']" value="' . esc_attr( $bill_item_value[ $sub_field ] ) . '"></td>';
 			}
 
@@ -94,11 +94,11 @@ class Bill_Item_Custom_Fields {
 			$form_table .= '<option value="">選択してください</option>';
 			foreach ( $tax_type_array as $tax_type ) {
 				$selected = false;
-				if (  ! empty( $value['tax-type'] ) && $tax_type['value'] === $value['tax-type'] ) {
+				if (  ! empty( $bill_item['tax-type'] ) && $tax_type['value'] === $bill_item['tax-type'] ) {
 					$selected = true;
 				} elseif ( ! empty( $old_tax_type ) && $tax_type['old_type'] === $old_tax_type ) {
 					$selected = true;
-				} elseif( empty( $value['tax-type'] ) && empty( $old_tax_type ) && 'tax_excluded' === $tax_type['value'] ) {
+				} elseif( empty( $bill_item['tax-type'] ) && empty( $old_tax_type ) && 'tax_excluded' === $tax_type['value'] ) {
 					$selected = true;
 				}
 				$form_table .= '<option value="' . $tax_type['value'] . '" ' . selected( $selected, true, false ) . '>' . $tax_type['label'] . '</option>';
@@ -112,11 +112,11 @@ class Bill_Item_Custom_Fields {
 			foreach ( $tax_array as $tax_rate ) {
 
 				$selected = false;
-				if (  ! empty( $value['tax-rate'] ) && $tax_rate ===  $value['tax-rate'] ) {
+				if (  ! empty( $bill_item['tax-rate'] ) && $tax_rate ===  $bill_item['tax-rate'] ) {
 					$selected = true;
 				} elseif ( ! empty( $old_tax_rate ) && $tax_rate === $old_tax_rate . '%' ) {
 					$selected = true;
-				} elseif( empty( $value['tax-rate'] ) && empty( $old_tax_rate ) && $tax_array[0] === $tax_rate ) {
+				} elseif( empty( $bill_item['tax-rate'] ) && empty( $old_tax_rate ) && $tax_array[0] === $tax_rate ) {
 					$selected = true;
 				}
 
