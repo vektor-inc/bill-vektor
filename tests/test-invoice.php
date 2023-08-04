@@ -158,6 +158,30 @@ class InvoiceTest extends WP_UnitTestCase {
             ),
         );
 
+        // 消費税率と税込・税抜が空の場合（10%前 / 2019-10-01 より前 ）
+        $posts['empty-10-before'] = wp_insert_post(
+            array(
+                'post_title'   => 'empty-10-before',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish',
+                'post_date'    => '2019-09-30 23:59:59',
+            )
+        );
+        add_post_meta( $posts['empty-10-before'], 'bill_items', $old_bill_item_tax_exclude );
+
+        // 消費税率と税込・税抜が空の場合（10%後 / 2019-10-01 以降 )
+        $posts['empty-10-after'] = wp_insert_post(
+            array(
+                'post_title'   => 'empty-10-after',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish',
+                'post_date'    => '2019-10-01 00:00:00',
+            )
+        );
+        add_post_meta( $posts['empty-10-after'], 'bill_items', $old_bill_item_tax_exclude );
+
         // 古い消費税率（8%）と消費税（最後にまとめて自動計算する）を選んでいた場合
         $posts['old-8tax-exclude'] = wp_insert_post(
             array(
@@ -230,6 +254,28 @@ class InvoiceTest extends WP_UnitTestCase {
         $data = self::setup_data();
 
         $test_array = array(
+            array(
+                'post_id'  => $data['empty-10-before'],
+                'cortrect' => array(
+                    '8%' => array(
+                        'rate'  => '8%対象',
+                        'price' => 14000,
+                        'tax'   => 1120,
+                        'total' => 15120,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['empty-10-after'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 14000,
+                        'tax'   => 1400,
+                        'total' => 15400,
+                    )
+                )
+            ),
             array(
                 'post_id'  => $data['old-8tax-exclude'],
                 'cortrect' => array(
@@ -316,6 +362,14 @@ class InvoiceTest extends WP_UnitTestCase {
         $data = self::setup_data();
 
         $test_array = array(
+            array(
+                'post_id'  => $data['empty-10-before'],
+                'cortrect' => 15120
+            ),
+            array(
+                'post_id'  => $data['empty-10-after'],
+                'cortrect' => 15400
+            ),
             array(
                 'post_id'  => $data['old-8tax-exclude'],
                 'cortrect' => 15120
