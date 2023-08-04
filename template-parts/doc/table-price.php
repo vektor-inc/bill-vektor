@@ -32,8 +32,9 @@ if ( is_array( $bill_items ) ) {
 		?>
 		<tr>
 		<?php
-		// 古いカスタムフィールドがある場合それを新仕様に対応
+		// 品目毎の税率指定がない場合
 		if ( empty( $bill_item['tax-rate'] ) ) {
+			// 税率情報を取得
 			$bill_item['tax-rate'] = bill_vektor_fix_tax_rate( $old_tax_rate, $post->post_date );
 		}
 		if ( empty( $bill_item['tax-type'] ) ) {

@@ -109,17 +109,21 @@ function bill_vektor_invoice_full_plice( $total_price, $tax_price ) {
  * 消費税率を処理
  * 
  * @param string $tax_rate  現在設定されている税率
- * @param int $old_tax_rate 過去に設定された税率
+ * @param int $old_tax_rate 過去に設定された全項目一括指定の税率
  * @param string $post_date 投稿日時
  * 
  * @return string $tax_rate 税率
  */
 function bill_vektor_fix_tax_rate( $old_tax_rate, $post_date ) {
+	// 旧バージョンでの全項目一括指定の税率がある場合はそれの値を反映
 	if ( ! empty( $old_tax_rate ) ) {
 		$tax_rate = $old_tax_rate . '%';
 	} else {
-		$post_date = date( $post_date );		
+		// 書類の投稿日を取得取得
+		$post_date = date( $post_date );
+		// 消費税率が 10% にかわった日時
 		$ten_start = date( '2019-10-01 00:00:00' );
+		// 投稿日時によって税率を指定
 		if ( strtotime( $post_date ) >= strtotime( $ten_start ) ) {
 			$tax_rate = '10%';
 		} else {
