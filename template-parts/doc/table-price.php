@@ -37,7 +37,9 @@ if ( is_array( $bill_items ) ) {
 			// 税率情報を取得
 			$bill_item['tax-rate'] = bill_vektor_fix_tax_rate( $old_tax_rate, $post->post_date );
 		}
+		// 品目毎に税別・税込の指定がない場合
 		if ( empty( $bill_item['tax-type'] ) ) {
+			// 税込・税抜きを取得
 			$bill_item['tax-type'] = bill_vektor_fix_tax_type( $old_tax_type );
 		}
 

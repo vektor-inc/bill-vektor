@@ -168,10 +168,12 @@ function bill_vektor_invoice_each_tax( $post ) {
 
 		// 行のループ
 		foreach ( $bill_items as $bill_item ) {
-			// 古いカスタムフィールドがある場合それを新仕様に対応
+			// 品目毎の税率の指定がない場合
 			if ( empty( $bill_item['tax-rate'] ) ) {
+				// 税率を取得
 				$bill_item['tax-rate'] = bill_vektor_fix_tax_rate( $old_tax_rate, $post->post_date );
 			}
+			// 品目毎の税別・税込みの指定がない場合
 			if ( empty( $bill_item['tax-type'] ) ) {
 				$bill_item['tax-type'] = bill_vektor_fix_tax_type( $old_tax_type );
 			}
