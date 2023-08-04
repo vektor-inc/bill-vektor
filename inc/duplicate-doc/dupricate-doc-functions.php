@@ -141,7 +141,7 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 				'count'    => '',
 				'unit'     => '',
 				'price'    => '',
-				'tax-rate' => $tax_array[0],
+				'tax-rate' => $tax_array[0], // 10%
 				'tax-type' => 'tax_excluded',
 			);
 		}

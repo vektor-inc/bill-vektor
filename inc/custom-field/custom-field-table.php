@@ -94,11 +94,15 @@ class Bill_Item_Custom_Fields {
 			$form_table .= '<option value="">選択してください</option>';
 			foreach ( $tax_type_array as $tax_type ) {
 				$selected = false;
-				if (  ! empty( $bill_item['tax-type'] ) && $tax_type['value'] === $bill_item['tax-type'] ) {
+				if (  ! empty( $bill_item['tax-type'] ) && $bill_item['tax-type'] === $tax_type['value'] ) {
+					// 税込・税別が保存されていて、保存されている値と ループ中の値が一致したら selected
 					$selected = true;
-				} elseif ( ! empty( $old_tax_type ) && $tax_type['old_type'] === $old_tax_type ) {
+				} elseif ( ! empty( $old_tax_type ) && $old_tax_type === $tax_type['old_type'] ) {
+					// 旧バージョンの税込・税別設定（一括指定設定）が保存されていて、
+					// 保存されている値と ループ中の値が一致したら selected
 					$selected = true;
 				} elseif( empty( $bill_item['tax-type'] ) && empty( $old_tax_type ) && 'tax_excluded' === $tax_type['value'] ) {
+					// 税込・税別 についてついて現行版も旧版も保存がない場合 税抜きをデフォルトにする
 					$selected = true;
 				}
 				$form_table .= '<option value="' . $tax_type['value'] . '" ' . selected( $selected, true, false ) . '>' . $tax_type['label'] . '</option>';
