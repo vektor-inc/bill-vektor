@@ -39,6 +39,7 @@ class Bill_Item_Custom_Fields {
 			'price' => 'number',
 		);
 
+		// 存在する消費税率の配列を取得
 		$tax_array = bill_vektor_tax_array();
 
 		// 品目の登録がない場合には8行分の配列を用意しておく
@@ -49,7 +50,7 @@ class Bill_Item_Custom_Fields {
 					'count'    => '',
 					'unit'     => '',
 					'price'    => '',
-					'tax-rate' => $tax_array[0],
+					'tax-rate' => $tax_array[0], // 10%
 					'tax-type' => 'tax_excluded',
 				);
 			}
@@ -109,15 +110,16 @@ class Bill_Item_Custom_Fields {
 			$form_table .= '<select id="bill_items[' . $key . '][tax-rate]" name="bill_items[' . $key . '][tax-rate]">';
 			$form_table .= '<option value="">選択してください</option>';
 			foreach ( $tax_array as $tax_rate ) {
+
 				$selected = false;
 				if (  ! empty( $value['tax-rate'] ) && $tax_rate ===  $value['tax-rate'] ) {
 					$selected = true;
 				} elseif ( ! empty( $old_tax_rate ) && $tax_rate === $old_tax_rate . '%' ) {
 					$selected = true;
-				}
-				elseif( empty( $value['tax-rate'] ) && empty( $old_tax_rate ) && $tax_array[0] === $tax_rate ) {
+				} elseif( empty( $value['tax-rate'] ) && empty( $old_tax_rate ) && $tax_array[0] === $tax_rate ) {
 					$selected = true;
 				}
+
 				$form_table .= '<option value="' . $tax_rate . '" ' . selected( $selected, true, false ) . '>' . $tax_rate . '</option>';
 			}
 			$form_table .= '</select>';
