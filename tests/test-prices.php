@@ -257,11 +257,13 @@ class PriceTest extends WP_UnitTestCase {
 				'post_date'    => '2019-09-30 23:59:59',
 				'correct'      => '10%'
 			),
+			// 古い指定がない場合 10%
 			array(
 				'old_tax_rate' => null,
 				'post_date'    => '2019-10-01 00:00:00',
 				'correct'      => '10%'
 			),
+			// 古い指定がない場合 8%
 			array(
 				'old_tax_rate' => null,
 				'post_date'    => '2019-09-30 23:59:59',
