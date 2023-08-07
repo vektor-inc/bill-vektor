@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.2
 Requires PHP: 7.2
-Stable tag: 1.8.3
+Stable tag: 1.8.４
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,6 +12,9 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
+
+1.8.4
+[ 不具合修正 ] インボイス番号で最初のTが入力できない不具合を修正
 
 1.8.3
 [ 不具合修正 ] 1.8系以降で、過去の書類で消費税未指定の場合に消費税が加算されない不具合を修正
