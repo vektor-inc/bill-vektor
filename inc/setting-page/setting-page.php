@@ -42,7 +42,7 @@ class Bill_Admin {
 		<tr>
 		<th>インボイス制度の登録番号</th>
 		<td>
-		<input type="number" name="bill-setting[invoice-number]" value="<?php echo esc_attr( $options['invoice-number'] ); ?>"/></td>
+		<input type="text" name="bill-setting[invoice-number]" value="<?php echo esc_attr( $options['invoice-number'] ); ?>"/></td>
 		</tr>
 		<tr>
 		<th>住所</th>
