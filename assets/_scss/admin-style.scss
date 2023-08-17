@@ -14,8 +14,25 @@
 }
 
 .admin-bill-table {
+	th,td{
+		box-sizing: border-box;
+		input {
+			box-sizing: border-box;
+		}
+	}
+	.vk-custom-field-builder &.table th,td {
+		padding:5px;
+	}
 	thead th {
 		font-size:10px;
+	}
+	td {
+		input {
+			font-size:12px;
+		}
+		&.bill-cell-name input[type="text"]{
+			width:100%;
+		}
 	}
 }
 
@@ -34,16 +51,27 @@ td[class*="bill-cell-"] {
    
    .bill-cell-toggle,
    .bill-cell-number {
-	   width: 5.5%;
+	   width: 30px;
    }
 .bill-cell-price {
-	width:6em;
+	width: 6em;
+	input {
+		text-align: right;
+	}
 }
 .bill-cell-count,
-.bill-cell-unit,
+.bill-cell-unit{
+	width:4em;
+	input {
+		text-align: center;
+	}
+}
 .bill-cell-tax-type,
-.bill-cell-tax-rate{
-	width:5em;
+.bill-cell-tax-rate {
+	width:6em;
+}
+.bill-cell-control{
+	width: 110px;
 }
 .bill-cell-control-cols {
 	display: flex;

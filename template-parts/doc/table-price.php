@@ -1,14 +1,14 @@
 <table class="table table-bordered table-striped table-bill">
 <thead>
 <tr>
-<th class="text-center">品目</th>
-<th class="text-center">数量</th>
-<th class="text-center">単位</th>
-<th class="text-center">単価</th>
-<th class="text-center">税抜金額</th>
-<th class="text-center">消費税率</th>
-<th class="text-center">消費税額</th>
-<th class="text-center">税込金額</th>
+<th class="text-center bill-cell-name">品目</th>
+<th class="text-center bill-cell-count">数量</th>
+<th class="text-center bill-cell-unit">単位</th>
+<th class="text-center bill-cell-single-price">単価</th>
+<th class="text-center bill-cell-excluding-tax">税抜金額</th>
+<th class="text-center bill-cell-tax-rate">消費税率</th>
+<th class="text-center bill-cell-tax-price">消費税額</th>
+<th class="text-center bill-cell-total-price">税込金額</th>
 </tr>
 </thead>
 <tbody>
