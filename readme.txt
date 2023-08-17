@@ -13,6 +13,8 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+[ デザイン調整 ] 請求品目の入力欄サイズ調整
+
 1.8.4
 [ 不具合修正 ] インボイス番号で最初のTが入力できない不具合を修正
 
