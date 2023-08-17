@@ -111,10 +111,11 @@ table.table-bill {
 	}
 	.price {
 		text-align: right;
-		width:8em;
+		white-space: nowrap;
 	}
 	thead tr th {
 		@include bill-th;
+		box-sizing: border-box;
 	}
 	thead,
 	tfoot {
@@ -124,6 +125,27 @@ table.table-bill {
 	}
 	tfoot{
 		border-top:2px solid #d5d5d5;
+	}
+	.bill-cell-count {
+		width:5em;
+	}
+	.bill-cell-unit {
+		width:3em;
+	}
+	.bill-cell-single-price{
+		width:6em;
+	}
+	.bill-cell-excluding-tax{
+		width:6em;
+	}
+	.bill-cell-tax-rate{
+		width:4em;
+	}
+	.bill-cell-tax-price{
+		width:4em;
+	}
+	.bill-cell-total-price{
+		width:4em;
 	}
 }
 table.table-bill-total {
