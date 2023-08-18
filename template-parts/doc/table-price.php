@@ -28,7 +28,7 @@ $digits = apply_filters( 'item_price_print_digits', 0 );
 if ( is_array( $bill_items ) ) {
 	$tax_total = array();
 	// 行のループ
-	foreach ( $bill_items as $bill_item ) {
+	foreach ( $bill_items as $key => $bill_item ) {
 		?>
 		<tr>
 		<?php
@@ -93,7 +93,7 @@ if ( is_array( $bill_items ) ) {
 	
 				?>
 				<td><?php echo esc_html( $bill_item_name ); ?></td>
-				<td class="text-center" id="bill-item-count-<?php echo $key; ?>"><?php echo esc_html( $item_count ); ?></td>
+				<td class="text-center" id="bill-item-count-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $item_count ); ?></td>
 				<td class="text-center"><?php echo esc_html( $bill_item['unit'] ); ?></td>
 				<td class="price"><?php echo esc_html( $item_price_print ); ?></td>
 				<td class="price"><?php echo esc_html( $item_price_total_print ); ?></td>
@@ -103,7 +103,7 @@ if ( is_array( $bill_items ) ) {
 			<!-- // 数値でなければ計算しようがないので空欄に -->
 			<?php else : ?>
 					<td><?php echo esc_html( $bill_item_name ); ?></td>
-					<td class="text-center" id="bill-item-count-<?php echo $key; ?>">　</td>
+					<td class="text-center" id="bill-item-count-<?php echo esc_attr( $key ); ?>">　</td>
 					<td class="text-center">　</td>
 					<td class="price">　</td>
 					<td class="price">　</td>
@@ -115,7 +115,7 @@ if ( is_array( $bill_items ) ) {
 		<!-- // 品目のみ入力されている場合 -->
 		<?php elseif ( ! empty( $bill_item['name'] ) ) : ?>
 			<td><?php echo esc_html( $bill_item['name'] ); ?></td>
-			<td class="text-center" id="bill-item-count-<?php echo $key; ?>">　</td>
+			<td class="text-center" id="bill-item-count-<?php echo esc_attr( $key ); ?>">　</td>
 			<td class="text-center">　</td>
 			<td class="price">　</td>
 			<td class="price">　</td>
@@ -125,7 +125,7 @@ if ( is_array( $bill_items ) ) {
 		<!-- // 値が埋まっていなければ表示のしようががないので空欄に -->
 		<?php else : ?>
 			<td>　</td>
-			<td class="text-center" id="bill-item-count-<?php echo $key; ?>">　</td>
+			<td class="text-center" id="bill-item-count-<?php echo esc_attr( $key ); ?>">　</td>
 			<td class="text-center">　</td>
 			<td class="price">　</td>
 			<td class="price">　</td>

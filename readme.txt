@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.2
 Requires PHP: 7.2
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,6 +12,9 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
+
+1.9.1
+[ 不具合修正 ] テーブルでPHPエラーが発生していたので修正
 
 1.9.0
 [ デザイン調整 ] 請求・見積品目の表示サイズ調整
