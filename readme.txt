@@ -13,6 +13,8 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+[ 不具合修正 ] テーブルでPHPエラーが発生していたので修正
+
 1.9.0
 [ デザイン調整 ] 請求・見積品目の表示サイズ調整
 [ デザイン調整 ] 請求・見積品目の入力欄サイズ調整
