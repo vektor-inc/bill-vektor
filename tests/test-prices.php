@@ -102,6 +102,24 @@ class PriceTest extends WP_UnitTestCase {
 				'tax_type' => 'tax_excluded',
 				'correct'  => 1000
 			),
+			array(
+				'price'    => 6000,
+				'tax_rate' => 0.10,
+				'tax_type' => 'tax_included',
+				'correct'  => 5455
+			),
+			array(
+				'price'    => 6000,
+				'tax_rate' => 0.10,
+				'tax_type' => 'tax_included_ceil',
+				'correct'  => 5455
+			),
+			array(
+				'price'    => 6000,
+				'tax_rate' => 0.10,
+				'tax_type' => 'tax_included_floor',
+				'correct'  => 5454
+			),
 		);
 
         print PHP_EOL;
@@ -182,7 +200,7 @@ class PriceTest extends WP_UnitTestCase {
 		foreach ( $test_array as $test_value ) {
 
 			// 価格を取得
-			$return  = bill_vektor_invoice_total_plice( $test_value['total_price'], $test_value['tax_rate'] );
+			$return  = bill_vektor_invoice_tax_plice( $test_value['total_price'], $test_value['tax_rate'] );
 			$correct = $test_value['correct'];
 			$this->assertEquals( $correct, $return );
 

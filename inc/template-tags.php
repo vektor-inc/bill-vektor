@@ -61,9 +61,13 @@ function bill_item_number( $number = 0 ) {
  */
 function bill_vektor_invoice_unit_plice( $price, $tax_rate, $tax_type ) {
 
-	// 税込み格の場合は税抜価格を算出して返し、そうでない場合はそのまま返す
+	// 税込価格の場合は税抜価格を算出して返し、そうでない場合はそのまま返す
 	if ( 'tax_included' === $tax_type ) {
-		$unit_price = $price / ( 1 + $tax_rate );
+		$unit_price = round( $price / ( 1 + $tax_rate ) );
+	} elseif ( 'tax_included_ceil' === $tax_type ) {
+		$unit_price = ceil( $price / ( 1 + $tax_rate ) );
+	} elseif ( 'tax_included_floor' === $tax_type ) {
+		$unit_price = floor( $price / ( 1 + $tax_rate ) );
 	} else {
 		$unit_price = $price;
 	}
