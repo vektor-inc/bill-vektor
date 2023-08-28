@@ -84,10 +84,20 @@ class Bill_Item_Custom_Fields {
 					'old_type' => 'tax_auto',
 				),
 				array( 
-					'label'    => '税込',
+					'label'    => '税込（税抜単価は四捨五入）',
 					'value'    => 'tax_included',
 					'old_type' => 'tax_not_auto',
-				)
+				),
+				array( 
+					'label'    => '税込（税抜単価は切り上げ）',
+					'value'    => 'tax_included_ceil',
+					'old_type' => '',
+				),
+				array( 
+					'label'    => '税込（税抜単価は切り捨て）',
+					'value'    => 'tax_included_floor',
+					'old_type' => '',
+				),
 			);
 			$form_table .= '<td class="bill-cell-tax-type">';
 			$form_table .= '<select id="bill_items[' . $key . '][tax-type]" name="bill_items[' . $key . '][tax-type]">';
@@ -102,7 +112,7 @@ class Bill_Item_Custom_Fields {
 					// 保存されている値と ループ中の値が一致したら selected
 					$selected = true;
 				} elseif( empty( $bill_item['tax-type'] ) && empty( $old_tax_type ) && 'tax_excluded' === $tax_type['value'] ) {
-					// 税込・税別 についてついて現行版も旧版も保存がない場合 税抜きをデフォルトにする
+					// 税込・税別 について現行版も旧版も保存がない場合 税抜をデフォルトにする
 					$selected = true;
 				}
 				$form_table .= '<option value="' . $tax_type['value'] . '" ' . selected( $selected, true, false ) . '>' . $tax_type['label'] . '</option>';

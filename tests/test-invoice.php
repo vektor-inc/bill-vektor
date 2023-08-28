@@ -245,6 +245,183 @@ class InvoiceTest extends WP_UnitTestCase {
         );
         add_post_meta( $posts['invoice'], 'bill_items', $bill_item_invoice );
 
+        // 税込 6000 円（単価：四捨五入）の処理共通項目
+        $bill_item_tax_round = array(
+            array(
+                'name'     => 'item-001',
+                'count'    => '1',
+                'unit'     => '個',
+                'price'    => 6000,
+                'tax-rate' => '10%',
+                'tax-type' => 'tax_included',
+            ),
+        );
+
+        // 税込 6000 円の処理（単価：四捨五入・消費税：デフォルト）
+        $posts['tax_round_default'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_round_default'], 'bill_items', $bill_item_tax_round  );
+
+        // 税込 6000 円の処理（単価：四捨五入・消費税：四捨五入）
+        $posts['tax_round_round'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_round_round'], 'bill_items', $bill_item_tax_round );
+        add_post_meta( $posts['tax_round_round'], 'bill_tax_fraction', 'round' );
+
+        // 税込 6000 円の処理（単価：四捨五入・消費税：切り上げ）
+        $posts['tax_round_ceil'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_round_ceil'], 'bill_items', $bill_item_tax_round );
+        add_post_meta( $posts['tax_round_ceil'], 'bill_tax_fraction', 'ceil' );
+
+        // 税込 6000 円の処理（単価：四捨五入・消費税：切り捨て）
+        $posts['tax_round_floor'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_round_floor'], 'bill_items', $bill_item_tax_round );
+        add_post_meta( $posts['tax_round_floor'], 'bill_tax_fraction', 'floor' );
+
+        // 税込 6000 円単価：切り上げ）の処理共通項目
+        $bill_item_tax_ceil = array(
+            array(
+                'name'     => 'item-001',
+                'count'    => '1',
+                'unit'     => '個',
+                'price'    => 6000,
+                'tax-rate' => '10%',
+                'tax-type' => 'tax_included_ceil',
+            ),
+        );
+
+        // 税込 6000 円の処理（単価：切り上げ・消費税：デフォルト）
+        $posts['tax_ceil_default'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_ceil_default'], 'bill_items', $bill_item_tax_ceil  );
+
+        // 税込 6000 円の処理（単価：切り上げ・消費税：四捨五入）
+        $posts['tax_ceil_round'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_ceil_round'], 'bill_items', $bill_item_tax_ceil );
+        add_post_meta( $posts['tax_ceil_round'], 'bill_tax_fraction', 'round' );
+
+        // 税込 6000 円の処理（単価：切り上げ・消費税：切り上げ）
+        $posts['tax_ceil_ceil'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_ceil_ceil'], 'bill_items', $bill_item_tax_ceil );
+        add_post_meta( $posts['tax_ceil_ceil'], 'bill_tax_fraction', 'ceil' );
+
+        // 税込 6000 円の処理（単価：切り上げ・消費税：切り捨て）
+        $posts['tax_ceil_floor'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_ceil_floor'], 'bill_items', $bill_item_tax_ceil );
+        add_post_meta( $posts['tax_ceil_floor'], 'bill_tax_fraction', 'floor' );
+
+        // 税込 6000 円の処理共通項目
+        $bill_item_tax_floor = array(
+            array(
+                'name'     => 'item-001',
+                'count'    => '1',
+                'unit'     => '個',
+                'price'    => 6000,
+                'tax-rate' => '10%',
+                'tax-type' => 'tax_included_floor',
+            ),
+        );
+
+        // 税込 6000 円の処理（単価：切り捨て・消費税：デフォルト）
+        $posts['tax_floor_default'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_floor_default'], 'bill_items', $bill_item_tax_floor  );
+
+        // 税込 6000 円の処理（単価：切り捨て・消費税：四捨五入）
+        $posts['tax_floor_round'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_floor_round'], 'bill_items', $bill_item_tax_floor );
+        add_post_meta( $posts['tax_floor_round'], 'bill_tax_fraction', 'round' );
+
+        // 税込 6000 円の処理（単価：切り捨て・消費税：切り上げ）
+        $posts['tax_floor_ceil'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_floor_ceil'], 'bill_items', $bill_item_tax_floor );
+        add_post_meta( $posts['tax_floor_ceil'], 'bill_tax_fraction', 'ceil' );
+
+        // 税込 6000 円の処理（単価：切り捨て・消費税：切り捨て）
+        $posts['tax_floor_floor'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_floor_floor'], 'bill_items', $bill_item_tax_floor );
+        add_post_meta( $posts['tax_floor_floor'], 'bill_tax_fraction', 'floor' );
+
         return $posts;
 
     }
@@ -337,6 +514,138 @@ class InvoiceTest extends WP_UnitTestCase {
                     )
                 )
             ),
+            array(
+                'post_id'  => $data['tax_round_default'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5455,
+                        'tax'   => 546,
+                        'total' => 6001,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_round_round'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5455,
+                        'tax'   => 546,
+                        'total' => 6001,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_round_ceil'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5455,
+                        'tax'   => 546,
+                        'total' => 6001,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_round_floor'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5455,
+                        'tax'   => 545,
+                        'total' => 6000,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_ceil_default'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5455,
+                        'tax'   => 546,
+                        'total' => 6001,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_ceil_round'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5455,
+                        'tax'   => 546,
+                        'total' => 6001,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_ceil_ceil'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5455,
+                        'tax'   => 546,
+                        'total' => 6001,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_ceil_floor'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5455,
+                        'tax'   => 545,
+                        'total' => 6000,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_floor_default'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5454,
+                        'tax'   => 545,
+                        'total' => 5999,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_floor_round'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5454,
+                        'tax'   => 545,
+                        'total' => 5999,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_floor_ceil'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5454,
+                        'tax'   => 546,
+                        'total' => 6000,
+                    )
+                )
+            ),
+            array(
+                'post_id'  => $data['tax_floor_floor'],
+                'cortrect' => array(
+                    '10%' => array(
+                        'rate'  => '10%対象',
+                        'price' => 5454,
+                        'tax'   => 545,
+                        'total' => 5999,
+                    )
+                )
+            ),
         );
 
         print PHP_EOL;
@@ -389,6 +698,54 @@ class InvoiceTest extends WP_UnitTestCase {
             array(
                 'post_id'  => $data['invoice'],
                 'cortrect' => 32800
+            ),
+            array(
+                'post_id'  => $data['tax_round_default'],
+                'cortrect' => 6001
+            ),
+            array(
+                'post_id'  => $data['tax_round_round'],
+                'cortrect' => 6001
+            ),
+            array(
+                'post_id'  => $data['tax_round_ceil'],
+                'cortrect' => 6001
+            ),
+            array(
+                'post_id'  => $data['tax_round_floor'],
+                'cortrect' => 6000
+            ),
+            array(
+                'post_id'  => $data['tax_ceil_default'],
+                'cortrect' => 6001
+            ),
+            array(
+                'post_id'  => $data['tax_ceil_round'],
+                'cortrect' => 6001
+            ),
+            array(
+                'post_id'  => $data['tax_ceil_ceil'],
+                'cortrect' => 6001
+            ),
+            array(
+                'post_id'  => $data['tax_ceil_floor'],
+                'cortrect' => 6000
+            ),
+            array(
+                'post_id'  => $data['tax_floor_default'],
+                'cortrect' => 5999
+            ),
+            array(
+                'post_id'  => $data['tax_floor_round'],
+                'cortrect' => 5999
+            ),
+            array(
+                'post_id'  => $data['tax_floor_ceil'],
+                'cortrect' => 6000
+            ),
+            array(
+                'post_id'  => $data['tax_floor_floor'],
+                'cortrect' => 5999
             ),
         );
 
