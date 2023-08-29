@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.2
 Requires PHP: 7.2
-Stable tag: 1.9.1
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.10.0
 [ 仕様変更 ] 品目毎に税込単価から税抜単価を計算する際税抜単価の四捨五入・切り上げ・切り捨てが選択可能に
 [ 仕様変更 ] 消費税の端数を処理する際の処理をの四捨五入・切り上げ・切り捨てが選択可能に
 
