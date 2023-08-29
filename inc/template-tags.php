@@ -61,9 +61,13 @@ function bill_item_number( $number = 0 ) {
  */
 function bill_vektor_invoice_unit_plice( $price, $tax_rate, $tax_type ) {
 
-	// 税込み格の場合は税抜価格を算出して返し、そうでない場合はそのまま返す
+	// 税込価格の場合は税抜価格を算出して返し、そうでない場合はそのまま返す
 	if ( 'tax_included' === $tax_type ) {
-		$unit_price = $price / ( 1 + $tax_rate );
+		$unit_price = round( $price / ( 1 + $tax_rate ) );
+	} elseif ( 'tax_included_ceil' === $tax_type ) {
+		$unit_price = ceil( $price / ( 1 + $tax_rate ) );
+	} elseif ( 'tax_included_floor' === $tax_type ) {
+		$unit_price = floor( $price / ( 1 + $tax_rate ) );
 	} else {
 		$unit_price = $price;
 	}
@@ -164,6 +168,9 @@ function bill_vektor_invoice_each_tax( $post ) {
 	$old_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
 	// 古い税込・税抜
 	$old_tax_type = get_post_meta( $post->ID, 'bill_tax_type', true );
+	// 消費税の丸め処理
+	$tax_fraction = ! empty( get_post_meta( $post->ID, 'bill_tax_fraction', true ) ) ? get_post_meta( $post->ID, 'bill_tax_fraction', true ) : 'round';
+
 	if ( is_array( $bill_items ) ) {
 
 		// 行のループ
@@ -217,12 +224,18 @@ function bill_vektor_invoice_each_tax( $post ) {
 							$tax_total[$tax_rate]['price'] = ! empty( $tax_total[$tax_rate]['price'] ) ? $tax_total[$tax_rate]['price'] + $item_total : $item_total;
 							// 対象税率の消費税額
 							$tax_total[$tax_rate]['tax']   = ! empty( $tax_total[$tax_rate]['tax'] )   ? $tax_total[$tax_rate]['tax'] + $item_tax_value : $item_tax_value;
-							// 対象税率の税込合計金額
-							$tax_total[$tax_rate]['total'] = ! empty( $tax_total[$tax_rate]['total'] ) ? $tax_total[$tax_rate]['total'] + $item_tax_total : $item_tax_total;
 						}
 					}
 				}
 			}
+		}
+		// 出来上がった配列の消費税と合計金額を調整
+		foreach( $tax_total as $tax_key => $tax_value ) {
+			// 消費税の丸め処理
+			// $tax_fraction には floor, round, ceil のいずれかが入っているので call_user_func でその関数を直接呼び出している
+			$tax_total[$tax_key]['tax']   = call_user_func( $tax_fraction, $tax_value['tax'] );
+			// 税抜金額と消費税から税込み金額を算出
+			$tax_total[$tax_key]['total'] = $tax_value['price'] + $tax_total[$tax_key]['tax'];
 		}
 	}
 	return $tax_total;
@@ -232,63 +245,13 @@ function bill_vektor_invoice_each_tax( $post ) {
  * インボイス対応の合計金額
  */
 function bill_vektor_invoice_total_tax( $post ) {
-	// カスタムフィールドを取得
-	$bill_items           = get_post_meta( $post->ID, 'bill_items', true );
-	// 支払い総額を初期化
-	$bill_total           = 0;
-	// 古い消費税率
-	$old_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
-	// 古い税込・税抜
-	$old_tax_type = get_post_meta( $post->ID, 'bill_tax_type', true );
-	// 消費税率の配列
-	$tax_array = bill_vektor_tax_array();
+	$total_array = bill_vektor_invoice_each_tax( $post );
+	$bill_total  = 0;
 
-	if ( is_array( $bill_items ) ) {
-		// 行のループ
-		foreach ( $bill_items as $bill_item ) {
-			// 古いカスタムフィールドがある場合それを新仕様に対応
-			if ( empty( $bill_item['tax-rate'] ) ) {
-				$bill_item['tax-rate'] = bill_vektor_fix_tax_rate( $old_tax_rate, $post->post_date );
-			}
-			if ( empty( $bill_item['tax-type'] ) ) {
-				$bill_item['tax-type'] = bill_vektor_fix_tax_type( $old_tax_type );
-			}
-			// すべてが埋まっていない行は算出対象外に
-			if ( 
-				! empty( $bill_item['name'] ) &&
-				! empty( $bill_item['count'] ) &&
-				! empty( $bill_item['unit'] ) &&
-				! empty( $bill_item['price'] ) &&
-				! empty( $bill_item['tax-rate'] ) &&
-				! empty( $bill_item['tax-type'] ) 
-			) {
-				// 税率を数値に変換
-				$item_tax_rate  = 0.01 * intval( str_replace( '%', '', $bill_item['tax-rate'] ) );
-
-				// 単価を数値に変換
-				$item_price = bill_vektor_invoice_unit_plice( bill_item_number( $bill_item['price'] ), $item_tax_rate, $bill_item['tax-type'] );
-
-				// 個数を数値に変換						
-				$item_count = bill_item_number( $bill_item['count'] );
-
-				// 上記３つが数値なら合計金額を算出
-				if ( is_numeric( $item_count ) && is_numeric( $item_price ) && is_numeric( $item_tax_rate ) ) {
-
-					// 合計金額を算出
-					$item_total     = bill_vektor_invoice_total_plice( $item_price,  $item_count );	
-
-					// 品目ごとの消費税額
-					$item_tax_value = bill_vektor_invoice_tax_plice( $item_total, $item_tax_rate );
-
-					// 品目ごとの税込合計金額					
-					$item_tax_total = bill_vektor_invoice_full_plice( $item_total, $item_tax_value );
-					
-					// 合計金額に加算
-					$bill_total += $item_tax_total;			
-				}
-			}
-		} // foreach ($bill_items as $key => $value) {
-	} // if ( is_array( $bill_items ) ) {
+	foreach( $total_array as $tax_value ) {
+		//var_dump($tax_value);
+		$bill_total = $bill_total + $tax_value['total'];
+	}
 
 	return $bill_total;
 }

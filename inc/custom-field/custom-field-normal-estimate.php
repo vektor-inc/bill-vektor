@@ -111,6 +111,17 @@ class Estimate_Normal_Custom_Fields {
 				),
 			),
 			*/
+			'bill_tax_fraction' => array(
+				'label'       => __( '消費税の端数処理', 'bill-vektor' ),
+				'type'        => 'radio',
+				'description' => '',
+				'required'    => false,
+				'options'     => array(
+					'round' => __( '四捨五入', 'bill-vektor' ),
+					'ceil'  => __( '切り上げ', 'bill-vektor' ),
+					'floor' => __( '切り捨て', 'bill-vektor' ),
+				),
+			),
 			'bill_total_price_display' => array(
 				'label'       => __( '合計の表示', 'bill-vektor' ),
 				'type'        => 'checkbox',
