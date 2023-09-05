@@ -1,8 +1,8 @@
 === BillVektor ===
 Contributors: kurudrive,vektor-inc,rickaddison7634
-Tested up to: 6.2
+Tested up to: 6.3
 Requires PHP: 7.2
-Stable tag: 1.10.0
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.11.0
 [ 仕様変更 ] 税率に非課税を追加
 
 1.10.0
