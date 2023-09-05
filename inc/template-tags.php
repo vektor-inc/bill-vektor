@@ -164,6 +164,7 @@ function bill_vektor_invoice_each_tax( $post ) {
 	$tax_array = bill_vektor_tax_array();
 	// 税率ごとに税込み金額・消費税額・合計金額を算出した配列を初期化
 	$tax_total = array();
+	$final_tax_total = array();
 	// 古い消費税率
 	$old_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
 	// 古い税込・税抜
@@ -237,7 +238,25 @@ function bill_vektor_invoice_each_tax( $post ) {
 			// 税抜金額と消費税から税込み金額を算出
 			$tax_total[$tax_key]['total'] = $tax_value['price'] + $tax_total[$tax_key]['tax'];
 		}
+
+		// 税率の高い順に一応並び替え
+		foreach( $tax_array as $tax_rate ) {
+			if ( 
+				! empty ( $tax_total[$tax_rate]['rate'] ) &&
+				! empty ( $tax_total[$tax_rate]['price'] ) &&
+				! empty ( $tax_total[$tax_rate]['tax'] || 0.0 === $tax_total[$tax_rate]['tax'] ) &&				
+				! empty ( $tax_total[$tax_rate]['total'] ) &&
+				$tax_rate  . '対象' === $tax_total[$tax_rate]['rate']
+			) {
+				$final_tax_total[$tax_rate]['rate']  = $tax_total[$tax_rate]['rate'];
+				$final_tax_total[$tax_rate]['price'] = $tax_total[$tax_rate]['price'];
+				$final_tax_total[$tax_rate]['tax']   = $tax_total[$tax_rate]['tax'];
+				$final_tax_total[$tax_rate]['total'] = $tax_total[$tax_rate]['total'];
+			}
+		}
+		$tax_total = $final_tax_total;
 	}
+
 	return $tax_total;
 }
 

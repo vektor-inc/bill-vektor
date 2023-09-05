@@ -42,10 +42,10 @@ if ( class_exists( 'YahnisElsts\PluginUpdateChecker\v5\PucFactory' ) ){
  * 存在する消費税率の配列
  * 
  * 消費税率の高い順に並べた配列。2番目以降は軽減税率フラグが立つ
- * @return $tax_array : 10%, 8%
+ * @return $tax_array : 10%, 8%, 0%
  */
 function bill_vektor_tax_array() {
-	$tax_array = array( '10%', '8%' );
+	$tax_array = array( '10%', '8%', '0%' );
 	return $tax_array;
 }
 

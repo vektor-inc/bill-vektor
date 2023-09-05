@@ -133,8 +133,10 @@ class Bill_Item_Custom_Fields {
 				} elseif( empty( $bill_item['tax-rate'] ) && empty( $old_tax_rate ) && $tax_array[0] === $tax_rate ) {
 					$selected = true;
 				}
-
-				$form_table .= '<option value="' . $tax_rate . '" ' . selected( $selected, true, false ) . '>' . $tax_rate . '</option>';
+				// 表示用消費税率
+				$form_tax_rate = $tax_rate !== '0%' ? $tax_rate : __( '非課税', 'bill-vektor' );
+				//オプションを表示
+				$form_table .= '<option value="' . $tax_rate . '" ' . selected( $selected, true, false ) . '>' . $form_tax_rate . '</option>';
 			}
 			$form_table .= '</select>';
 			$form_table .= '<td class="bill-cell-control">
