@@ -780,6 +780,10 @@ class InvoiceTest extends WP_UnitTestCase {
                 'post_id'  => $data['tax_floor_floor'],
                 'cortrect' => 5999
             ),
+            array(
+                'post_id'  => $data['tax_none'],
+                'cortrect' => 6000
+            ),
         );
 
         print PHP_EOL;
