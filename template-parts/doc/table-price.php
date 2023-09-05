@@ -53,7 +53,7 @@ if ( is_array( $bill_items ) ) {
 		) :
 			// 品目
 			// 軽減税率対象なら＊を付加
-			if ( $bill_item['tax-rate'] !== $tax_array[0] ) {
+			if ( $bill_item['tax-rate'] !== $tax_array[0] && $bill_item['tax-rate'] !== '0%' ) {
 				$bill_item_name = $bill_item['name'] . '＊';
 			// そうでなければ通常通り
 			} else {
@@ -79,14 +79,15 @@ if ( is_array( $bill_items ) ) {
 				$item_price_total       =  bill_vektor_invoice_total_plice( $item_price, $item_count );
 				$item_price_total_print = '¥ ' . number_format( $item_price_total, $digits );	
 
-				if ( $item_tax_rate !== $tax_array[0] ) {
+				if ( $item_tax_rate !== $tax_array[0] && $item_tax_rate !== '0%' ) {
 					$lite_tax_flag = true;
 				}			
 	
 				// 対象品目の合計消費税額
 				$item_tax_value       = bill_vektor_invoice_tax_plice(  $item_price_total, $item_tax_rate_value );
 				$item_tax_value_print = '¥ ' . number_format( $item_tax_value, $digits );
-	
+				$form_item_tax_rate   = $item_tax_rate !== '0%' ? $item_tax_rate : __( '非課税', 'bill-vektor' );
+
 				// 対象品目の合計税込金額
 				$item_total = bill_vektor_invoice_full_plice( $item_price_total, $item_tax_value );
 				$item_total_print = '¥ ' . number_format( $item_total, $digits );
@@ -97,7 +98,7 @@ if ( is_array( $bill_items ) ) {
 				<td class="text-center"><?php echo esc_html( $bill_item['unit'] ); ?></td>
 				<td class="price"><?php echo esc_html( $item_price_print ); ?></td>
 				<td class="price"><?php echo esc_html( $item_price_total_print ); ?></td>
-				<td class="price"><?php echo esc_html( $item_tax_rate ); ?></td>
+				<td class="price"><?php echo esc_html( $form_item_tax_rate ); ?></td>
 				<td class="price">-</td>
 				<td class="price">-</td>
 			<!-- // 数値でなければ計算しようがないので空欄に -->
@@ -113,7 +114,7 @@ if ( is_array( $bill_items ) ) {
 			<?php endif; ?>
 
 		<!-- // 品目のみ入力されている場合 -->
-		<?php elseif ( ! empty( $bill_item['name'] ) ) : ?>
+		<?php elseif ( isset( $bill_item['name'] ) ) : ?>
 			<td><?php echo esc_html( $bill_item['name'] ); ?></td>
 			<td class="text-center" id="bill-item-count-<?php echo esc_attr( $key ); ?>">　</td>
 			<td class="text-center">　</td>
@@ -170,12 +171,19 @@ if ( $bill_total_price_display != 'hidden' ) {
 		$bill_total['tax']   = ! empty( $bill_total['tax'] )   ? $bill_total['tax'] + $total['tax'] : $total['tax'];
 		// 税込金額
 		$bill_total['total'] = ! empty( $bill_total['total'] ) ? $bill_total['total'] + $total['total'] : $total['total'];
+		// 表示用消費税率
+		$form_tax_rate = $total['rate'] !== '0%対象' ? $total['rate'] : __( '非課税', 'bill-vektor' );
+		// 表示用消費税額
+		$form_tax      = $total['rate'] !== '0%対象' ? '¥ '. number_format( $total['tax'], $digits ) : '-';
 		?>
-		<?php if( ! empty( $total['price'] ) && ! empty( $total['tax'] ) && ! empty( $total['total'] ) ) : ?>
+		<?php
+		if( ! empty( $total['price'] ) && ! empty( $form_tax ) && ! empty( $total['total'] ) ) : 
+			$form_tax_rate = $total['rate'] !== '0%対象' ? $total['rate'] : __( '非課税', 'bill-vektor' );
+		?>
 			<tr>
-				<th><?php echo esc_html( $total['rate'] ) ?></th>
+				<th><?php echo esc_html( $form_tax_rate ) ?></th>
 				<td class="price">¥ <?php echo number_format( $total['price'], $digits ) ?></td>
-				<td class="price">¥ <?php echo number_format( $total['tax'], $digits ) ?></td>
+				<td class="price"><?php echo $form_tax ?></td>
 				<td class="price">¥ <?php echo number_format( $total['total'], $digits ) ?></td>
 			</tr>
 		<?php endif; ?>

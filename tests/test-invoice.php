@@ -422,6 +422,28 @@ class InvoiceTest extends WP_UnitTestCase {
         add_post_meta( $posts['tax_floor_floor'], 'bill_items', $bill_item_tax_floor );
         add_post_meta( $posts['tax_floor_floor'], 'bill_tax_fraction', 'floor' );
 
+        // 非課税
+        $bill_item_tax_none = array(
+            array(
+                'name'     => 'item-001',
+                'count'    => '1',
+                'unit'     => '個',
+                'price'    => 6000,
+                'tax-rate' => '0%',
+                'tax-type' => 'tax_included_ceil',
+            ),
+        );
+        $posts['tax_none'] = wp_insert_post(
+            array(
+                'post_title'   => 'New Type',
+                'post_content' => '',
+                'post_type'    => 'estimate',
+                'post_status'  => 'publish'
+            )
+        );
+        add_post_meta( $posts['tax_none'], 'bill_items', $bill_item_tax_none );
+        add_post_meta( $posts['tax_none'], 'bill_tax_fraction', 'floor' );
+
         return $posts;
 
     }
@@ -646,6 +668,17 @@ class InvoiceTest extends WP_UnitTestCase {
                     )
                 )
             ),
+            array(
+                'post_id'  => $data['tax_none'],
+                'cortrect' => array(
+                    '0%' => array(
+                        'rate'  => '0%対象',
+                        'price' => 6000,
+                        'tax'   => 0,
+                        'total' => 6000,
+                    )
+                )
+            ),
         );
 
         print PHP_EOL;
@@ -746,6 +779,10 @@ class InvoiceTest extends WP_UnitTestCase {
             array(
                 'post_id'  => $data['tax_floor_floor'],
                 'cortrect' => 5999
+            ),
+            array(
+                'post_id'  => $data['tax_none'],
+                'cortrect' => 6000
             ),
         );
 
