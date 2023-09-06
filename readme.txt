@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.3
 Requires PHP: 7.2
-Stable tag: 1.11.0
+Stable tag: 1.11.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,6 +12,9 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
+
+1.11.1
+[ 不具合修正 ] インボイス対応版での表の項目の並び替え不具合修正
 
 1.11.0
 [ 仕様変更 ] 税率に非課税を追加

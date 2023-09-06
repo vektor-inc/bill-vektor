@@ -1,12 +1,13 @@
 <?php
 /*
-このファイルの元ファイルは
+Custom Field Builder for BillVektor
+
+BillVektor 同梱の Custom Field Builder は
+vektor-wp-libraries の Custom Field Builder をベースにしていますが、
+最新版の適用は停止しています。
 https://github.com/vektor-inc/vektor-wp-libraries
-にあります。
-修正の際は上記リポジトリのデータを修正してください。
-編集権限を持っていない方で何か修正要望などありましたら
-各プラグインのリポジトリにプルリクエストで結構です。
 */
+
 /*
 * 項目変動・多行のカスタムフィールド
 */
