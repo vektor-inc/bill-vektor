@@ -13,6 +13,8 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+[ 不具合修正 ] インボイス対応版での表の項目の並び替え不具合修正
+
 1.11.0
 [ 仕様変更 ] 税率に非課税を追加
 
