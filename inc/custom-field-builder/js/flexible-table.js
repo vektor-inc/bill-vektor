@@ -25,7 +25,7 @@
 		jQuery('.row-control').each(function(){
 		jQuery(this).find('tbody tr').each(function(i){
 
-			jQuery(this).find( 'input.flexible-field-item' ).each(function(){
+			jQuery(this).find( 'input.flexible-field-item,select.flexible-field-item' ).each(function(){
 
 				// 置換対象の文字列
 				var input_name = jQuery(this).attr("name");
