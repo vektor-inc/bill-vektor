@@ -13,6 +13,8 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+[ 微修正 ]　編集画面での税込 / 税抜及び消費税率の状態を見やすく
+
 1.11.1
 [ 不具合修正 ] インボイス対応版での表の項目の並び替え不具合修正
 
