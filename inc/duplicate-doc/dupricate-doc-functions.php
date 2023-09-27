@@ -120,23 +120,27 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 		// 一括にしてテーブルを保存する
 		//
 		// 合計金額を算出する
-		$old_bill_items = bill_vektor_invoice_total_tax( $post );
+		$old_bill_items = bill_vektor_invoice_each_tax( $post );
 		$new_bill_items = array();
 
+
 		foreach ( $old_bill_items as $bill_item ) {
-			$new_bill_item[] = array(
-				'name'     => $new_post->post_title . ' ( ' . $bill_item['rate'] . ' ) ',
-				'count'    => $bill_item['price'],
+			$bill_rate = $bill_item['rate'] !== '0%対象' ? $bill_item['rate'] : '非課税対象';
+			$new_bill_items[] = array(
+				'name'     => $post->post_title . ' ( ' . $bill_rate . ' ) ',
+				'count'    => 1,
 				'unit'     => '式',
-				'price'    => $bill_total,
+				'price'    => $bill_item['price'],
 				'tax-rate' => str_replace( '対象', '', $bill_item['rate'] ),
 				'tax-type' => 'tax_excluded',
 			);
 		}
 
+
+		
 		// 余白分数行追加しておく
 		for ( $i = 1; $i <= 7;$i++ ) {
-			$new_bill_items[ $i ] = array(
+			$new_bill_items[] = array(
 				'name'     => '',
 				'count'    => '',
 				'unit'     => '',
@@ -145,7 +149,7 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 				'tax-type' => 'tax_excluded',
 			);
 		}
-	
+		
 
 		add_post_meta( $new_post, 'bill_items', $new_bill_items );
 	}
