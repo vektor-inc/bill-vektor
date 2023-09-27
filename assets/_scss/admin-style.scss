@@ -66,9 +66,11 @@ td[class*="bill-cell-"] {
 		text-align: center;
 	}
 }
-.bill-cell-tax-type,
+.bill-cell-tax-type{
+	width:15em;
+}
 .bill-cell-tax-rate {
-	width:6em;
+	width:7em;
 }
 .bill-cell-control{
 	width: 110px;

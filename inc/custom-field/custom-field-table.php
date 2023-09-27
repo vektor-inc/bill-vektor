@@ -101,7 +101,7 @@ class Bill_Item_Custom_Fields {
 			);
 			$form_table .= '<td class="bill-cell-tax-type">';
 			$form_table .= '<select id="bill_items[' . $key . '][tax-type]" name="bill_items[' . $key . '][tax-type]" class="flexible-field-item">';
-			$form_table .= '<option value="">選択してください</option>';
+			$form_table .= '<option value="">選択</option>';
 			foreach ( $tax_type_array as $tax_type ) {
 				$selected = false;
 				if (  ! empty( $bill_item['tax-type'] ) && $bill_item['tax-type'] === $tax_type['value'] ) {
@@ -122,7 +122,7 @@ class Bill_Item_Custom_Fields {
 			// 消費税率
 			$form_table .= '<td class="bill-cell-tax-rate">';
 			$form_table .= '<select id="bill_items[' . $key . '][tax-rate]" name="bill_items[' . $key . '][tax-rate]" class="flexible-field-item">';
-			$form_table .= '<option value="">選択してください</option>';
+			$form_table .= '<option value="">選択</option>';
 			foreach ( $tax_array as $tax_rate ) {
 
 				$selected = false;
