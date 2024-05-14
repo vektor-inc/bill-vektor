@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.3
 Requires PHP: 7.2
-Stable tag: 1.11.1
+Stable tag: 1.11.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.11.2
 [ 仕様変更 ]　単位未入力の場合でも数値を表示するように変更
 [ 微調整 ]　編集画面での税込 / 税抜及び消費税率の状態を見やすく
 
