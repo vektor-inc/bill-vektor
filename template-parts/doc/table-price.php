@@ -45,7 +45,7 @@ if ( is_array( $bill_items ) ) {
 
 		if ( ! empty( $bill_item['name'] ) &&
 			! empty( $bill_item['count'] ) &&
-			! empty( $bill_item['unit'] ) &&
+			// ! empty( $bill_item['unit'] ) &&
 			! empty( $bill_item['price'] ) &&
 			! empty( $bill_item['tax-rate'] ) &&
 			! empty( $bill_item['tax-type'] )
