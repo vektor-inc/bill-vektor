@@ -66,9 +66,9 @@ class PriceTest extends WP_UnitTestCase {
 			$number = bill_item_number( $test_value['number_input'] );
 			$this->assertEquals( $test_value['number_correct'], $number );
 
-			print PHP_EOL;
-			print 'number         :' . $number . PHP_EOL;
-			print 'number_correct :' . $test_value['number_correct'] . PHP_EOL;
+			// print PHP_EOL;
+			// print 'number         :' . $number . PHP_EOL;
+			// print 'number_correct :' . $test_value['number_correct'] . PHP_EOL;
 		}
 	}
 
@@ -135,9 +135,9 @@ class PriceTest extends WP_UnitTestCase {
 			$correct = $test_value['correct'];
 			$this->assertEquals( $correct, $return );
 
-			print PHP_EOL;
-			print 'return  :' . $return . PHP_EOL;
-			print 'correct :' . $correct . PHP_EOL;
+			// print PHP_EOL;
+			// print 'return  :' . $return . PHP_EOL;
+			// print 'correct :' . $correct . PHP_EOL;
 		}
 	}
 
@@ -167,9 +167,9 @@ class PriceTest extends WP_UnitTestCase {
 			$correct = $test_value['correct'];
 			$this->assertEquals( $correct, $return );
 
-			print PHP_EOL;
-			print 'return  :' . $return . PHP_EOL;
-			print 'correct :' . $correct . PHP_EOL;
+			// print PHP_EOL;
+			// print 'return  :' . $return . PHP_EOL;
+			// print 'correct :' . $correct . PHP_EOL;
 		}
 	}
 
@@ -204,9 +204,9 @@ class PriceTest extends WP_UnitTestCase {
 			$correct = $test_value['correct'];
 			$this->assertEquals( $correct, $return );
 
-			print PHP_EOL;
-			print 'return  :' . $return . PHP_EOL;
-			print 'correct :' . $correct . PHP_EOL;
+			// print PHP_EOL;
+			// print 'return  :' . $return . PHP_EOL;
+			// print 'correct :' . $correct . PHP_EOL;
 		}
 	}
 
@@ -241,9 +241,9 @@ class PriceTest extends WP_UnitTestCase {
 			$correct = $test_value['correct'];
 			$this->assertEquals( $correct, $return );
 
-			print PHP_EOL;
-			print 'return  :' . $return . PHP_EOL;
-			print 'correct :' . $correct . PHP_EOL;
+			// print PHP_EOL;
+			// print 'return  :' . $return . PHP_EOL;
+			// print 'correct :' . $correct . PHP_EOL;
 		}
 	}
 
@@ -302,9 +302,9 @@ class PriceTest extends WP_UnitTestCase {
 			$correct = $test_value['correct'];
 			$this->assertEquals( $correct, $return );
 
-			print PHP_EOL;
-			print 'return  :' . $return . PHP_EOL;
-			print 'correct :' . $correct . PHP_EOL;
+			// print PHP_EOL;
+			// print 'return  :' . $return . PHP_EOL;
+			// print 'correct :' . $correct . PHP_EOL;
 		}
 	}
 
@@ -341,10 +341,9 @@ class PriceTest extends WP_UnitTestCase {
 			$correct = $test_value['correct'];
 			$this->assertEquals( $correct, $return );
 
-			print PHP_EOL;
-			print 'return  :' . $return . PHP_EOL;
-			print 'correct :' . $correct . PHP_EOL;
+			// print PHP_EOL;
+			// print 'return  :' . $return . PHP_EOL;
+			// print 'correct :' . $correct . PHP_EOL;
 		}
 	}
-
 }
