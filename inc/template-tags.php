@@ -152,6 +152,7 @@ function bill_vektor_fix_tax_type( $old_tax_type ) {
 
 /**
  * インボイス対応の税率ごとの合計金額
+ * @return array $tax_total 税率ごとの合計金額
  */
 function bill_vektor_invoice_each_tax( $post ) {
 	// カスタムフィールドを取得
@@ -256,11 +257,16 @@ function bill_vektor_invoice_each_tax( $post ) {
 
 /**
  * インボイス対応の合計金額
+ * 
+ * @param object $post 投稿オブジェクト
+ * @return int $bill_total 合計金額
  */
 function bill_vektor_invoice_total_tax( $post ) {
+	// 税率毎の合計を配列で取得
 	$total_array = bill_vektor_invoice_each_tax( $post );
+	// 合計金額の初期化
 	$bill_total  = 0;
-
+	// 合計金額を算出
 	foreach ( $total_array as $tax_value ) {
 		// var_dump($tax_value);
 		$bill_total = $bill_total + $tax_value['total'];
@@ -305,8 +311,6 @@ function bill_get_post_type() {
 	return $post_type;
 }
 
-/*
--------------------------------------------*/
 /*
 	bill_get_terms()
 /*-------------------------------------------*/
