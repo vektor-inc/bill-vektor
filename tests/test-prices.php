@@ -82,47 +82,47 @@ class PriceTest extends WP_UnitTestCase {
 				'price'    => 1080,
 				'tax_rate' => 0.08,
 				'tax_type' => 'tax_included',
-				'correct'  => 1000
+				'correct'  => 1000,
 			),
 			array(
 				'price'    => 1100,
 				'tax_rate' => 0.1,
 				'tax_type' => 'tax_included',
-				'correct'  => 1000
+				'correct'  => 1000,
 			),
 			array(
 				'price'    => 1000,
 				'tax_rate' => 0.08,
 				'tax_type' => 'tax_excluded',
-				'correct'  => 1000
+				'correct'  => 1000,
 			),
 			array(
 				'price'    => 1000,
 				'tax_rate' => 0.10,
 				'tax_type' => 'tax_excluded',
-				'correct'  => 1000
+				'correct'  => 1000,
 			),
 			array(
 				'price'    => 6000,
 				'tax_rate' => 0.10,
 				'tax_type' => 'tax_included',
-				'correct'  => 5455
+				'correct'  => 5455,
 			),
 			array(
 				'price'    => 6000,
 				'tax_rate' => 0.10,
 				'tax_type' => 'tax_included_ceil',
-				'correct'  => 5455
+				'correct'  => 5455,
 			),
 			array(
 				'price'    => 6000,
 				'tax_rate' => 0.10,
 				'tax_type' => 'tax_included_floor',
-				'correct'  => 5454
+				'correct'  => 5454,
 			),
 		);
 
-        print PHP_EOL;
+		print PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
 		print 'Test Bill Vektor Invoice Unit Plice' . PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
@@ -150,11 +150,11 @@ class PriceTest extends WP_UnitTestCase {
 			array(
 				'unit_price' => 1000,
 				'count'      => 10,
-				'correct'    => 10000
+				'correct'    => 10000,
 			),
 		);
 
-        print PHP_EOL;
+		print PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
 		print 'Test Bill Vektor Invoice Total Plice' . PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
@@ -182,16 +182,16 @@ class PriceTest extends WP_UnitTestCase {
 			array(
 				'total_price' => 10000,
 				'tax_rate'    => 0.08,
-				'correct'     => 800
+				'correct'     => 800,
 			),
 			array(
 				'total_price' => 10000,
 				'tax_rate'    => 0.1,
-				'correct'     => 1000
+				'correct'     => 1000,
 			),
 		);
 
-        print PHP_EOL;
+		print PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
 		print 'Test Bill Vektor Invoice Tax Plice' . PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
@@ -219,16 +219,16 @@ class PriceTest extends WP_UnitTestCase {
 			array(
 				'total_price' => 10000,
 				'tax_price'   => 800,
-				'correct'     => 10800
+				'correct'     => 10800,
 			),
 			array(
 				'total_price' => 10000,
 				'tax_price'   => 1000,
-				'correct'     => 11000
+				'correct'     => 11000,
 			),
 		);
 
-        print PHP_EOL;
+		print PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
 		print 'Test Bill Vektor Invoice Full Plice' . PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
@@ -256,40 +256,40 @@ class PriceTest extends WP_UnitTestCase {
 			array(
 				'old_tax_rate' => 10,
 				'post_date'    => '2019-10-01 00:00:00',
-				'correct'      => '10%'
+				'correct'      => '10%',
 			),
 			array(
 				'old_tax_rate' => 8,
 				'post_date'    => '2019-09-30 23:59:59',
-				'correct'      => '8%'
+				'correct'      => '8%',
 			),
 			// 日付に関係なく税率指定がある場合 8%
 			array(
 				'old_tax_rate' => 8,
 				'post_date'    => '2020-10-01 00:00:00',
-				'correct'      => '8%'
+				'correct'      => '8%',
 			),
 			// 日付に関係なく税率指定がある場合 10%
 			array(
 				'old_tax_rate' => 10,
 				'post_date'    => '2019-09-30 23:59:59',
-				'correct'      => '10%'
+				'correct'      => '10%',
 			),
 			// 古い指定がない場合 10%
 			array(
 				'old_tax_rate' => null,
 				'post_date'    => '2019-10-01 00:00:00',
-				'correct'      => '10%'
+				'correct'      => '10%',
 			),
 			// 古い指定がない場合 8%
 			array(
 				'old_tax_rate' => null,
 				'post_date'    => '2019-09-30 23:59:59',
-				'correct'      => '8%'
+				'correct'      => '8%',
 			),
 		);
 
-        print PHP_EOL;
+		print PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
 		print 'Test Bill Vektor Fix Tax Rate' . PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
@@ -316,19 +316,19 @@ class PriceTest extends WP_UnitTestCase {
 		$test_array = array(
 			array(
 				'old_tax_type' => 'tax_not_auto',
-				'correct'      => 'tax_included'
+				'correct'      => 'tax_included',
 			),
 			array(
 				'old_tax_type' => 'tax_auto',
-				'correct'      => 'tax_excluded'
+				'correct'      => 'tax_excluded',
 			),
 			array(
 				'old_tax_type' => null,
-				'correct'      => 'tax_excluded'
+				'correct'      => 'tax_excluded',
 			),
 		);
 
-        print PHP_EOL;
+		print PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
 		print 'Test Bill Vektor Fix Tax Type' . PHP_EOL;
 		print '------------------------------------' . PHP_EOL;
