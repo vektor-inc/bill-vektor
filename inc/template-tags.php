@@ -186,7 +186,7 @@ function bill_vektor_invoice_each_tax( $post ) {
 			// すべてが埋まっていない行は算出対象外に
 			if ( ! empty( $bill_item['name'] ) &&
 				! empty( $bill_item['count'] ) &&
-				! empty( $bill_item['unit'] ) &&
+				// ! empty( $bill_item['unit'] ) &&
 				! empty( $bill_item['price'] ) &&
 				! empty( $bill_item['tax-rate'] ) &&
 				! empty( $bill_item['tax-type'] )

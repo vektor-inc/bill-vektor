@@ -88,13 +88,17 @@ if ( is_array( $bill_items ) ) {
 				$form_item_tax_rate   = $item_tax_rate !== '0%' ? $item_tax_rate : __( '非課税', 'bill-vektor' );
 
 				// 対象品目の合計税込金額
-				$item_total       = bill_vektor_invoice_full_plice( $item_price_total, $item_tax_value );
+				$item_total      = bill_vektor_invoice_full_plice( $item_price_total, $item_tax_value );
+				$item_total_unit = '';
+				if ( ! empty( $bill_item['unit'] ) ) {
+					$item_total_unit = $bill_item['unit'];
+				}
 				$item_total_print = '¥ ' . number_format( $item_total, $digits );
 
 				?>
 				<td><?php echo esc_html( $bill_item_name ); ?></td>
 				<td class="text-center" id="bill-item-count-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $item_count ); ?></td>
-				<td class="text-center"><?php echo esc_html( $bill_item['unit'] ); ?></td>
+				<td class="text-center"><?php echo esc_html( $item_total_unit ); ?></td>
 				<td class="price"><?php echo esc_html( $item_price_print ); ?></td>
 				<td class="price"><?php echo esc_html( $item_price_total_print ); ?></td>
 				<td class="price"><?php echo esc_html( $form_item_tax_rate ); ?></td>
