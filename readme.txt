@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.3
 Requires PHP: 7.2
-Stable tag: 1.11.2
+Stable tag: 1.11.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,6 +12,9 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
+
+1.11.3
+[ 不具合修正 ] 単位が未入力だと合計金額が 0円になるなる不具合を修正
 
 1.11.2
 [ 仕様変更 ]　単位未入力の場合でも数値を表示するように変更

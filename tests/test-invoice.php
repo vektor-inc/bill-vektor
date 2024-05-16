@@ -801,4 +801,122 @@ class InvoiceTest extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * 合計金額テスト
+	 */
+	public function test_bill_vektor_invoice_total_tax__unit() {
+
+		print PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print 'test_bill_vektor_invoice_total_tax__unit' . PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print PHP_EOL;
+
+		$post_data = array(
+			'post_title'   => 'test',
+			'post_content' => 'test',
+			'post_status'  => 'publish',
+			'post_type'    => 'post',
+		);
+
+		$test_array = array(
+			array(
+				'test_name'     => 'とりあえず動くか確認',
+				'custom_fields' => array(
+					'bill_items'        => array(
+						array(
+							'name'     => 'test',
+							'count'    => 1,
+							'unit'     => '円',
+							'price'    => 10000,
+							'tax-rate' => '10%',
+							'tax-type' => 'tax_excluded',
+						),
+					),
+					'bill_tax_rate'     => 10, // old_tax_rate
+					'bill_tax_type'     => 'tax_included',  // old_tax_type
+					'bill_tax_fraction' => 'floor',
+				),
+				'expected'      => 11000,
+			),
+			array(
+				'test_name'     => '単位が空の場合',
+				'custom_fields' => array(
+					'bill_items'        => array(
+						array(
+							'name'     => 'test',
+							'count'    => 1,
+							'unit'     => '',
+							'price'    => 10000,
+							'tax-rate' => '10%',
+							'tax-type' => 'tax_excluded',
+						),
+					),
+					'bill_tax_fraction' => 'floor',
+				),
+				'expected'      => 11000,
+			),
+			array(
+				'test_name'     => '旧設定で税抜きだが 個別項目で税込み -> 税込みで計算される',
+				'custom_fields' => array(
+					'bill_items'        => array(
+						array(
+							'name'     => 'test',
+							'count'    => 1,
+							'unit'     => '',
+							'price'    => 11000,
+							'tax-rate' => '10%',
+							'tax-type' => 'tax_included',
+						),
+					),
+					'bill_tax_rate'     => 10, // old_tax_rate
+					'bill_tax_type'     => 'tax_excluded',  // old_tax_type
+					'bill_tax_fraction' => 'floor',
+				),
+				'expected'      => 11000,
+			),
+			array(
+				'test_name'     => '10%税込 + 8%税込',
+				'custom_fields' => array(
+					'bill_items'        => array(
+						array(
+							'name'     => 'test',
+							'count'    => 1,
+							'unit'     => '',
+							'price'    => 11000,
+							'tax-rate' => '10%',
+							'tax-type' => 'tax_included',
+						),
+						array(
+							'name'     => 'test',
+							'count'    => 1,
+							'unit'     => '',
+							'price'    => 10800,
+							'tax-rate' => '8%',
+							'tax-type' => 'tax_included',
+						),
+					),
+					'bill_tax_fraction' => 'floor',
+				),
+				'expected'      => 21800,
+			),
+
+		);
+
+		foreach ( $test_array as $test_item ) {
+			$post_id = wp_insert_post( $post_data );
+			foreach ( $test_item['custom_fields'] as $key => $value ) {
+				update_post_meta( $post_id, $key, $value );
+			}
+			$post   = get_post( $post_id );
+			$actual = bill_vektor_invoice_total_tax( $post );
+			print PHP_EOL;
+			print 'test_name  :' . $actual . PHP_EOL;
+			print 'actual  :' . $actual . PHP_EOL;
+			print 'expected :' . $test_item['expected'] . PHP_EOL;
+			$this->assertEquals( $test_item['expected'], $actual );
+			wp_delete_post( $post_id, true );
+		}
+	}
+
 }
