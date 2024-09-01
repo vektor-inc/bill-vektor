@@ -71,11 +71,11 @@ if ( ! class_exists( 'CsvExport' ) ) {
 				/*-------------------------------------------*/
 				foreach ( $posts as $key => $post ) {
 
-				    setup_postdata($GLOBALS['post'] =& $post);
+					setup_postdata( $GLOBALS['post'] =& $post );
 
-					$date               = date_i18n( 'Y/n/j', strtotime( $post->post_date ) );
-					$bill_limit_date    = get_post_meta( $post->ID, 'bill_limit_date', true );
-					$date_pay           = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
+					$date            = date_i18n( 'Y/n/j', strtotime( $post->post_date ) );
+					$bill_limit_date = get_post_meta( $post->ID, 'bill_limit_date', true );
+					$date_pay        = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
 
 					$bill_total_price = bill_vektor_invoice_total_tax( $post );
 					$bill_tax_each    = bill_vektor_invoice_each_tax( $post );
@@ -140,12 +140,12 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						// 配列を , 区切りで格納
 						$csv[] = implode( ',', $c );
 						if ( $number ) {
-							$number ++;
+							++$number;
 						}
 					}
 				}
 
-                wp_reset_postdata();
+				wp_reset_postdata();
 
 				if ( $_GET['action'] == 'csv_mf' ) {
 
@@ -154,10 +154,10 @@ if ( ! class_exists( 'CsvExport' ) ) {
 					/*-------------------------------------------*/
 					foreach ( $posts as $key => $post ) {
 
-                        setup_postdata($GLOBALS['post'] =& $post);
+						setup_postdata( $GLOBALS['post'] =& $post );
 
-						$bill_limit_date    = get_post_meta( $post->ID, 'bill_limit_date', true );
-						$date_pay           = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
+						$bill_limit_date  = get_post_meta( $post->ID, 'bill_limit_date', true );
+						$date_pay         = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
 						$bill_total_price = bill_vektor_invoice_total_tax( $post );
 						// 取引先名（省略名があれば省略名で表示）
 						$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
@@ -190,11 +190,11 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						// 配列を , 区切りで格納
 						$csv[] = implode( ',', $c );
 						if ( $number ) {
-							$number ++;
+							++$number;
 						}
 					}
 
-                    wp_reset_postdata();
+					wp_reset_postdata();
 
 				} // if ( $_GET['action'] == 'csv_mf' ){
 
