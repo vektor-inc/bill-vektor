@@ -14,12 +14,12 @@
     "phpunit": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/.phpunit.xml --verbose'"
   },
   "dependencies": {
-    "@wordpress/env": "^5.16.0",
+    "@wordpress/env": "10.4.0",
     "gulp": "^4.0.2",
     "npm-check-updates": "^16.10.8",
     "run-sequence": "^2.2.1"
   },
   "volta": {
-    "node": "18.16.0"
+    "node": "20.14.0"
   }
 }
