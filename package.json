@@ -11,7 +11,7 @@
     "dist": "composer install --no-dev && gulp dist && composer install",
 	"zip": "npm run dist && cd dist && zip -r bill-vektor.zip bill-vektor && cd ../",
     "sass": "sass --watch assets/_scss:assets/css",
-    "phpunit": "wp-env run phpunit 'phpunit -c /var/www/html/wp-content/themes/bill-vektor/.phpunit.xml --verbose'"
+	"phpunit:": "composer install && wp-env run tests-cli --env-cwd='wp-content/themes/bill-vektor' vendor/bin/phpunit -c .phpunit.xml"
   },
   "dependencies": {
     "@wordpress/env": "10.4.0",
