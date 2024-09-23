@@ -123,6 +123,12 @@ class Client_Custom_Fields {
 					'hidden' => 'ドロップダウンに表示しない',
 					),
 			),
+			'client_invoice' => array(
+				'label' => __('インボイス制度の登録番号','bill-vektor'),
+				'type' => 'text',
+				'description' => '',
+				'required' => false,
+			),
 		);
 		return $custom_fields_array;
 	}
