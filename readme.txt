@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.3
 Requires PHP: 7.4
-Stable tag: 1.11.4
+Stable tag: 1.11.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.11.5
 [ 不具合修正 ] サブディレクトリで運用された場合のリダイレクト不良修正
 
 1.11.4
