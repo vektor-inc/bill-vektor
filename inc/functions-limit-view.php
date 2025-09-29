@@ -17,9 +17,8 @@ function bill_no_login_redirect( $content ) {
 	global $pagenow;
 	if ( ! is_user_logged_in() && ! is_admin() ) {
 		// ログインページへリダイレクト
-		$redirectUrl = home_url( $_SERVER['REQUEST_URI'] );
-		$url         = wp_login_url( $redirectUrl );
-		header( "Location: {$url}" );
+		$url = wp_login_url( $_SERVER['REQUEST_URI'] );
+		wp_safe_redirect( $url );
 		exit;
 
 		/*
