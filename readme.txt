@@ -13,6 +13,8 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+[ 不具合修正 ] サブディレクトリで運用された場合のリダイレクト不良修正
+
 1.11.4
 [ 不具合修正 ] Money Forward インポート用のデータ形式が変更になってインポートできなくなっていたため修正
 
