@@ -12,6 +12,9 @@ body.single {
 	display:block; overflow:hidden;
 	padding: 2em 0;
 	page-break-after:always;
+	&:last-child {
+		page-break-after:auto;
+	}
 	@media screen{
 		border-bottom:1px solid #e5e5e5;
 	}
