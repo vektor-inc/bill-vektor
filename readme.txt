@@ -12,6 +12,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
+[ 不具合修正 ] 請求書・領収書を印刷すると白紙の2ページ目が出力されてしまうケースを修正（1ページ分の内容のみの場合は自動的に改ページを入れないように調整）。
 
 1.11.5
 [ 不具合修正 ] サブディレクトリで運用された場合のリダイレクト不良修正
