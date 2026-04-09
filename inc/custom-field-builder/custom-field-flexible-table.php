@@ -90,6 +90,7 @@ class VK_Custom_Field_Builder_Flexible_Table {
 				if ( isset( $value['type'] ) && 'select' === $value['type'] && isset( $value['options'] ) && is_array( $value['options'] ) && ! empty( $value['options'] ) ) {
 					// プルダウン（select）の出力
 					$form_table .= '<select class="flexible-field-item" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '">';
+					$form_table .= '<option value=""' . ( '' === (string) $current_value ? ' selected="selected"' : '' ) . '></option>';
 					foreach ( $value['options'] as $option_value => $option_label ) {
 						$selected    = ( (string) $current_value === (string) $option_value ) ? ' selected="selected"' : '';
 						$form_table .= '<option value="' . esc_attr( $option_value ) . '"' . $selected . '>' . esc_html( $option_label ) . '</option>';
