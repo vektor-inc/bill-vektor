@@ -83,9 +83,25 @@ class VK_Custom_Field_Builder_Flexible_Table {
 
 			// 列をループ
 			foreach ( $custom_fields_array['items'] as $field_key => $value ) {
-				// $bill_item_value[ $sub_field ] = ( isset( $value[ $sub_field ] ) ) ? $value[ $sub_field ] : '';
-				$form_table .= '<td class="cell-' . $key . '">';
-				$form_table .= '<input class="flexible-field-item" type="text" id="' . $custom_fields_array['field_name'] . '[' . $key . '][' . $field_key . ']" name="' . $custom_fields_array['field_name'] . '[' . $key . '][' . $field_key . ']" value="' . esc_attr( $fields_value[ $key ][ $field_key ] ) . '"></td>';
+				$current_value = isset( $fields_value[ $key ][ $field_key ] ) ? $fields_value[ $key ][ $field_key ] : '';
+				$field_id      = $custom_fields_array['field_name'] . '[' . $key . '][' . $field_key . ']';
+				$form_table   .= '<td class="cell-' . esc_attr( (string) $key ) . '">';
+
+				if ( isset( $value['type'] ) && 'select' === $value['type'] && isset( $value['options'] ) && is_array( $value['options'] ) && ! empty( $value['options'] ) ) {
+					// プルダウン（select）の出力
+					$form_table .= '<select class="flexible-field-item" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '">';
+					$form_table .= '<option value=""' . ( '' === (string) $current_value ? ' selected="selected"' : '' ) . '></option>';
+					foreach ( $value['options'] as $option_value => $option_label ) {
+						$selected    = ( (string) $current_value === (string) $option_value ) ? ' selected="selected"' : '';
+						$form_table .= '<option value="' . esc_attr( $option_value ) . '"' . $selected . '>' . esc_html( $option_label ) . '</option>';
+					}
+					$form_table .= '</select>';
+				} else {
+					// テキスト入力の出力
+					$form_table .= '<input class="flexible-field-item" type="text" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '" value="' . esc_attr( $current_value ) . '">';
+				}
+
+				$form_table .= '</td>';
 			}
 			$form_table .= '<td class="cell-control">
 			<input type="button" class="add-row button button-primary" value="行を追加" />
