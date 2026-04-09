@@ -1,8 +1,8 @@
 === BillVektor ===
 Contributors: kurudrive,vektor-inc,rickaddison7634
-Tested up to: 6.3
+Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.11.6
+Stable tag: 1.11.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,7 +13,8 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
-[ 機能追加 ] フレキシブルテーブルのカスタムフィールドで select（プルダウン）タイプをサポート
+1.11.7
+[ その他 ] フレキシブルテーブルのカスタムフィールドで select（プルダウン）タイプをサポート
 
 1.11.6
 [ 不具合修正 ] 請求書・領収書を印刷すると白紙の2ページ目が出力されてしまうケースを修正（1ページ分の内容のみの場合は自動的に改ページを入れないように調整）。
