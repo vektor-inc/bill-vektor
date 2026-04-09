@@ -85,9 +85,9 @@ class VK_Custom_Field_Builder_Flexible_Table {
 			foreach ( $custom_fields_array['items'] as $field_key => $value ) {
 				$current_value = isset( $fields_value[ $key ][ $field_key ] ) ? $fields_value[ $key ][ $field_key ] : '';
 				$field_id      = $custom_fields_array['field_name'] . '[' . $key . '][' . $field_key . ']';
-				$form_table   .= '<td class="cell-' . $key . '">';
+				$form_table   .= '<td class="cell-' . esc_attr( (string) $key ) . '">';
 
-				if ( isset( $value['type'] ) && 'select' === $value['type'] && ! empty( $value['options'] ) ) {
+				if ( isset( $value['type'] ) && 'select' === $value['type'] && is_array( $value['options'] ) && ! empty( $value['options'] ) ) {
 					// プルダウン（select）の出力
 					$form_table .= '<select class="flexible-field-item" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $field_id ) . '">';
 					foreach ( $value['options'] as $option_value => $option_label ) {
