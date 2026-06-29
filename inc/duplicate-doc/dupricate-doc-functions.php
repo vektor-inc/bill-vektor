@@ -222,13 +222,27 @@ function bill_copy_redirect() {
 			wp_die( esc_html__( 'この操作を行う権限がありません。', 'bill-vektor' ) );
 		}
 
-		$post_type       = esc_html( $_GET['post_type'] ?? '' );
-		$table_copy_type = esc_html( $_GET['table_copy_type'] ?? '' );
+		// $post_type: 登録済みの投稿タイプのみ許可（不正な値はからにする）
+		$allowed_post_types = array_keys( get_post_types() );
+		$post_type_raw      = sanitize_key( $_GET['post_type'] ?? '' );
+		$post_type          = in_array( $post_type_raw, $allowed_post_types, true ) ? $post_type_raw : '';
 
-		$duplicate_type = ( isset( $_GET['duplicate_type'] ) && $_GET['duplicate_type'] ) ? esc_html( $_GET['duplicate_type'] ) : '';
+		// $table_copy_type: sanitize_key でサニタイズ（内部処理用の識別子）
+		$table_copy_type = sanitize_key( $_GET['table_copy_type'] ?? '' );
+
+		// $duplicate_type: 'full' または空文字のみ許可
+		$allowed_duplicate_types = array( 'full', '' );
+		$duplicate_type_raw      = sanitize_key( $_GET['duplicate_type'] ?? '' );
+		$duplicate_type          = in_array( $duplicate_type_raw, $allowed_duplicate_types, true ) ? $duplicate_type_raw : '';
 
 		// 記事の複製を実行
 		$copy_post_id = bill_copy_post( $master_id, $post_type, $table_copy_type, $duplicate_type );
+
+		// 複製に失敗した場合はリダイレクトせずエラーを表示する
+		if ( ! $copy_post_id ) {
+			wp_die( esc_html__( '書類の複製に失敗しました。', 'bill-vektor' ) );
+		}
+
 		// 複製した記事の編集画面へリダイレクト
 		$url = admin_url() . 'post.php?post=' . $copy_post_id . '&action=edit';
 		wp_safe_redirect( $url );
