@@ -200,12 +200,30 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 	複製する関数を実行する
 	複製完了したら出来た記事にリダイレクト
 /*-------------------------------------------*/
+/**
+ * 書類複製トリガー関数
+ *
+ * admin_init フックで呼ばれ、URL パラメーターに master_id が含まれる場合に
+ * CSRF 検証・権限チェックを行ったうえで書類を複製し、編集画面へリダイレクトする。
+ *
+ * @return void
+ */
 function bill_copy_redirect() {
 	// 管理画面のURLに複製識別用のURLが含まれていたら
 	if ( isset( $_GET['master_id'] ) ) {
-		$master_id       = esc_html( $_GET['master_id'] );
-		$post_type       = esc_html( $_GET['post_type'] );
-		$table_copy_type = esc_html( $_GET['table_copy_type'] );
+		// 整数IDとしてサニタイズ（文字列ではなく整数が正しい型）
+		$master_id = absint( $_GET['master_id'] );
+
+		// CSRF 検証：nonce が不正または欠落している場合は処理を中断する
+		check_admin_referer( 'bill_copy_' . $master_id );
+
+		// 権限チェック：複製元の書類を編集できる権限がないユーザーは操作不可
+		if ( ! current_user_can( 'edit_post', $master_id ) ) {
+			wp_die( esc_html__( 'この操作を行う権限がありません。', 'bill-vektor' ) );
+		}
+
+		$post_type       = esc_html( $_GET['post_type'] ?? '' );
+		$table_copy_type = esc_html( $_GET['table_copy_type'] ?? '' );
 
 		$duplicate_type = ( isset( $_GET['duplicate_type'] ) && $_GET['duplicate_type'] ) ? esc_html( $_GET['duplicate_type'] ) : '';
 
@@ -221,9 +239,24 @@ add_action( 'admin_init', 'bill_copy_redirect' );
 /*
   記事リスト _ 複製して編集へのリンクを追加
 /*-------------------------------------------*/
+/**
+ * 投稿一覧に「複製」リンクを追加する関数
+ *
+ * 行アクションに複製リンクを追加する。
+ * リンクには CSRF 対策の nonce を含め、URL を esc_url でエスケープする。
+ *
+ * @param array   $actions 既存のアクションリンク配列。
+ * @param WP_Post $post    対象の投稿オブジェクト。
+ * @return array nonce 付き複製リンクを追加したアクション配列。
+ */
 function bill_row_actions_add_duplicate_link( $actions, $post ) {
-	$post_type          = get_post_type();
-	$links              = admin_url() . 'post-new.php?post_type=' . $post_type . '&master_id=' . $post->ID . '&table_copy_type=all&duplicate_type=full';
-	$actions['newlink'] = '<a href="' . $links . '">複製</a>';
+	$post_type = get_post_type();
+	// CSRF 対策として nonce を URL パラメーターに付与する
+	$links = admin_url() . 'post-new.php?post_type=' . $post_type
+		. '&master_id=' . $post->ID
+		. '&table_copy_type=all&duplicate_type=full'
+		. '&_wpnonce=' . wp_create_nonce( 'bill_copy_' . $post->ID );
+	// URL を適切にエスケープして出力する
+	$actions['newlink'] = '<a href="' . esc_url( $links ) . '">複製</a>';
 	return $actions;
 }
