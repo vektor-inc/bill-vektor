@@ -213,6 +213,9 @@ function bill_copy_redirect() {
 	if ( isset( $_GET['master_id'] ) ) {
 		// 整数IDとしてサニタイズ（文字列ではなく整数が正しい型）
 		$master_id = absint( $_GET['master_id'] );
+		if ( ! $master_id ) {
+			wp_die( esc_html__( '無効なIDです。', 'bill-vektor' ) );
+		}
 
 		// CSRF 検証：nonce が不正または欠落している場合は処理を中断する
 		check_admin_referer( 'bill_copy_' . $master_id );
