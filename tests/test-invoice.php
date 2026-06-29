@@ -537,34 +537,37 @@ class InvoiceTest extends WP_UnitTestCase {
 			),
 			array(
 				'post_id'  => $data['tax_round_default'],
+				// 税込入力（四捨五入）：税抜=5455、消費税=6000-5455=545、税込合計=6000
 				'cortrect' => array(
 					'10%' => array(
 						'rate'  => '10%対象',
 						'price' => 5455,
-						'tax'   => 546,
-						'total' => 6001,
+						'tax'   => 545,
+						'total' => 6000,
 					),
 				),
 			),
 			array(
 				'post_id'  => $data['tax_round_round'],
+				// 税込入力（四捨五入）：消費税の丸め設定は税込入力では効かない（税込-税抜方式のため）
 				'cortrect' => array(
 					'10%' => array(
 						'rate'  => '10%対象',
 						'price' => 5455,
-						'tax'   => 546,
-						'total' => 6001,
+						'tax'   => 545,
+						'total' => 6000,
 					),
 				),
 			),
 			array(
 				'post_id'  => $data['tax_round_ceil'],
+				// 税込入力（四捨五入）：消費税の丸め設定は税込入力では効かない（税込-税抜方式のため）
 				'cortrect' => array(
 					'10%' => array(
 						'rate'  => '10%対象',
 						'price' => 5455,
-						'tax'   => 546,
-						'total' => 6001,
+						'tax'   => 545,
+						'total' => 6000,
 					),
 				),
 			),
@@ -581,34 +584,37 @@ class InvoiceTest extends WP_UnitTestCase {
 			),
 			array(
 				'post_id'  => $data['tax_ceil_default'],
+				// 税込入力（切り上げ）：税抜=ceil(6000/1.1)=5455、消費税=6000-5455=545、税込合計=6000
 				'cortrect' => array(
 					'10%' => array(
 						'rate'  => '10%対象',
 						'price' => 5455,
-						'tax'   => 546,
-						'total' => 6001,
+						'tax'   => 545,
+						'total' => 6000,
 					),
 				),
 			),
 			array(
 				'post_id'  => $data['tax_ceil_round'],
+				// 税込入力（切り上げ）：消費税の丸め設定は税込入力では効かない（税込-税抜方式のため）
 				'cortrect' => array(
 					'10%' => array(
 						'rate'  => '10%対象',
 						'price' => 5455,
-						'tax'   => 546,
-						'total' => 6001,
+						'tax'   => 545,
+						'total' => 6000,
 					),
 				),
 			),
 			array(
 				'post_id'  => $data['tax_ceil_ceil'],
+				// 税込入力（切り上げ）：消費税の丸め設定は税込入力では効かない（税込-税抜方式のため）
 				'cortrect' => array(
 					'10%' => array(
 						'rate'  => '10%対象',
 						'price' => 5455,
-						'tax'   => 546,
-						'total' => 6001,
+						'tax'   => 545,
+						'total' => 6000,
 					),
 				),
 			),
@@ -625,23 +631,25 @@ class InvoiceTest extends WP_UnitTestCase {
 			),
 			array(
 				'post_id'  => $data['tax_floor_default'],
+				// 税込入力（切り捨て）：税抜=floor(6000/1.1)=5454、消費税=6000-5454=546、税込合計=6000
 				'cortrect' => array(
 					'10%' => array(
 						'rate'  => '10%対象',
 						'price' => 5454,
-						'tax'   => 545,
-						'total' => 5999,
+						'tax'   => 546,
+						'total' => 6000,
 					),
 				),
 			),
 			array(
 				'post_id'  => $data['tax_floor_round'],
+				// 税込入力（切り捨て）：消費税の丸め設定は税込入力では効かない（税込-税抜方式のため）
 				'cortrect' => array(
 					'10%' => array(
 						'rate'  => '10%対象',
 						'price' => 5454,
-						'tax'   => 545,
-						'total' => 5999,
+						'tax'   => 546,
+						'total' => 6000,
 					),
 				),
 			),
@@ -658,12 +666,13 @@ class InvoiceTest extends WP_UnitTestCase {
 			),
 			array(
 				'post_id'  => $data['tax_floor_floor'],
+				// 税込入力（切り捨て）：消費税の丸め設定は税込入力では効かない（税込-税抜方式のため）
 				'cortrect' => array(
 					'10%' => array(
 						'rate'  => '10%対象',
 						'price' => 5454,
-						'tax'   => 545,
-						'total' => 5999,
+						'tax'   => 546,
+						'total' => 6000,
 					),
 				),
 			),
@@ -732,52 +741,64 @@ class InvoiceTest extends WP_UnitTestCase {
 				'cortrect' => 32800,
 			),
 			array(
+				// 税込入力（四捨五入）: 税込-税抜方式で計算するため 6000 円になる
 				'post_id'  => $data['tax_round_default'],
-				'cortrect' => 6001,
+				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（四捨五入）: 消費税の丸め設定は税込入力では効かない
 				'post_id'  => $data['tax_round_round'],
-				'cortrect' => 6001,
+				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（四捨五入）: 消費税の丸め設定は税込入力では効かない
 				'post_id'  => $data['tax_round_ceil'],
-				'cortrect' => 6001,
+				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（四捨五入）: 消費税の丸め設定は税込入力では効かない
 				'post_id'  => $data['tax_round_floor'],
 				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（切り上げ）: 税込-税抜方式で計算するため 6000 円になる
 				'post_id'  => $data['tax_ceil_default'],
-				'cortrect' => 6001,
+				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（切り上げ）: 消費税の丸め設定は税込入力では効かない
 				'post_id'  => $data['tax_ceil_round'],
-				'cortrect' => 6001,
+				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（切り上げ）: 消費税の丸め設定は税込入力では効かない
 				'post_id'  => $data['tax_ceil_ceil'],
-				'cortrect' => 6001,
+				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（切り上げ）: 消費税の丸め設定は税込入力では効かない
 				'post_id'  => $data['tax_ceil_floor'],
 				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（切り捨て）: 税抜=5454、消費税=6000-5454=546、合計 6000 円になる
 				'post_id'  => $data['tax_floor_default'],
-				'cortrect' => 5999,
+				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（切り捨て）: 消費税の丸め設定は税込入力では効かない
 				'post_id'  => $data['tax_floor_round'],
-				'cortrect' => 5999,
+				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（切り捨て）: 消費税の丸め設定は税込入力では効かない
 				'post_id'  => $data['tax_floor_ceil'],
 				'cortrect' => 6000,
 			),
 			array(
+				// 税込入力（切り捨て）: 消費税の丸め設定は税込入力では効かない
 				'post_id'  => $data['tax_floor_floor'],
-				'cortrect' => 5999,
+				'cortrect' => 6000,
 			),
 			array(
 				'post_id'  => $data['tax_none'],
