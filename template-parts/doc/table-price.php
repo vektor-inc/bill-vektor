@@ -66,8 +66,11 @@ if ( is_array( $bill_items ) ) {
 			// 個数を数値にフォーマット
 			$item_count = bill_item_number( $bill_item['count'] );
 
-			// 単価を数値にフォーマット
-			$item_price = bill_vektor_invoice_unit_plice( bill_item_number( $bill_item['price'] ), $item_tax_rate_value, $bill_item['tax-type'] );
+			// 入力された元の単価を数値に変換（税込・税抜変換前の値）
+			$item_original_price = bill_item_number( $bill_item['price'] );
+
+			// 単価を税抜価格にフォーマット（税込入力の場合は税込→税抜に変換、税抜入力はそのまま）
+			$item_price = bill_vektor_invoice_unit_plice( $item_original_price, $item_tax_rate_value, $bill_item['tax-type'] );
 
 			// 単価と個数と税率が数値なら続行 ///////////////////////////////////////////////////////
 			if ( is_numeric( $item_count ) && is_numeric( $item_price ) && is_numeric( $item_tax_rate_value ) ) :
@@ -82,8 +85,17 @@ if ( is_array( $bill_items ) ) {
 					$lite_tax_flag = true;
 				}
 
-				// 対象品目の合計消費税額
-				$item_tax_value       = bill_vektor_invoice_tax_plice( $item_price_total, $item_tax_rate_value );
+				// 消費税額の計算方法を税込・税抜によって分岐
+				// 税込入力の場合：元の税込合計 - 税抜合計 で消費税を確定する（端数処理を二重にかけないため）
+				// 税抜入力の場合：税抜合計 × 税率 で消費税を算出する
+				if ( in_array( $bill_item['tax-type'], array( 'tax_included', 'tax_included_ceil', 'tax_included_floor' ), true ) ) {
+					// 税込入力：元の税込合計から税抜合計を引いた値が消費税
+					$item_original_total = $item_original_price * $item_count;
+					$item_tax_value      = $item_original_total - $item_price_total;
+				} else {
+					// 税抜入力：税抜合計 × 税率
+					$item_tax_value = bill_vektor_invoice_tax_plice( $item_price_total, $item_tax_rate_value );
+				}
 				$item_tax_value_print = '¥ ' . number_format( $item_tax_value, $digits );
 				$form_item_tax_rate   = $item_tax_rate !== '0%' ? $item_tax_rate : __( '非課税', 'bill-vektor' );
 

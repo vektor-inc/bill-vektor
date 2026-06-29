@@ -152,7 +152,10 @@ function bill_vektor_fix_tax_type( $old_tax_type ) {
 
 /**
  * インボイス対応の税率ごとの合計金額
- * @return array $tax_total 税率ごとの合計金額
+ *
+ * @param WP_Post $post 投稿オブジェクト。
+ * @return array $tax_total 税率ごとの合計金額。
+ *               各要素は rate（税率ラベル）・price（税抜合計）・tax（消費税額）・total（税込合計）を持つ配列。
  */
 function bill_vektor_invoice_each_tax( $post ) {
 	// カスタムフィールドを取得
@@ -166,7 +169,7 @@ function bill_vektor_invoice_each_tax( $post ) {
 	$old_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
 	// 古い税込・税抜
 	$old_tax_type = get_post_meta( $post->ID, 'bill_tax_type', true );
-	// 消費税の丸め処理
+	// 消費税の丸め処理（税抜入力品目の消費税合算値に適用される）
 	$tax_fraction = ! empty( get_post_meta( $post->ID, 'bill_tax_fraction', true ) ) ? get_post_meta( $post->ID, 'bill_tax_fraction', true ) : 'round';
 
 	if ( is_array( $bill_items ) ) {
@@ -199,8 +202,11 @@ function bill_vektor_invoice_each_tax( $post ) {
 						// 税率を数値に変換
 						$item_tax_rate = 0.01 * intval( str_replace( '%', '', $bill_item['tax-rate'] ) );
 
-						// 単価を数値に変換
-						$item_price = bill_vektor_invoice_unit_plice( bill_item_number( $bill_item['price'] ), $item_tax_rate, $bill_item['tax-type'] );
+						// 入力された元の単価を数値に変換（税込・税抜変換前の値）
+						$item_original_price = bill_item_number( $bill_item['price'] );
+
+						// 単価を税抜価格に変換（税込入力の場合は税込→税抜に変換、税抜入力はそのまま）
+						$item_price = bill_vektor_invoice_unit_plice( $item_original_price, $item_tax_rate, $bill_item['tax-type'] );
 
 						// 個数を数値に変換
 						$item_count = bill_item_number( $bill_item['count'] );
@@ -208,12 +214,24 @@ function bill_vektor_invoice_each_tax( $post ) {
 						// 上記３つが数値なら
 						if ( is_numeric( $item_count ) && is_numeric( $item_price ) && is_numeric( $item_tax_rate ) ) {
 
-							// 合計金額を算出
+							// 税抜合計金額を算出（税抜単価 × 個数）
 							$item_total = bill_vektor_invoice_total_plice( $item_price, $item_count );
-							// 品目ごとの消費税額
-							$item_tax_value = bill_vektor_invoice_tax_plice( $item_total, $item_tax_rate );
-							// 品目ごとの税込合計金額
-							$item_tax_total = bill_vektor_invoice_full_plice( $item_total, $item_tax_value );
+
+							// 消費税額の計算方法を税込・税抜によって分岐
+							// 税込入力の場合：元の税込合計 - 税抜合計 で消費税を確定する。
+							//   理由：税込→税抜変換時に端数処理が発生するため、
+							//         「税抜合計 × 税率」で再計算すると端数が二重に発生して税込合計が1円ずれる。
+							//         「元の税込合計 - 税抜合計」なら端数処理は1回（税抜変換時）のみになり、
+							//         税抜 + 消費税 = 元の税込価格 が常に成立する。
+							// 税抜入力の場合：税抜合計 × 税率 で消費税を算出する（小数のまま保持し、後の合算後に丸め処理をかける）。
+							if ( in_array( $bill_item['tax-type'], array( 'tax_included', 'tax_included_ceil', 'tax_included_floor' ), true ) ) {
+								// 税込入力：元の税込合計（税込単価 × 個数）から税抜合計を引いた値が消費税
+								$item_original_total = $item_original_price * $item_count;
+								$item_tax_value      = $item_original_total - $item_total;
+							} else {
+								// 税抜入力：税抜合計 × 税率（bill_tax_fraction による丸め処理の対象になる）
+								$item_tax_value = bill_vektor_invoice_tax_plice( $item_total, $item_tax_rate );
+							}
 
 							// 税率何％の対象か
 							$tax_total[ $tax_rate ]['rate'] = $bill_item['tax-rate'] . '対象';
@@ -230,6 +248,7 @@ function bill_vektor_invoice_each_tax( $post ) {
 		foreach ( $tax_total as $tax_key => $tax_value ) {
 			// 消費税の丸め処理
 			// $tax_fraction には floor, round, ceil のいずれかが入っているので call_user_func でその関数を直接呼び出している
+			// 税込入力品目の消費税は整数で確定済みのため、この丸め処理は主に税抜入力品目の小数分に効く
 			$tax_total[ $tax_key ]['tax'] = call_user_func( $tax_fraction, $tax_value['tax'] );
 			// 税抜金額と消費税から税込み金額を算出
 			$tax_total[ $tax_key ]['total'] = $tax_value['price'] + $tax_total[ $tax_key ]['tax'];
