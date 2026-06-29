@@ -208,7 +208,7 @@ class DuplicateDocTest extends WP_UnitTestCase {
 			// --- 正常系（WP_HTTP_Redirect の確認）：管理者が有効な nonce でアクセスした場合 ---
 			// リダイレクトが発生するため、wp_die は呼ばれないことを確認する
 			array(
-				'test_condition_name' => '管理者ユーザーが有効な nonce でアクセスした場合 => wp_die が発生しないこと',
+				'test_condition_name' => '管理者ユーザーが有効な nonce でアクセスした場合 => wp_redirect が呼ばれること',
 				'setup'               => function () {
 					// 管理者としてログイン
 					wp_set_current_user( $this->admin_user_id );
@@ -234,6 +234,7 @@ class DuplicateDocTest extends WP_UnitTestCase {
 
 			// テスト用に wp_die_handler と wp_redirect フィルターを設定
 			$exception_thrown = false;
+			$redirect_called  = false;
 
 			// クロージャを変数に保存し、フレームワーク側のフィルターを除去しないよう個別に外す
 			$die_handler = function () {
@@ -244,7 +245,9 @@ class DuplicateDocTest extends WP_UnitTestCase {
 			add_filter( 'wp_die_handler', $die_handler );
 
 			// wp_safe_redirect はヘッダー送信を試みるため、テスト環境では例外化して処理を止める
-			$redirect_handler = function ( $location ) {
+			// $redirect_called フラグで「リダイレクトに到達したこと」を正常系で確認できるようにする
+			$redirect_handler = function ( $location ) use ( &$redirect_called ) {
+				$redirect_called = true;
 				throw new \Exception( 'wp_redirect called: ' . $location );
 			};
 			add_filter( 'wp_redirect', $redirect_handler );
@@ -268,7 +271,10 @@ class DuplicateDocTest extends WP_UnitTestCase {
 			if ( $case['expected_exception'] ) {
 				$this->assertTrue( $exception_thrown, $case['test_condition_name'] );
 			} else {
+				// 正常系：wp_die が呼ばれず、かつ wp_redirect に到達したことを確認する
+				// （何もせず return した場合の偽陽性を防ぐ）
 				$this->assertFalse( $exception_thrown, $case['test_condition_name'] );
+				$this->assertTrue( $redirect_called, $case['test_condition_name'] . ' (wp_redirect が呼ばれること)' );
 			}
 		}
 	}
