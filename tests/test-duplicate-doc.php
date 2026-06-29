@@ -150,22 +150,21 @@ class DuplicateDocTest extends WP_UnitTestCase {
 				$exception_thrown = false;
 
 				// テスト用に wp_die_handler をオーバーライドして例外をキャッチする
-				add_filter(
-					'wp_die_handler',
-					function () {
-						return function ( $message ) {
-							throw new \Exception( 'wp_die called: ' . ( is_string( $message ) ? $message : '' ) );
-						};
-					}
-				);
+				// クロージャを変数に保存し、フレームワーク側のフィルターを除去しないよう個別に外す
+				$die_handler = function () {
+					return function ( $message ) {
+						throw new \Exception( 'wp_die called: ' . ( is_string( $message ) ? $message : '' ) );
+					};
+				};
+				add_filter( 'wp_die_handler', $die_handler );
 
 				try {
 					bill_copy_redirect();
 				} catch ( \Exception $e ) {
 					$exception_thrown = true;
 				} finally {
-					// フィルターを削除してクリーンアップ
-					remove_all_filters( 'wp_die_handler' );
+					// フィルターを個別に削除してフレームワーク側のフィルターを保持する
+					remove_filter( 'wp_die_handler', $die_handler );
 					$_GET     = array();
 					$_REQUEST = array();
 				}
@@ -236,22 +235,19 @@ class DuplicateDocTest extends WP_UnitTestCase {
 			// テスト用に wp_die_handler と wp_redirect フィルターを設定
 			$exception_thrown = false;
 
-			add_filter(
-				'wp_die_handler',
-				function () {
-					return function ( $message ) {
-						throw new \Exception( 'wp_die called: ' . ( is_string( $message ) ? $message : '' ) );
-					};
-				}
-			);
+			// クロージャを変数に保存し、フレームワーク側のフィルターを除去しないよう個別に外す
+			$die_handler = function () {
+				return function ( $message ) {
+					throw new \Exception( 'wp_die called: ' . ( is_string( $message ) ? $message : '' ) );
+				};
+			};
+			add_filter( 'wp_die_handler', $die_handler );
 
 			// wp_safe_redirect はヘッダー送信を試みるため、テスト環境では例外化して処理を止める
-			add_filter(
-				'wp_redirect',
-				function ( $location ) {
-					throw new \Exception( 'wp_redirect called: ' . $location );
-				}
-			);
+			$redirect_handler = function ( $location ) {
+				throw new \Exception( 'wp_redirect called: ' . $location );
+			};
+			add_filter( 'wp_redirect', $redirect_handler );
 
 			try {
 				bill_copy_redirect();
@@ -262,9 +258,9 @@ class DuplicateDocTest extends WP_UnitTestCase {
 				// wp_redirect 呼び出しの場合は "wp_redirect called:" プレフィックスが付く
 				$exception_thrown = strpos( $message, 'wp_die called:' ) === 0;
 			} finally {
-				// フィルターを削除してクリーンアップ
-				remove_all_filters( 'wp_die_handler' );
-				remove_all_filters( 'wp_redirect' );
+				// フィルターを個別に削除してフレームワーク側のフィルターを保持する
+				remove_filter( 'wp_die_handler', $die_handler );
+				remove_filter( 'wp_redirect', $redirect_handler );
 				$_GET     = array();
 				$_REQUEST = array();
 			}
