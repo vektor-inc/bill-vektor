@@ -264,7 +264,12 @@ add_action( 'admin_init', 'bill_copy_redirect' );
  * @return array nonce 付き複製リンクを追加したアクション配列。
  */
 function bill_row_actions_add_duplicate_link( $actions, $post ) {
-	$post_type = get_post_type();
+	// 編集権限がないユーザーには複製リンクを表示しない
+	if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+		return $actions;
+	}
+
+	$post_type = get_post_type( $post );
 	// CSRF 対策として nonce を URL パラメーターに付与する
 	$links = admin_url() . 'post-new.php?post_type=' . $post_type
 		. '&master_id=' . $post->ID
