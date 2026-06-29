@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.11.7
+Stable tag: 1.11.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,9 +13,10 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.11.8
 [ 不具合修正 ] 税込入力の品目で消費税の端数処理が二重に適用され税込合計が1円ずれる不具合を修正
-[ セキュリティ修正 ] 書類複製機能に権限チェックとCSRF検証がなく不正に複製できる問題を修正
 [ 不具合修正 ] PHP 8.xで書類複製時にURLパラメーターが欠落している場合にPHP警告が記録される問題を修正
+[ セキュリティ修正 ] 書類複製機能に権限チェックとCSRF検証がなく不正に複製できる問題を修正
 
 1.11.7
 [ その他 ] フレキシブルテーブルのカスタムフィールドで select（プルダウン）タイプをサポート
