@@ -74,8 +74,9 @@ class DuplicateDocTest extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function tear_down() {
-		// $_GET をリセット
-		$_GET = array();
+		// $_GET・$_REQUEST をリセット
+		$_GET     = array();
+		$_REQUEST = array();
 
 		// 作成した投稿を削除
 		if ( $this->post_id ) {
@@ -165,7 +166,8 @@ class DuplicateDocTest extends WP_UnitTestCase {
 				} finally {
 					// フィルターを削除してクリーンアップ
 					remove_all_filters( 'wp_die_handler' );
-					$_GET = array();
+					$_GET     = array();
+					$_REQUEST = array();
 				}
 
 				$this->assertTrue( $exception_thrown, $case['test_condition_name'] );
@@ -191,14 +193,16 @@ class DuplicateDocTest extends WP_UnitTestCase {
 					// 購読者としてログイン（edit_post 権限なし）
 					wp_set_current_user( $this->subscriber_user_id );
 					// 有効な nonce を生成して設定
-					$nonce    = wp_create_nonce( 'bill_copy_' . $this->post_id );
-					$_GET = array(
+					$nonce = wp_create_nonce( 'bill_copy_' . $this->post_id );
+					$_GET  = array(
 						'master_id'       => $this->post_id,
 						'post_type'       => 'post',
 						'table_copy_type' => 'all',
 						'duplicate_type'  => 'full',
 						'_wpnonce'        => $nonce,
 					);
+					// check_admin_referer() は $_REQUEST['_wpnonce'] を参照するため合わせて設定する
+					$_REQUEST['_wpnonce'] = $nonce;
 				},
 				'expected_exception' => true,
 			),
@@ -210,14 +214,16 @@ class DuplicateDocTest extends WP_UnitTestCase {
 					// 管理者としてログイン
 					wp_set_current_user( $this->admin_user_id );
 					// 有効な nonce を生成して設定
-					$nonce    = wp_create_nonce( 'bill_copy_' . $this->post_id );
-					$_GET = array(
+					$nonce = wp_create_nonce( 'bill_copy_' . $this->post_id );
+					$_GET  = array(
 						'master_id'       => $this->post_id,
 						'post_type'       => 'post',
 						'table_copy_type' => 'all',
 						'duplicate_type'  => 'full',
 						'_wpnonce'        => $nonce,
 					);
+					// check_admin_referer() は $_REQUEST['_wpnonce'] を参照するため合わせて設定する
+					$_REQUEST['_wpnonce'] = $nonce;
 				},
 				'expected_exception' => false,
 			),
@@ -259,7 +265,8 @@ class DuplicateDocTest extends WP_UnitTestCase {
 				// フィルターを削除してクリーンアップ
 				remove_all_filters( 'wp_die_handler' );
 				remove_all_filters( 'wp_redirect' );
-				$_GET = array();
+				$_GET     = array();
+				$_REQUEST = array();
 			}
 
 			if ( $case['expected_exception'] ) {
