@@ -211,6 +211,110 @@ class PriceTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 品目1件分の消費税額計算テスト（共通ヘルパー）.
+	 */
+	function test_bill_vektor_invoice_item_tax() {
+
+		$test_array = array(
+			// 税抜入力・端数なし
+			array(
+				'test_condition_name' => '税抜入力（10%）で端数が出ない場合 => 税抜合計 × 税率',
+				'tax_type'            => 'tax_excluded',
+				'original_price'      => 1000,
+				'count'               => 1,
+				'total_price'         => 1000,
+				'tax_rate'            => 0.1,
+				'correct'             => 100,
+			),
+			// 税抜入力・端数あり（丸め処理はこの関数では行わず小数のまま返す）
+			array(
+				'test_condition_name' => '税抜入力（10%）で端数が出る場合 => 丸めずに小数のまま返す',
+				'tax_type'            => 'tax_excluded',
+				'original_price'      => 333,
+				'count'               => 1,
+				'total_price'         => 333,
+				'tax_rate'            => 0.1,
+				'correct'             => 33.3,
+			),
+			// 税込入力（四捨五入）・端数なし
+			array(
+				'test_condition_name' => '税込入力（tax_included, 10%）で端数が出ない場合 => 元の税込合計 - 税抜合計',
+				'tax_type'            => 'tax_included',
+				'original_price'      => 1100,
+				'count'               => 1,
+				'total_price'         => 1000,
+				'tax_rate'            => 0.1,
+				'correct'             => 100,
+			),
+			// 税込入力（四捨五入）・端数あり（PR #266 で修正された 6000円/10%のケース）
+			array(
+				'test_condition_name' => '税込入力（tax_included, 10%）で税抜変換に端数が出る場合 => 税込-税抜方式で1円ずれない',
+				'tax_type'            => 'tax_included',
+				'original_price'      => 6000,
+				'count'               => 1,
+				'total_price'         => 5455, // round(6000 / 1.1)
+				'tax_rate'            => 0.1,
+				'correct'             => 545, // 6000 - 5455
+			),
+			// 税込入力（切り上げ）・端数あり
+			array(
+				'test_condition_name' => '税込入力（tax_included_ceil, 10%）で税抜変換に端数が出る場合 => 税込-税抜方式で1円ずれない',
+				'tax_type'            => 'tax_included_ceil',
+				'original_price'      => 6000,
+				'count'               => 1,
+				'total_price'         => 5455, // ceil(6000 / 1.1)
+				'tax_rate'            => 0.1,
+				'correct'             => 545, // 6000 - 5455
+			),
+			// 税込入力（切り捨て）・端数あり
+			array(
+				'test_condition_name' => '税込入力（tax_included_floor, 10%）で税抜変換に端数が出る場合 => 税込-税抜方式で1円ずれない',
+				'tax_type'            => 'tax_included_floor',
+				'original_price'      => 6000,
+				'count'               => 1,
+				'total_price'         => 5454, // floor(6000 / 1.1)
+				'tax_rate'            => 0.1,
+				'correct'             => 546, // 6000 - 5454
+			),
+			// 個数が複数の場合（税込入力）
+			array(
+				'test_condition_name' => '税込入力（tax_included, 8%）で個数が複数の場合 => 元の税込合計 - 税抜合計',
+				'tax_type'            => 'tax_included',
+				'original_price'      => 1080,
+				'count'               => 3,
+				'total_price'         => 3000,
+				'tax_rate'            => 0.08,
+				'correct'             => 240, // (1080 * 3) - 3000
+			),
+			// 非課税（0%）
+			array(
+				'test_condition_name' => '税抜入力で税率が 0% の場合 => 消費税額は 0',
+				'tax_type'            => 'tax_excluded',
+				'original_price'      => 6000,
+				'count'               => 1,
+				'total_price'         => 6000,
+				'tax_rate'            => 0,
+				'correct'             => 0,
+			),
+		);
+
+		print PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print 'Test Bill Vektor Invoice Item Tax' . PHP_EOL;
+		print '------------------------------------' . PHP_EOL;
+		print PHP_EOL;
+
+		foreach ( $test_array as $test_value ) {
+
+			// 消費税額を取得
+			$return  = bill_vektor_invoice_item_tax( $test_value['tax_type'], $test_value['original_price'], $test_value['count'], $test_value['total_price'], $test_value['tax_rate'] );
+			$correct = $test_value['correct'];
+			// 浮動小数点演算の誤差を許容するため assertEqualsWithDelta を使用（丸め処理はこの関数の責務ではないため小数のまま比較する）
+			$this->assertEqualsWithDelta( $correct, $return, 0.0001, $test_value['test_condition_name'] );
+		}
+	}
+
+	/**
 	 * 税込金額テスト.
 	 */
 	function test_bill_vektor_invoice_full_plice() {
