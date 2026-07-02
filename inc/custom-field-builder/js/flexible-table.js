@@ -43,14 +43,22 @@
 		});
 	}
 
-	jQuery('.sortable').sortable();
+	// ドラッグ開始位置をハンドルアイコンに限定し、input・select 等をタップしても
+	// Sortable が反応しないようにする（iPad 等タッチデバイスでの入力不可バグ対策）。
+	// cancel はハンドル限定に加えた保険。
+	var sortable_options = {
+		handle: '.icon-drag',
+		cancel: 'input, textarea, select, button'
+	};
+
+	jQuery('.sortable').sortable(sortable_options);
 	jQuery('.sortable').disableSelection();
 
 	jQuery('.sortable').bind('sortstop', function (e, ui) {
 	    // ソートが完了したら実行される。
 
 	    row_count_reset();
-	    jQuery('.sortable').sortable();
+	    jQuery('.sortable').sortable(sortable_options);
 
 	})
 
