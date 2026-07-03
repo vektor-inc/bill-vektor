@@ -11,3 +11,8 @@ vendor/
 *.override.json
 dist/
 .phpunit.result.cache
+
+# Playwright e2e テストの一時生成物（実行結果・ログイン済みセッション・スクリーンショット）
+test-results/
+tests/e2e/.auth-state.json
+tests/e2e/screenshots/
