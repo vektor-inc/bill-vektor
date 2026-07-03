@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.11.10
+Stable tag: 1.11.11
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.11.11
 [ 不具合修正 ] 見積書編集画面の複製・請求書発行ボタンのリンクにnonceが付与されておらず、クリック時に「リンクの有効期限切れです」エラーになる不具合を修正
 
 1.11.10
