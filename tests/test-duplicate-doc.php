@@ -278,4 +278,97 @@ class DuplicateDocTest extends WP_UnitTestCase {
 			}
 		}
 	}
+
+	/**
+	 * bill_duplicate() のリンク生成に対する nonce 付与テスト
+	 *
+	 * 見積書編集画面のサブミットボックスに出力される「見積書を複製」
+	 * 「この内容で請求書を発行」「件名を品目一式にして請求書を発行」の
+	 * 3リンクに、有効な nonce（_wpnonce）が付与されていることを検証する。
+	 *
+	 * PR #279 で修正した不具合（リンク生成側で nonce の付け忘れが発生し、
+	 * check_admin_referer() 側だけ nonce 検証を追加したためエラーになっていた）の
+	 * 再発防止用の回帰テスト。
+	 *
+	 * @return void
+	 */
+	public function test_bill_duplicate() {
+
+		// テスト用の見積書投稿を2件作成（post ID ごとに nonce が変わることを確認するため）
+		$estimate_post_id_1 = wp_insert_post(
+			array(
+				'post_title'   => 'テスト用見積書1',
+				'post_content' => '',
+				'post_status'  => 'publish',
+				'post_type'    => 'estimate',
+			)
+		);
+		$estimate_post_id_2 = wp_insert_post(
+			array(
+				'post_title'   => 'テスト用見積書2',
+				'post_content' => '',
+				'post_status'  => 'publish',
+				'post_type'    => 'estimate',
+			)
+		);
+
+		$test_cases = array(
+			// --- 正常系：見積書投稿の場合、3リンクすべてに有効な nonce が付与される ---
+			array(
+				'test_condition_name' => '見積書投稿の場合 => 3リンクすべてに投稿IDに対して有効な nonce が付与される',
+				'post_id'             => $estimate_post_id_1,
+				'expect_links'        => true,
+			),
+			// --- 正常系：別の見積書投稿でも、その投稿ID用の nonce が付与される ---
+			array(
+				'test_condition_name' => '別の見積書投稿の場合 => その投稿ID用の nonce が付与される（post ID ごとに nonce が異なる）',
+				'post_id'             => $estimate_post_id_2,
+				'expect_links'        => true,
+			),
+			// --- 異常系・境界値：見積書以外の投稿タイプの場合、複製・発行リンクが出力されない ---
+			array(
+				'test_condition_name' => '見積書以外の投稿タイプの場合 => 複製・発行リンクが出力されない',
+				'post_id'             => $this->post_id,
+				'expect_links'        => false,
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			// global $post と get_post_type() の参照先を切り替える
+			global $post;
+			$post = get_post( $case['post_id'] );
+			setup_postdata( $post );
+
+			// bill_duplicate() は post_submitbox_start フックで直接 HTML を echo する関数のため
+			// 出力バッファリングで結果を取得する
+			ob_start();
+			bill_duplicate();
+			$output = ob_get_clean();
+
+			if ( $case['expect_links'] ) {
+				// href 属性内の _wpnonce パラメーター値を全て抽出する
+				preg_match_all( '/_wpnonce=([a-f0-9]+)/', $output, $matches );
+
+				// 3つのボタンすべてにリンクが出力されていること
+				$this->assertCount( 3, $matches[1], $case['test_condition_name'] . '（リンク数）' );
+
+				foreach ( $matches[1] as $nonce ) {
+					// 各 nonce が対象投稿の post ID に対して有効であること
+					$this->assertNotFalse(
+						wp_verify_nonce( $nonce, 'bill_copy_' . $case['post_id'] ),
+						$case['test_condition_name'] . '（nonce 検証）'
+					);
+				}
+			} else {
+				// 見積書以外では duplicate-section 自体が出力されないこと
+				$this->assertStringNotContainsString( 'duplicate-section', $output, $case['test_condition_name'] );
+			}
+
+			wp_reset_postdata();
+		}
+
+		// 作成した投稿を削除
+		wp_delete_post( $estimate_post_id_1, true );
+		wp_delete_post( $estimate_post_id_2, true );
+	}
 }
