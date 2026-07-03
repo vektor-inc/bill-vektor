@@ -370,5 +370,11 @@ class DuplicateDocTest extends WP_UnitTestCase {
 		// 作成した投稿を削除
 		wp_delete_post( $estimate_post_id_1, true );
 		wp_delete_post( $estimate_post_id_2, true );
+
+		// wp_reset_postdata() はメインクエリの The Loop 内でしか効果がなく、
+		// このテストのように setup_postdata() を直接呼ぶだけのケースでは no-op になるため、
+		// global $post の汚染（削除済み投稿を指したまま残る）を防ぐため明示的にリセットする
+		$GLOBALS['post'] = null;
+		wp_reset_postdata();
 	}
 }
