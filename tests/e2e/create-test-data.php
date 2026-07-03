@@ -21,6 +21,11 @@ $post_id_tax_round = wp_insert_post( array(
 	'post_status' => 'publish',
 ) );
 
+// wp_insert_post() は失敗時に WP_Error を返すため、投稿作成に失敗していないか確認する
+if ( is_wp_error( $post_id_tax_round ) ) {
+	WP_CLI::error( '投稿の作成に失敗しました（tax_round_default）: ' . $post_id_tax_round->get_error_message() );
+}
+
 add_post_meta( $post_id_tax_round, 'bill_items', array(
 	array(
 		'name'     => 'テスト品目',
@@ -41,6 +46,11 @@ $post_id_tax_ceil = wp_insert_post( array(
 	'post_type'   => 'post',
 	'post_status' => 'publish',
 ) );
+
+// wp_insert_post() は失敗時に WP_Error を返すため、投稿作成に失敗していないか確認する
+if ( is_wp_error( $post_id_tax_ceil ) ) {
+	WP_CLI::error( '投稿の作成に失敗しました（tax_round_ceil）: ' . $post_id_tax_ceil->get_error_message() );
+}
 
 add_post_meta( $post_id_tax_ceil, 'bill_items', array(
 	array(
@@ -64,6 +74,11 @@ $post_id_excluded = wp_insert_post( array(
 	'post_status' => 'publish',
 ) );
 
+// wp_insert_post() は失敗時に WP_Error を返すため、投稿作成に失敗していないか確認する
+if ( is_wp_error( $post_id_excluded ) ) {
+	WP_CLI::error( '投稿の作成に失敗しました（tax_excluded）: ' . $post_id_excluded->get_error_message() );
+}
+
 add_post_meta( $post_id_excluded, 'bill_items', array(
 	array(
 		'name'     => 'テスト品目',
@@ -85,6 +100,11 @@ $post_id_excluded_3333 = wp_insert_post( array(
 	'post_type'   => 'post',
 	'post_status' => 'publish',
 ) );
+
+// wp_insert_post() は失敗時に WP_Error を返すため、投稿作成に失敗していないか確認する
+if ( is_wp_error( $post_id_excluded_3333 ) ) {
+	WP_CLI::error( '投稿の作成に失敗しました（tax_excluded_3333）: ' . $post_id_excluded_3333->get_error_message() );
+}
 
 add_post_meta( $post_id_excluded_3333, 'bill_items', array(
 	array(

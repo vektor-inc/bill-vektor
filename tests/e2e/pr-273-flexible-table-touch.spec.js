@@ -125,6 +125,9 @@ test.describe('PR #273: タッチデバイスでの入力欄タップ確認（iP
 	 */
 	test('品目名の入力欄をタップするとフォーカスが当たる', async ({ browser }) => {
 		const context = await browser.newContext({
+			// browser.newContext() は playwright.config.js の baseURL を自動継承するが、
+			// 念のため明示的に指定して相対URL（EDIT_URL）の解決漏れを防ぐ
+			baseURL: process.env.WP_BASE_URL || 'http://localhost:8895',
 			storageState: 'tests/e2e/.auth-state.json',
 			hasTouch: true,
 			isMobile: true,
@@ -146,6 +149,9 @@ test.describe('PR #273: タッチデバイスでの入力欄タップ確認（iP
 
 	test('数量の入力欄をタップするとフォーカスが当たる', async ({ browser }) => {
 		const context = await browser.newContext({
+			// browser.newContext() は playwright.config.js の baseURL を自動継承するが、
+			// 念のため明示的に指定して相対URL（EDIT_URL）の解決漏れを防ぐ
+			baseURL: process.env.WP_BASE_URL || 'http://localhost:8895',
 			storageState: 'tests/e2e/.auth-state.json',
 			hasTouch: true,
 			isMobile: true,
@@ -167,6 +173,9 @@ test.describe('PR #273: タッチデバイスでの入力欄タップ確認（iP
 
 	test('ドラッグハンドルをタッチ操作しても並び替えが機能する（デグレ確認）', async ({ browser }) => {
 		const context = await browser.newContext({
+			// browser.newContext() は playwright.config.js の baseURL を自動継承するが、
+			// 念のため明示的に指定して相対URL（EDIT_URL）の解決漏れを防ぐ
+			baseURL: process.env.WP_BASE_URL || 'http://localhost:8895',
 			storageState: 'tests/e2e/.auth-state.json',
 			hasTouch: true,
 			isMobile: true,
