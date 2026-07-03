@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.11.9
+Stable tag: 1.11.10
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.11.10
 [ 不具合修正 ] 配布パッケージのビルド処理で画像ファイルが破損し、ロゴ等の画像が表示されない不具合を修正
 
 1.11.9
