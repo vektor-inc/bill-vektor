@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.11.8
+Stable tag: 1.11.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.11.9
 [ 不具合修正 ] 品目テーブルの並び替えがタップ全体に反応し、iPad等で入力欄をタップできない不具合を修正（#244）
 
 1.11.8
