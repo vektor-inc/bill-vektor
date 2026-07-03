@@ -2,6 +2,7 @@
   "name": "bill-vektor",
   "version": "1.0.0",
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "sass": "^1.62.0"
   },
   "scripts": {
