@@ -85,17 +85,10 @@ if ( is_array( $bill_items ) ) {
 					$lite_tax_flag = true;
 				}
 
-				// 消費税額の計算方法を税込・税抜によって分岐
-				// 税込入力の場合：元の税込合計 - 税抜合計 で消費税を確定する（端数処理を二重にかけないため）
-				// 税抜入力の場合：税抜合計 × 税率 で消費税を算出する
-				if ( in_array( $bill_item['tax-type'], array( 'tax_included', 'tax_included_ceil', 'tax_included_floor' ), true ) ) {
-					// 税込入力：元の税込合計から税抜合計を引いた値が消費税
-					$item_original_total = $item_original_price * $item_count;
-					$item_tax_value      = $item_original_total - $item_price_total;
-				} else {
-					// 税抜入力：税抜合計 × 税率
-					$item_tax_value = bill_vektor_invoice_tax_plice( $item_price_total, $item_tax_rate_value );
-				}
+				// 消費税額の計算方法を税込・税抜によって分岐する処理は共通ヘルパーに集約している
+				// （合計表の消費税計算 bill_vektor_invoice_each_tax() と同じロジックを使用）。
+				// table-price.php では品目ごとに即座に表示用の確定値として使用するため、丸め処理はかけない。
+				$item_tax_value = bill_vektor_invoice_item_tax( $bill_item['tax-type'], $item_original_price, $item_count, $item_price_total, $item_tax_rate_value );
 				$item_tax_value_print = '¥ ' . number_format( $item_tax_value, $digits );
 				$form_item_tax_rate   = $item_tax_rate !== '0%' ? $item_tax_rate : __( '非課税', 'bill-vektor' );
 
