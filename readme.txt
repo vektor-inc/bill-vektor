@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.11.8
+Stable tag: 1.11.11
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,6 +14,15 @@ GitHub : https://github.com/vektor-inc/BillVektor
 == Changelog ==
 
 [ その他 ] 品目の消費税額を計算するロジックを共通関数に集約する内部リファクタリング
+
+1.11.11
+[ 不具合修正 ] 見積書編集画面の複製・請求書発行ボタンのリンクにnonceが付与されておらず、クリック時に「リンクの有効期限切れです」エラーになる不具合を修正
+
+1.11.10
+[ 不具合修正 ] 配布パッケージのビルド処理で画像ファイルが破損し、ロゴ等の画像が表示されない不具合を修正
+
+1.11.9
+[ 不具合修正 ] 品目テーブルの並び替えがタップ全体に反応し、iPad等で入力欄をタップできない不具合を修正（#244）
 
 1.11.8
 [ 不具合修正 ] 税込入力の品目で消費税の端数処理が二重に適用され税込合計が1円ずれる不具合を修正
