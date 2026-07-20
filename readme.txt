@@ -13,6 +13,8 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+[ 機能追加 ] 請求書編集画面に「請求書を複製」ボタンを追加
+
 [ その他 ] 品目の消費税額を計算するロジックを共通関数に集約する内部リファクタリング
 
 1.11.11
