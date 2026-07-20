@@ -282,13 +282,17 @@ class DuplicateDocTest extends WP_UnitTestCase {
 	/**
 	 * bill_duplicate() のリンク生成に対する nonce 付与テスト
 	 *
-	 * 見積書編集画面のサブミットボックスに出力される「見積書を複製」
-	 * 「この内容で請求書を発行」「件名を品目一式にして請求書を発行」の
-	 * 3リンクに、有効な nonce（_wpnonce）が付与されていることを検証する。
+	 * サブミットボックスに出力される複製・発行リンクに、有効な nonce（_wpnonce）が
+	 * 付与されていることを検証する。検証対象は以下の投稿タイプ。
+	 *
+	 * - 見積書（estimate）: 「見積書を複製」「この内容で請求書を発行」
+	 *   「件名を品目一式にして請求書を発行」の3リンクが出力される。
+	 * - 請求書（post）: 「請求書を複製」の1リンクが出力される（issue #283）。
+	 * - 上記以外（page 等）: 複製・発行リンクが出力されない。
 	 *
 	 * PR #279 で修正した不具合（リンク生成側で nonce の付け忘れが発生し、
 	 * check_admin_referer() 側だけ nonce 検証を追加したためエラーになっていた）の
-	 * 再発防止用の回帰テスト。
+	 * 再発防止も兼ねる回帰テスト。
 	 *
 	 * @return void
 	 */
@@ -311,6 +315,15 @@ class DuplicateDocTest extends WP_UnitTestCase {
 				'post_type'    => 'estimate',
 			)
 		);
+		// テスト用の固定ページ投稿を作成（複製対象外の投稿タイプの負のケース用）
+		$page_post_id = wp_insert_post(
+			array(
+				'post_title'   => 'テスト用固定ページ',
+				'post_content' => '',
+				'post_status'  => 'publish',
+				'post_type'    => 'page',
+			)
+		);
 
 		$test_cases = array(
 			// --- 正常系：見積書投稿の場合、3リンクすべてに有効な nonce が付与される ---
@@ -318,18 +331,28 @@ class DuplicateDocTest extends WP_UnitTestCase {
 				'test_condition_name' => '見積書投稿の場合 => 3リンクすべてに投稿IDに対して有効な nonce が付与される',
 				'post_id'             => $estimate_post_id_1,
 				'expect_links'        => true,
+				'expected_link_count' => 3,
 			),
 			// --- 正常系：別の見積書投稿でも、その投稿ID用の nonce が付与される ---
 			array(
 				'test_condition_name' => '別の見積書投稿の場合 => その投稿ID用の nonce が付与される（post ID ごとに nonce が異なる）',
 				'post_id'             => $estimate_post_id_2,
 				'expect_links'        => true,
+				'expected_link_count' => 3,
 			),
-			// --- 異常系・境界値：見積書以外の投稿タイプの場合、複製・発行リンクが出力されない ---
+			// --- 正常系：請求書（post）投稿の場合、「請求書を複製」の1リンクに有効な nonce が付与される（issue #283） ---
 			array(
-				'test_condition_name' => '見積書以外の投稿タイプの場合 => 複製・発行リンクが出力されない',
+				'test_condition_name' => '請求書（post）投稿の場合 => 「請求書を複製」リンク1つに投稿IDに対して有効な nonce が付与される',
 				'post_id'             => $this->post_id,
+				'expect_links'        => true,
+				'expected_link_count' => 1,
+			),
+			// --- 異常系・境界値：複製対象外の投稿タイプ（page）の場合、複製・発行リンクが出力されない ---
+			array(
+				'test_condition_name' => '複製対象外の投稿タイプ（固定ページ）の場合 => 複製・発行リンクが出力されない',
+				'post_id'             => $page_post_id,
 				'expect_links'        => false,
+				'expected_link_count' => 0,
 			),
 		);
 
@@ -349,8 +372,8 @@ class DuplicateDocTest extends WP_UnitTestCase {
 				// href 属性内の _wpnonce パラメーター値を全て抽出する
 				preg_match_all( '/_wpnonce=([a-f0-9]+)/', $output, $matches );
 
-				// 3つのボタンすべてにリンクが出力されていること
-				$this->assertCount( 3, $matches[1], $case['test_condition_name'] . '（リンク数）' );
+				// 投稿タイプごとに期待されるリンク数（nonce の数）が出力されていること
+				$this->assertCount( $case['expected_link_count'], $matches[1], $case['test_condition_name'] . '（リンク数）' );
 
 				foreach ( $matches[1] as $nonce ) {
 					// 各 nonce が対象投稿の post ID に対して有効であること
@@ -360,7 +383,7 @@ class DuplicateDocTest extends WP_UnitTestCase {
 					);
 				}
 			} else {
-				// 見積書以外では duplicate-section 自体が出力されないこと
+				// 複製対象外の投稿タイプでは duplicate-section 自体が出力されないこと
 				$this->assertStringNotContainsString( 'duplicate-section', $output, $case['test_condition_name'] );
 			}
 
@@ -370,6 +393,7 @@ class DuplicateDocTest extends WP_UnitTestCase {
 		// 作成した投稿を削除
 		wp_delete_post( $estimate_post_id_1, true );
 		wp_delete_post( $estimate_post_id_2, true );
+		wp_delete_post( $page_post_id, true );
 
 		// wp_reset_postdata() はメインクエリの The Loop 内でしか効果がなく、
 		// このテストのように setup_postdata() を直接呼ぶだけのケースでは no-op になるため、
