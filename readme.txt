@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.11.11
+Stable tag: 1.12.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,8 +13,8 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.12.0
 [ 機能追加 ] 請求書編集画面に「請求書を複製」ボタンを追加
-
 [ その他 ] 品目の消費税額を計算するロジックを共通関数に集約する内部リファクタリング
 
 1.11.11
