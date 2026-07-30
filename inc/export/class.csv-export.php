@@ -38,9 +38,12 @@ if ( ! class_exists( 'CsvExport' ) ) {
 			}
 
 			// CSRF 対策。エクスポートボタン側は wp_nonce_field() で _wpnonce を送出する
-			// レスポンスコードを 403 にして、サーバーエラー（既定の 500）と区別できるようにする
+			// sanitize_key() を通すのは、配列など非スカラーの _wpnonce を渡された際に
+			// wp_verify_nonce() 側で PHP 警告が出て（WP_DEBUG 環境で）ヘッダーより先に
+			// 出力が発生し、403 が 200 に化けるのを防ぐため
 			if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'bill_csv_export' ) ) {
-				wp_die( esc_html__( 'リンクの有効期限切れです。', 'bill-vektor' ), '', array( 'response' => 403 ) );
+				// コアの nonce エラー画面に委ねる（403・ローカライズ済み文言・復帰リンクが揃う）
+				wp_nonce_ays( 'bill_csv_export' );
 			}
 
 			return true;
@@ -296,6 +299,8 @@ if ( ! class_exists( 'CsvExport' ) ) {
 			$full_csv = implode( "\r\n", $csv );
 
 			// CSVで出力実行
+			// 請求データは機密情報のため、CDN・プロキシ・ブラウザにキャッシュさせない
+			nocache_headers();
 			if ( $_GET['action'] == 'csv_mf' ) {
 				header( 'Content-Type: text/csv; charset=shift_jis' );
 				$full_csv = mb_convert_encoding( $full_csv, 'SJIS' );

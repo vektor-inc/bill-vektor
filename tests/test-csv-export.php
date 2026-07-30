@@ -29,6 +29,13 @@ class CsvExportTest extends WP_UnitTestCase {
 	private $subscriber_user_id;
 
 	/**
+	 * テスト用寄稿者ユーザーID（edit_posts 権限あり）
+	 *
+	 * @var int
+	 */
+	private $contributor_user_id;
+
+	/**
 	 * テスト前の共通セットアップ
 	 *
 	 * 権限あり・権限なしのテスト用ユーザーを作成する。
@@ -47,6 +54,11 @@ class CsvExportTest extends WP_UnitTestCase {
 		$this->subscriber_user_id = wp_create_user( 'test_csv_subscriber', 'password', 'csv_subscriber@example.com' );
 		$subscriber_user          = new WP_User( $this->subscriber_user_id );
 		$subscriber_user->set_role( 'subscriber' );
+
+		// 寄稿者ユーザーを作成（edit_posts 権限あり）
+		$this->contributor_user_id = wp_create_user( 'test_csv_contributor', 'password', 'csv_contributor@example.com' );
+		$contributor_user          = new WP_User( $this->contributor_user_id );
+		$contributor_user->set_role( 'contributor' );
 	}
 
 	/**
@@ -71,6 +83,9 @@ class CsvExportTest extends WP_UnitTestCase {
 		if ( $this->subscriber_user_id ) {
 			wp_delete_user( $this->subscriber_user_id );
 		}
+		if ( $this->contributor_user_id ) {
+			wp_delete_user( $this->contributor_user_id );
+		}
 
 		parent::tear_down();
 	}
@@ -78,7 +93,7 @@ class CsvExportTest extends WP_UnitTestCase {
 	/**
 	 * テスト条件からログインユーザーを設定する
 	 *
-	 * @param string $user_type 'anonymous' / 'admin' / 'subscriber' のいずれか。
+	 * @param string $user_type 'anonymous' / 'admin' / 'subscriber' / 'contributor' のいずれか。
 	 * @return void
 	 */
 	private function set_current_user_by_type( $user_type ) {
@@ -86,6 +101,8 @@ class CsvExportTest extends WP_UnitTestCase {
 			wp_set_current_user( $this->admin_user_id );
 		} elseif ( 'subscriber' === $user_type ) {
 			wp_set_current_user( $this->subscriber_user_id );
+		} elseif ( 'contributor' === $user_type ) {
+			wp_set_current_user( $this->contributor_user_id );
 		} else {
 			// 未ログイン状態
 			wp_set_current_user( 0 );
@@ -321,6 +338,91 @@ class CsvExportTest extends WP_UnitTestCase {
 
 			$_GET     = array();
 			$_REQUEST = array();
+		}
+	}
+
+	/**
+	 * 寄稿者（contributor）が CSV をエクスポートできることのテスト
+	 *
+	 * ガードの権限は意図的に edit_posts としている。寄稿者は edit_posts を持つため
+	 * エクスポートできるのが仕様であり、この挙動を後から変えられないよう固定しておく。
+	 * （権限をこれ以上引き上げると、Author / Contributor 運用のサイトでエクスポートが
+	 * 使えなくなる。個別の書類ページは寄稿者でも閲覧できるため、CSV だけ権限を上げても
+	 * 漏洩量は変わらない。テーマ全体の認可モデルの見直しは別 issue で扱う。）
+	 *
+	 * @return void
+	 */
+	public function test_can_export__contributor() {
+
+		$test_cases = array(
+			// --- 正常系：寄稿者が有効な nonce で freee 用エクスポートを実行 ---
+			array(
+				'test_condition_name' => '寄稿者が有効な nonce で action=csv_freee にアクセスした場合 => true（edit_posts を持つのでエクスポート可）',
+				'conditions'          => array(
+					'user'   => 'contributor',
+					'action' => 'csv_freee',
+					'nonce'  => 'valid',
+				),
+				'expected'            => true,
+			),
+			// --- 正常系：寄稿者が有効な nonce で MF 用エクスポートを実行 ---
+			array(
+				'test_condition_name' => '寄稿者が有効な nonce で action=csv_mf にアクセスした場合 => true（edit_posts を持つのでエクスポート可）',
+				'conditions'          => array(
+					'user'   => 'contributor',
+					'action' => 'csv_mf',
+					'nonce'  => 'valid',
+				),
+				'expected'            => true,
+			),
+			// --- 異常系：寄稿者でも nonce が無ければ中断される ---
+			array(
+				'test_condition_name' => '寄稿者が nonce なしでアクセスした場合 => wp_die（権限があっても CSRF 検証は通す）',
+				'conditions'          => array(
+					'user'   => 'contributor',
+					'action' => 'csv_freee',
+					'nonce'  => 'none',
+				),
+				'expected'            => 'wp_die',
+			),
+		);
+
+		// 前提として寄稿者が edit_posts を持つことを明示しておく
+		// （WordPress のロール定義が変わった場合に、このテストの前提が崩れたと分かるようにする）
+		$contributor = new WP_User( $this->contributor_user_id );
+		$this->assertTrue( $contributor->has_cap( 'edit_posts' ), '寄稿者は edit_posts 権限を持つこと' );
+
+		foreach ( $test_cases as $case ) {
+			// ログイン状態とリクエストパラメーターを設定する
+			$this->set_current_user_by_type( $case['conditions']['user'] );
+			$this->set_up_get_params( $case['conditions'] );
+
+			// wp_die（wp_nonce_ays 経由を含む）を例外に置き換えて捕捉できるようにする
+			$die_handler = function () {
+				return function ( $message ) {
+					throw new \Exception( 'wp_die called: ' . ( is_string( $message ) ? $message : '' ) );
+				};
+			};
+			add_filter( 'wp_die_handler', $die_handler );
+
+			$died   = false;
+			$actual = null;
+			try {
+				$actual = CsvExport::can_export();
+			} catch ( \Exception $e ) {
+				$died = true;
+			} finally {
+				remove_filter( 'wp_die_handler', $die_handler );
+				$_GET     = array();
+				$_REQUEST = array();
+			}
+
+			if ( 'wp_die' === $case['expected'] ) {
+				$this->assertTrue( $died, $case['test_condition_name'] );
+			} else {
+				$this->assertFalse( $died, $case['test_condition_name'] . '（wp_die は発生しない想定）' );
+				$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+			}
 		}
 	}
 

@@ -77,7 +77,14 @@ test.describe('issue #299 ログイン済みでも nonce 無しでは CSV を返
 	test('nonce を付けずにアクセスすると CSV ではなくエラー画面が返る', async ({
 		page,
 	}) => {
-		const response = await page.request.get('/?action=csv_freee');
+		// コアの nonce エラー画面に復帰リンクが出る条件（同一サイトのリファラー）を満たすため、
+		// 先にトップページを開いてその URL をリファラーとして送る
+		await page.goto('/');
+		const referer = page.url();
+
+		const response = await page.request.get('/?action=csv_freee', {
+			headers: { referer },
+		});
 
 		// CSRF とみなして 403 で中断されること
 		expect(response.status()).toBe(403);
@@ -85,9 +92,26 @@ test.describe('issue #299 ログイン済みでも nonce 無しでは CSV を返
 		// CSV は返らないこと
 		await expectNotCsvExport(response);
 
-		// nonce 不正時のエラーメッセージが表示されること
+		// wp_nonce_ays() によるコア標準のエラー画面が返ること
+		// （サイトのロケールに依存しないよう、英語・日本語のどちらでも通るようにする）
 		const body = await response.text();
-		expect(body).toContain('リンクの有効期限切れです。');
+		expect(body).toMatch(
+			/The link you followed has expired\.|リンクの有効期限切れです。/
+		);
+
+		// 袋小路にならないよう、元のページへ戻る復帰リンクが含まれること
+		expect(body).toMatch(/Please try again\.|もう一度お試しください。/);
+	});
+
+	test('不正な nonce を付けた場合も CSV ではなく 403 が返る', async ({
+		page,
+	}) => {
+		const response = await page.request.get(
+			'/?action=csv_mf&_wpnonce=invalidnonce'
+		);
+
+		expect(response.status()).toBe(403);
+		await expectNotCsvExport(response);
 	});
 
 	test('エクスポートフォームの nonce を付ければ CSV が返る', async ({
@@ -108,5 +132,10 @@ test.describe('issue #299 ログイン済みでも nonce 無しでは CSV を返
 		expect(response.ok()).toBe(true);
 		expect(response.headers()['content-disposition']).toContain('export.csv');
 		expect(await response.text()).toContain('"収支区分"');
+
+		// 請求データがキャッシュされないよう nocache_headers() が効いていること
+		const cacheControl = response.headers()['cache-control'] || '';
+		expect(cacheControl).toContain('no-store');
+		expect(cacheControl).toContain('no-cache');
 	});
 });

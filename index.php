@@ -135,9 +135,18 @@
 </ul>
 </div>
 
+<?php
+// エクスポートは編集権限を持つユーザーのみ実行できるため、権限がない場合はボックス自体を出力しない
+// （押しても何も起きないボタンを見せないようにする）
+// CsvExport::can_export() は nonce 不正時に wp_nonce_ays() で処理を止めるため、表示判定には使わない
+if ( current_user_can( 'edit_posts' ) ) {
+	?>
 <div id="csv-export" class="section">
 	<?php get_template_part( 'template-parts/export-box' ); ?>
 </div>
+	<?php
+}
+?>
 
 </form>
 
