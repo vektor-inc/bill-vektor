@@ -10,7 +10,7 @@
 wp_nonce_field( 'bill_csv_export', '_wpnonce', false );
 ?>
 <p>各種会計データインポート用のCSVファイルをダウンロードする事ができます。<br>
-<a href="<?php echo home_url(); ?>/#search-box">※エクスポートしたい期間など必要に応じて上部検索ボックスで指定してください。</a></p>
+<a href="<?php echo home_url(); ?>/#search-box">※エクスポートしたい期間・キーワードなど必要に応じて上部検索ボックスで指定してください。</a></p>
 <h4>MFクラウド会計</h4>
 <p>仕分帳用に出力する最初の取引Noを入力した上でCSVエクスポートボタンを押してください。</p>
 <p>MFクラウド会計でのインポートは「<a href="https://accounting.moneyforward.com/books" target="_blank">会計帳簿 > 仕訳帳</a>」より行います。</p>

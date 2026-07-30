@@ -439,3 +439,56 @@ function bill_get_client_honorific( $post ) {
 		}
 	}
 }
+
+/**
+ * 絞り込み検索フォームで指定されたキーワードを取得
+ *
+ * 書類一覧の絞り込みフォーム（template-parts/search-box.php）から送信されたキーワードを
+ * サニタイズして返す。書類一覧の絞り込み（inc/functions-pre-get-posts.php）と
+ * CSV エクスポートの抽出条件（inc/export/class.csv-export.php）で同じ値を使うため、
+ * 受け取り処理をこの関数に集約している。
+ *
+ * WordPress 標準の `s` ではなく独自の `bill_keyword` をパラメーター名に使っているのは、
+ * `s` を送ると WordPress がそのページを検索結果ページと判定してしまい、
+ * index.php の一覧表示の分岐（is_front_page() / is_archive() / is_tax()）から外れて
+ * 書類一覧の表組みが表示されなくなるため。
+ *
+ * 返り値はスラッシュを除去した状態（ユーザーが入力したままの文字列）。
+ * WP_Query の検索条件（`s`）へ渡す際は WP_Query 側で stripslashes() されるため、
+ * 呼び出し側で wp_slash() を付け直す必要がある点に注意。
+ *
+ * @return string サニタイズ済みのキーワード。未指定・空文字・空白のみの場合は空文字。
+ */
+function bill_get_search_keyword() {
+	// パラメーター自体が無い場合は絞り込みなしとして空文字を返す。
+	// bill_keyword[]=xxx のように配列で渡された場合も PHP エラーを避けるため空文字を返す
+	if ( ! isset( $_GET['bill_keyword'] ) || ! is_string( $_GET['bill_keyword'] ) ) {
+		return '';
+	}
+
+	// sanitize_text_field() はタグ除去・不正なUTF-8の除去に加えて前後の空白も除去するため、
+	// 空白のみが入力された場合はこの時点で空文字になる（＝絞り込みなしになる）
+	return sanitize_text_field( wp_unslash( $_GET['bill_keyword'] ) );
+}
+
+/**
+ * 絞り込み検索のキーワード検索対象を書類の件名だけに限定するクエリー引数を返す
+ *
+ * WordPress 標準のキーワード検索は post_title に加えて post_excerpt・post_content も
+ * 対象にするため、そのままでは以下の2点で絞り込みフォームの用途と食い違う。
+ * 1. 件名に含まないキーワードで書類がヒットしてしまう。
+ * 2. 検索語がある場合は「件名に一致する投稿を優先する並べ替え」が ORDER BY の先頭に
+ *    挿入されるため、書類一覧の発行日順の並びが崩れる。
+ * 検索対象を件名だけに絞ると全件が件名一致になるため、どちらも解消される。
+ *
+ * WP_Query の `search_columns` 引数（WordPress 6.2 以降）を使う。
+ * post_search_columns フィルターと違ってクエリー単位の指定なので、
+ * 他の検索処理に影響することがない。
+ * 6.2 より前のバージョンでは未知の引数として無視され、
+ * 従来どおり本文・抜粋も検索対象になるだけなので致命的な問題は起きない。
+ *
+ * @return string[] WP_Query の search_columns に渡すカラム名の配列。
+ */
+function bill_get_search_columns() {
+	return array( 'post_title' );
+}

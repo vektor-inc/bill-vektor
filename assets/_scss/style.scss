@@ -203,7 +203,6 @@ form {
 			display: inline-block;
 			width:7em;
 		}
-		margin-bottom:0;
 	}
 	.search-submit {
 		width:48%;
@@ -212,6 +211,9 @@ form {
 
 }
 
+/* ==========================================================================
+   .search-box（書類一覧の絞り込み検索）
+   ========================================================================== */
 .search-box {
 	display: -webkit-flex; /* Safari */
 	display: flex;
@@ -219,6 +221,62 @@ form {
 	flex-wrap:         wrap;
 	-webkit-justify-content: space-between; /* Safari */
 	justify-content:         space-between;
+
+	/* 検索対象の注記
+	   ========================================================================== */
+	/* Bootstrap の .help-block を利用。flex アイテムとして1行を占有させる。
+	   注記は直前の入力項目群に属するものなので、上下の余白は付けない。
+	   .search-box の子はすべて flex アイテムでマージンが相殺されないため、
+	   余白を付けると項目間（form dl の margin-bottom 1em = 12px）と等間隔になり、
+	   注記がどのまとまりに属するのか読めなくなる。 */
+	.help-block {
+		width:100%;
+		margin-top:0;
+		margin-bottom:0;
+	}
+
+	/* 「絞り込み」ボタン
+	   ========================================================================== */
+	/* 同じ行に他の項目が並ばないため横幅いっぱいに表示する。
+	   form .search-submit の 48% を打ち消すが、同じクラスを使っている
+	   .export-box の CSV エクスポートボタンには影響させないため検索ボックス内に限定する。 */
+	/* margin-top は「入力項目群＋注記」のまとまりと「実行」の境界を作るための余白。
+	   項目間の 12px より広くする必要がある。
+	   なお em の基準はここだけ異なり、.btn の font-size 14px 基準なので 1.5em = 21px。
+	   本文（12px）基準の他の指定と数値を揃えても同じ実寸にはならない点に注意。 */
+	.search-submit {
+		width:100%;
+		margin-top:1.5em;
+	}
+}
+
+/* 狭い画面での表示（Bootstrap 3 の sm ブレークポイント未満）
+   ========================================================================== */
+/* form dl の width:48% は display:table のため必要幅未満に縮まず、
+   狭い画面で「発行日」と「キーワード」の入力欄が重なって操作できなくなる。
+   そのため .search-box 内の項目は1カラムに折り返す。
+   あわせて dt / dd を縦積みにしてラベル幅（form dl dt の 6em）を入力欄に回す。
+   発行日の datepicker は dateFormat が yymmdd で区切りなしの8桁を入れるため、
+   dt と dd を横並びのままにすると入力済みの日付の末尾が見切れる。 */
+@media (max-width: 767px) {
+	.search-box {
+		dl {
+			width:100%;
+			display:block;
+		}
+		dt,
+		dd {
+			display:block;
+			width:auto;
+		}
+		/* ラベルと入力欄が接触しないための最小限の余白 */
+		dt {
+			margin-bottom:2px;
+		}
+		.search-date input.form-control {
+			width:calc(50% - 1em);
+		}
+	}
 }
 
 .export-box {
