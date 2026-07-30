@@ -387,6 +387,48 @@ function bill_get_client_name( $post ) {
 	return $client_name;
 }
 
+/**
+ * 投稿IDまたは投稿オブジェクトから書類の取引先名を取得する
+ *
+ * 管理画面の投稿一覧（manage_{$post_type}_posts_custom_column）のように
+ * 投稿IDしか受け取れない箇所から取引先名を取得するためのラッパー。
+ * 取引先名の組み立ては bill_get_client_name() に委譲するため、
+ * 書類本体・PDFタイトル・CSVエクスポートと必ず同じ結果になる。
+ *
+ * @param int|WP_Post $post 書類の投稿IDまたは投稿オブジェクト。
+ * @return string 取引先名。取引先が未設定の場合や投稿が存在しない場合は空文字。
+ */
+function bill_get_client_name_by_post( $post ) {
+	/*
+	 * 空の値を get_post() に渡すとグローバルの $post が返るため、
+	 * 意図しない書類の取引先名を返さないよう先に判定する。
+	 */
+	if ( empty( $post ) ) {
+		return '';
+	}
+
+	// 投稿IDでも投稿オブジェクトでも受け取れるように WP_Post に正規化する
+	$post = get_post( $post );
+
+	// 投稿が存在しない場合は空文字を返す
+	if ( ! $post instanceof WP_Post ) {
+		return '';
+	}
+
+	/*
+	 * 取引先（イレギュラー）・取引先（登録済）ともに未設定の場合は空文字を返す。
+	 * bill_get_client_name() は内部で get_the_title( $post->bill_client ) を呼ぶが、
+	 * get_the_title() に空の値を渡すとグローバルの $post が参照されるため、
+	 * 管理画面の一覧のようにグローバルの $post がセットされている場所では
+	 * 書類自身の件名が取引先名として返ってしまう。それを避けるため事前に判定する。
+	 */
+	if ( empty( $post->bill_client_name_manual ) && empty( $post->bill_client ) ) {
+		return '';
+	}
+
+	return (string) bill_get_client_name( $post );
+}
+
 function bill_get_client_honorific( $post ) {
 	if ( empty( $post->bill_client_name_manual ) ) {
 		$client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
