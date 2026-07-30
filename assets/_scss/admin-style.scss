@@ -83,3 +83,9 @@ td[class*="bill-cell-"] {
 		font-size:11px;
 	}
 }
+
+/* 見積書一覧の取引先カラム
+   件名と取引先はセットで読むため、タイトル列と等分にならないよう幅を絞る */
+body.post-type-estimate .column-bill_client_name {
+	width: 22%;
+}

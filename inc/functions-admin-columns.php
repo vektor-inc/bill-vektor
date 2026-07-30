@@ -6,12 +6,16 @@
 */
 
 /**
- * 取引先カラムのカラムキー
+ * 取引先カラムのカラムキーを取得する
  *
  * 「取引先（イレギュラー）」「取引先（登録済）」のどちらから取得した名前も
  * 表示するため、カスタムフィールド名（bill_client）とは別のキーにしている。
+ *
+ * @return string カラムキー。
  */
-define( 'BILL_CLIENT_ADMIN_COLUMN_KEY', 'bill_client_name' );
+function bill_get_client_column_key() {
+	return 'bill_client_name';
+}
 
 /**
  * 取引先カラムを追加する書類の投稿タイプを取得する
@@ -52,20 +56,21 @@ add_action( 'admin_init', 'bill_register_client_admin_column' );
  * @return array 取引先カラムを追加したカラムの配列。
  */
 function bill_add_client_admin_column( $columns ) {
+	$column_key  = bill_get_client_column_key();
 	$new_columns = array();
 
-	foreach ( $columns as $column_key => $column_label ) {
-		$new_columns[ $column_key ] = $column_label;
+	foreach ( $columns as $key => $label ) {
+		$new_columns[ $key ] = $label;
 
 		// タイトル列の直後に取引先列を挿入する
-		if ( 'title' === $column_key ) {
-			$new_columns[ BILL_CLIENT_ADMIN_COLUMN_KEY ] = __( '取引先', 'bill-vektor' );
+		if ( 'title' === $key ) {
+			$new_columns[ $column_key ] = __( '取引先', 'bill-vektor' );
 		}
 	}
 
 	// タイトル列が無効化されている場合は末尾に追加する
-	if ( ! isset( $new_columns[ BILL_CLIENT_ADMIN_COLUMN_KEY ] ) ) {
-		$new_columns[ BILL_CLIENT_ADMIN_COLUMN_KEY ] = __( '取引先', 'bill-vektor' );
+	if ( ! isset( $new_columns[ $column_key ] ) ) {
+		$new_columns[ $column_key ] = __( '取引先', 'bill-vektor' );
 	}
 
 	return $new_columns;
@@ -74,7 +79,7 @@ function bill_add_client_admin_column( $columns ) {
 /**
  * 取引先カラムの内容を出力する
  *
- * 取引先名の取得は bill_get_client_name_by_post_id() に委譲するため、
+ * 取引先名の取得は bill_get_client_name_by_post() に委譲するため、
  * 書類本体・PDFタイトル・CSVエクスポートと同じ取引先名が表示される。
  * 取引先へのリンクは不要なため、名前のみをエスケープして出力する。
  *
@@ -84,15 +89,20 @@ function bill_add_client_admin_column( $columns ) {
  */
 function bill_render_client_admin_column( $column_name, $post_id ) {
 	// 取引先カラム以外は何もしない
-	if ( BILL_CLIENT_ADMIN_COLUMN_KEY !== $column_name ) {
+	if ( bill_get_client_column_key() !== $column_name ) {
 		return;
 	}
 
-	$client_name = bill_get_client_name_by_post_id( $post_id );
+	$client_name = bill_get_client_name_by_post( $post_id );
 
-	// 取引先が未設定の場合は、WordPress 管理画面の慣習に合わせてダッシュを表示する
+	/*
+	 * 表示できる取引先名が無い場合は、WordPress 管理画面の慣習に合わせて
+	 * ダッシュと読み上げ用の代替テキストを表示する。
+	 * 取引先（登録済）を選択していても取引先の投稿タイトルが空であれば
+	 * ここに入るため、「未設定」ではなく「なし」という表現にしている。
+	 */
 	if ( '' === $client_name ) {
-		echo '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">' . esc_html__( '取引先未設定', 'bill-vektor' ) . '</span>';
+		echo '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">' . esc_html__( '取引先なし', 'bill-vektor' ) . '</span>';
 		return;
 	}
 

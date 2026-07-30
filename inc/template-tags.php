@@ -388,7 +388,7 @@ function bill_get_client_name( $post ) {
 }
 
 /**
- * 投稿IDから書類の取引先名を取得する
+ * 投稿IDまたは投稿オブジェクトから書類の取引先名を取得する
  *
  * 管理画面の投稿一覧（manage_{$post_type}_posts_custom_column）のように
  * 投稿IDしか受け取れない箇所から取引先名を取得するためのラッパー。
@@ -398,7 +398,7 @@ function bill_get_client_name( $post ) {
  * @param int|WP_Post $post 書類の投稿IDまたは投稿オブジェクト。
  * @return string 取引先名。取引先が未設定の場合や投稿が存在しない場合は空文字。
  */
-function bill_get_client_name_by_post_id( $post ) {
+function bill_get_client_name_by_post( $post ) {
 	/*
 	 * 空の値を get_post() に渡すとグローバルの $post が返るため、
 	 * 意図しない書類の取引先名を返さないよう先に判定する。
