@@ -219,6 +219,13 @@ form {
 	flex-wrap:         wrap;
 	-webkit-justify-content: space-between; /* Safari */
 	justify-content:         space-between;
+
+	/* 「絞り込み」ボタンは同じ行に他の項目が並ばないため横幅いっぱいに表示する。
+	   form .search-submit の 48% を打ち消すが、同じクラスを使っている
+	   .export-box の CSV エクスポートボタンには影響させないため検索ボックス内に限定する。 */
+	.search-submit {
+		width:100%;
+	}
 }
 
 .export-box {

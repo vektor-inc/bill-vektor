@@ -71,6 +71,18 @@ $end_date   = ( isset( $_GET['end_date'] ) && $_GET['end_date'] ) ? $_GET['end_d
 </dd>
 </dl>
 
+<dl>
+<dt><label for="bill_keyword">キーワード</label></dt>
+<dd>
+<?php
+// 送信済みのキーワードを取得して入力欄に再表示する
+// （絞り込み後もどのキーワードで検索したのか分かるようにするため）
+$bill_keyword = bill_get_search_keyword();
+?>
+<input type="text" class="form-control" value="<?php echo esc_attr( $bill_keyword ); ?>" name="bill_keyword" id="bill_keyword">
+</dd>
+</dl>
+
 <button type="submit" name="action" value="send" class="search-submit btn btn-block btn-primary">絞り込み　<span class="glyphicon glyphicon-search"></span></button>
 
 </div>

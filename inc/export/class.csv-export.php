@@ -91,6 +91,16 @@ if ( ! class_exists( 'CsvExport' ) ) {
 						),
 					);
 				}
+
+				// キーワードの絞り込み
+				// 検索ボックスと同じフォームから送信されるため、画面の絞り込み結果と
+				// エクスポート内容が食い違わないようにキーワードも抽出条件に反映する
+				$bill_keyword = bill_get_search_keyword();
+				if ( $bill_keyword ) {
+					// WP_Query::parse_search() 内で stripslashes() されるため wp_slash() で付け直しておく
+					$args['s'] = wp_slash( $bill_keyword );
+				}
+
 				$posts = get_posts( $args );
 
 				$number = ( isset( $_GET['number_start'] ) && $_GET['number_start'] ) ? esc_html( $_GET['number_start'] ) : '';
