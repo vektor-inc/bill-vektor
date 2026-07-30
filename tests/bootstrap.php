@@ -54,7 +54,10 @@ function _manually_load_plugin() {
 	// テーマの functions.php が読み込まれるようにするため、テーマ名を固定値で書かない
 	$theme_slug = basename( $theme_dir );
 
-	register_theme_directory( $theme_root_dir ); switch_theme( $theme_slug ); search_theme_directories();
+	// テーマ置き場を登録してからテーマを有効化し、テーマディレクトリのキャッシュを作り直す
+	register_theme_directory( $theme_root_dir );
+	switch_theme( $theme_slug );
+	search_theme_directories();
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 

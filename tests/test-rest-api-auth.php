@@ -130,32 +130,82 @@ class RestApiAuthTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * テスト条件から、先行フィルターが返す値を組み立てる
+	 *
+	 * @param string|null $prior_result 'error_403' / 'authenticated' / 'false_value' / null。
+	 * @return WP_Error|true|false|null 先行フィルターが返す値。
+	 */
+	private function get_prior_result_value( $prior_result ) {
+		if ( 'error_403' === $prior_result ) {
+			// 既に別のエラーが入っているケース
+			return new WP_Error( 'prior_rest_error', 'prior error', array( 'status' => 403 ) );
+		} elseif ( 'authenticated' === $prior_result ) {
+			// 別の認証方式で認証済みと明示されているケース
+			return true;
+		} elseif ( 'false_value' === $prior_result ) {
+			// rest_authentication_errors の契約（WP_Error / true / null）から外れた falsy 値を
+			// 返すフィルターが同居しているケース
+			return false;
+		}
+
+		// 判定されていない状態
+		return null;
+	}
+
+	/**
+	 * bill_rest_require_login() の戻り値を、期待値と比較できる文字列に変換する
+	 *
+	 * 戻り値そのものを期待値に書くと WP_Error のインスタンス比較になり読みにくいため、
+	 * 種別（と WP_Error の場合はステータスコード）が分かる文字列に変換する。
+	 *
+	 * @param mixed $value bill_rest_require_login() の戻り値。
+	 * @return string 'null' / 'true' / 'false' / 'WP_Error(401)' のような文字列。
+	 */
+	private function describe_filter_result( $value ) {
+		if ( is_wp_error( $value ) ) {
+			$error_data = $value->get_error_data();
+			$status     = isset( $error_data['status'] ) ? $error_data['status'] : 0;
+			return 'WP_Error(' . $status . ')';
+		}
+		if ( null === $value ) {
+			return 'null';
+		}
+		if ( true === $value ) {
+			return 'true';
+		}
+		if ( false === $value ) {
+			return 'false';
+		}
+
+		// 想定外の型（テストの失敗メッセージで気づけるようにしておく）
+		return 'other';
+	}
+
+	/**
 	 * 実際の REST リクエストと同じ手順でルートへアクセスする
 	 *
 	 * WP_REST_Server::serve_request() と同じく、まず check_authentication()（＝
 	 * rest_authentication_errors フィルター）で認証を判定し、エラーであればその時点で
 	 * ステータスを返す。認証を通過した場合のみルートへディスパッチする。
 	 *
+	 * ただし serve_request() 自体は通しておらず、その手順を手組みで再現したもの。
+	 * ここで検証しているのは rest_authentication_errors フィルター単体の振る舞い
+	 * （＝未ログインのリクエストがルートへ到達しないこと）であり、
+	 * 個々のエンドポイントの権限チェックまでを検証するものではない。
+	 *
 	 * @param string      $route        アクセスするルート（例: '/wp/v2/posts'）。
 	 * @param array       $params       リクエストパラメーター。
-	 * @param string|null $prior_result 先行フィルターの結果。'error_403' / 'authenticated' / null。
+	 * @param string|null $prior_result 先行フィルターの結果。'error_403' / 'authenticated' / 'false_value' / null。
 	 * @return array 'status'（HTTPステータスコード）と 'exposed'（露出した件名・ユーザー名の配列）。
 	 */
 	private function request_rest_route( $route, $params, $prior_result ) {
 		// 他のプラグインが先に認証結果を返しているケースを再現する（優先度5で本体より先に実行）
 		$prior_filter = null;
-		if ( 'error_403' === $prior_result ) {
-			// 既に別のエラーが入っているケース
-			$prior_filter = function () {
-				return new WP_Error( 'prior_rest_error', 'prior error', array( 'status' => 403 ) );
+		if ( null !== $prior_result ) {
+			$prior_value  = $this->get_prior_result_value( $prior_result );
+			$prior_filter = function () use ( $prior_value ) {
+				return $prior_value;
 			};
-		} elseif ( 'authenticated' === $prior_result ) {
-			// 別の認証方式で認証済みと明示されているケース
-			$prior_filter = function () {
-				return true;
-			};
-		}
-		if ( null !== $prior_filter ) {
 			add_filter( 'rest_authentication_errors', $prior_filter, 5 );
 		}
 
@@ -214,7 +264,13 @@ class RestApiAuthTest extends WP_UnitTestCase {
 	 *
 	 * 未ログインの REST リクエストが 401 で拒否されて請求書の件名が露出しないこと、
 	 * ログイン済みのリクエストは従来どおり通ること、
-	 * 先行するフィルターの判定結果（WP_Error / true）を潰さないことを検証する。
+	 * 先行するフィルターの判定結果（WP_Error / true）を潰さないこと、
+	 * 契約外の falsy な値でガードが無効化されないことを検証する。
+	 *
+	 * 期待値の 'filter_result' は bill_rest_require_login() の戻り値そのもの。
+	 * ログイン済みの場合に 'null'（＝判定しない）であることが重要で、ここで 'true' を返すと
+	 * コアの rest_cookie_check_errors()（優先度100）が即 return して
+	 * Cookie 認証の REST リクエストに対する nonce 検証（CSRF対策）が失われる。
 	 *
 	 * @return void
 	 */
@@ -231,8 +287,9 @@ class RestApiAuthTest extends WP_UnitTestCase {
 					'prior_result' => null,
 				),
 				'expected'            => array(
-					'status'  => 401,
-					'exposed' => array(),
+					'filter_result' => 'WP_Error(401)',
+					'status'        => 401,
+					'exposed'       => array(),
 				),
 			),
 			array(
@@ -244,13 +301,14 @@ class RestApiAuthTest extends WP_UnitTestCase {
 					'prior_result' => null,
 				),
 				'expected'            => array(
-					'status'  => 401,
-					'exposed' => array(),
+					'filter_result' => 'WP_Error(401)',
+					'status'        => 401,
+					'exposed'       => array(),
 				),
 			),
 			// --- 正常系：ログイン済みのリクエストは従来どおり通る ---
 			array(
-				'test_condition_name' => '管理者でログインして /wp/v2/posts にアクセスした場合 => 200（請求書を取得できる）',
+				'test_condition_name' => '管理者でログインして /wp/v2/posts にアクセスした場合 => nullを返して200（請求書を取得でき、コアのnonce検証も残る）',
 				'conditions'          => array(
 					'user'         => 'admin',
 					'route'        => '/wp/v2/posts',
@@ -258,12 +316,13 @@ class RestApiAuthTest extends WP_UnitTestCase {
 					'prior_result' => null,
 				),
 				'expected'            => array(
-					'status'  => 200,
-					'exposed' => array( self::TEST_INVOICE_TITLE ),
+					'filter_result' => 'null',
+					'status'        => 200,
+					'exposed'       => array( self::TEST_INVOICE_TITLE ),
 				),
 			),
 			array(
-				'test_condition_name' => '購読者でログインして /wp/v2/posts にアクセスした場合 => 200（ログイン済みなら通す）',
+				'test_condition_name' => '購読者でログインして /wp/v2/posts にアクセスした場合 => nullを返して200（ログイン済みなら通し、認証済みと明示はしない）',
 				'conditions'          => array(
 					'user'         => 'subscriber',
 					'route'        => '/wp/v2/posts',
@@ -271,8 +330,9 @@ class RestApiAuthTest extends WP_UnitTestCase {
 					'prior_result' => null,
 				),
 				'expected'            => array(
-					'status'  => 200,
-					'exposed' => array( self::TEST_INVOICE_TITLE ),
+					'filter_result' => 'null',
+					'status'        => 200,
+					'exposed'       => array( self::TEST_INVOICE_TITLE ),
 				),
 			),
 			// --- 境界値：先行するフィルターの判定結果を尊重する ---
@@ -285,8 +345,9 @@ class RestApiAuthTest extends WP_UnitTestCase {
 					'prior_result' => 'error_403',
 				),
 				'expected'            => array(
-					'status'  => 403,
-					'exposed' => array(),
+					'filter_result' => 'WP_Error(403)',
+					'status'        => 403,
+					'exposed'       => array(),
 				),
 			),
 			array(
@@ -298,8 +359,38 @@ class RestApiAuthTest extends WP_UnitTestCase {
 					'prior_result' => 'authenticated',
 				),
 				'expected'            => array(
-					'status'  => 200,
-					'exposed' => array( self::TEST_INVOICE_TITLE ),
+					'filter_result' => 'true',
+					'status'        => 200,
+					'exposed'       => array( self::TEST_INVOICE_TITLE ),
+				),
+			),
+			// --- 境界値：契約外の falsy な値でガードが無効化されないこと（fail-closed） ---
+			array(
+				'test_condition_name' => '未ログインで先行フィルターが契約外のfalseを返している場合 => 401（ガードが無効化されない）',
+				'conditions'          => array(
+					'user'         => 'anonymous',
+					'route'        => '/wp/v2/posts',
+					'params'       => array( 'include' => array( $this->invoice_post_id ) ),
+					'prior_result' => 'false_value',
+				),
+				'expected'            => array(
+					'filter_result' => 'WP_Error(401)',
+					'status'        => 401,
+					'exposed'       => array(),
+				),
+			),
+			array(
+				'test_condition_name' => 'ログイン済みで先行フィルターが契約外のfalseを返している場合 => falseをそのまま返して200（ログイン済みは通す）',
+				'conditions'          => array(
+					'user'         => 'admin',
+					'route'        => '/wp/v2/posts',
+					'params'       => array( 'include' => array( $this->invoice_post_id ) ),
+					'prior_result' => 'false_value',
+				),
+				'expected'            => array(
+					'filter_result' => 'false',
+					'status'        => 200,
+					'exposed'       => array( self::TEST_INVOICE_TITLE ),
 				),
 			),
 		);
@@ -308,12 +399,18 @@ class RestApiAuthTest extends WP_UnitTestCase {
 			// ログイン状態を設定する
 			$this->set_current_user_by_type( $case['conditions']['user'] );
 
+			// bill_rest_require_login() の戻り値そのものを確認する
+			$filter_result = bill_rest_require_login( $this->get_prior_result_value( $case['conditions']['prior_result'] ) );
+
 			// REST リクエストを実行する
 			$actual = $this->request_rest_route(
 				$case['conditions']['route'],
 				$case['conditions']['params'],
 				$case['conditions']['prior_result']
 			);
+
+			// 戻り値の判定結果を先頭に加える
+			$actual = array_merge( array( 'filter_result' => $this->describe_filter_result( $filter_result ) ), $actual );
 
 			// 期待値テスト
 			$this->assertEquals( $case['expected'], $actual, $case['test_condition_name'] );
