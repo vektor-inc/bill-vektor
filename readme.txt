@@ -1,5 +1,5 @@
 === BillVektor ===
-Contributors: kurudrive,vektor-inc,rickaddison7634
+Contributors: kurudrive,vektor-inc,rickaddison7634,una9
 Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 1.12.0
