@@ -45,7 +45,19 @@ define( 'GUTENBERG_LOAD_VENDOR_SCRIPTS', false );
  * Manually load the plugin being tested.
  */
 function _manually_load_plugin() {
-	register_theme_directory( dirname( __FILE__ ) . '/../../' ); switch_theme('bill-vektor'); search_theme_directories();
+	// テーマのディレクトリ（tests の1つ上）と、その親であるテーマ置き場
+	$theme_dir      = dirname( dirname( __FILE__ ) );
+	$theme_root_dir = dirname( $theme_dir );
+
+	// 有効化するテーマはディレクトリ名から求める。
+	// git worktree などでチェックアウト先のディレクトリ名が bill-vektor 以外になっている場合でも
+	// テーマの functions.php が読み込まれるようにするため、テーマ名を固定値で書かない
+	$theme_slug = basename( $theme_dir );
+
+	// テーマ置き場を登録してからテーマを有効化し、テーマディレクトリのキャッシュを作り直す
+	register_theme_directory( $theme_root_dir );
+	switch_theme( $theme_slug );
+	search_theme_directories();
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
