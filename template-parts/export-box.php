@@ -1,4 +1,11 @@
 <div class="export-box">
+<?php
+// CSV エクスポートの CSRF 対策。
+// エクスポートボタンは index.php の GET フォーム内の submit ボタンのため、
+// wp_nonce_url() ではなく hidden フィールドで _wpnonce を送出する。
+// 第3引数を false にして _wp_http_referer は出力しない。
+wp_nonce_field( 'bill_csv_export', '_wpnonce', false );
+?>
 <h3>仕分帳データのエクスポート</h3>
 <p>各種会計データインポート用のCSVファイルをダウンロードする事ができます。<br>
 <a href="<?php echo home_url(); ?>/#search-box">※エクスポートしたい期間など必要に応じて上部検索ボックスで指定してください。</a></p>
