@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634,una9
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.12.0
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.13.0
 [ 機能追加 ] 見積書一覧画面に取引先名を表示するカラムを追加
 [ 機能追加 ] 書類一覧の絞り込み検索に「キーワード」の入力欄を追加（書類の件名を対象に検索。CSVエクスポートの抽出条件にも反映）
 [ 仕様変更 ] 書類一覧の絞り込み検索の「絞り込み」ボタンを「発行日」の下へ移動し、横幅いっぱいの表示に変更
