@@ -396,6 +396,116 @@ class SearchKeywordTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * bill_custom_home_post_type() の並び順のテスト
+	 *
+	 * キーワードで絞り込んでも書類一覧の並びが発行日の降順に保たれることを検証する。
+	 * WP_Query はキーワード検索時、orderby が未指定だと「フレーズ一致 → 全語一致」で
+	 * 優劣を付ける並べ替えを ORDER BY の先頭に入れるため、検索語が2語以上だと
+	 * 発行日順が崩れる（この並べ替えは検索対象カラムの限定とは無関係に組み立てられる）。
+	 * 実装から orderby の指定が外れると、このテストの2語のケースが落ちる。
+	 *
+	 * @return void
+	 */
+	public function test_bill_custom_home_post_type__orderby() {
+
+		// 並び順の検証用の書類を2件作成する
+		// 発行日が古い方だけがキーワード全体（フレーズ）に一致するため、
+		// 関連度順になっていると古い方が先頭に来てしまう。
+		// 既存のテスト用書類のキーワードと当たらない語を使っている。
+		$order_post_ids = array();
+		$order_posts    = array(
+			// 「年度 更新」というフレーズを件名に含む（関連度順だと先頭に来る）／発行日は古い
+			array(
+				'post_title' => '年度 更新プラン',
+				'post_date'  => '2023-01-01 00:00:00',
+			),
+			// 「年度」「更新」を含むがフレーズとしては含まない／発行日は新しい
+			array(
+				'post_title' => '更新プランの年度切替',
+				'post_date'  => '2023-08-01 00:00:00',
+			),
+		);
+		foreach ( $order_posts as $order_post ) {
+			$order_post_ids[] = wp_insert_post(
+				array(
+					'post_title'   => $order_post['post_title'],
+					'post_content' => '',
+					'post_status'  => 'publish',
+					'post_type'    => 'post',
+					'post_date'    => $order_post['post_date'],
+				)
+			);
+		}
+
+		$test_cases = array(
+			// --- 正常系：2語のキーワードでも発行日の降順が保たれる ---
+			array(
+				'test_condition_name' => 'キーワードが2語「年度 更新」の場合 => フレーズ一致優先にならず発行日の新しい順で表示',
+				'conditions'          => array( 'bill_keyword' => '年度 更新' ),
+				'expected'            => array(
+					'orderby' => 'date',
+					'titles'  => array( '更新プランの年度切替', '年度 更新プラン' ),
+				),
+			),
+			// --- 正常系：1語のキーワードでも発行日の降順 ---
+			array(
+				'test_condition_name' => 'キーワードが1語「更新」の場合 => 発行日の新しい順で表示',
+				'conditions'          => array( 'bill_keyword' => '更新' ),
+				'expected'            => array(
+					'orderby' => 'date',
+					'titles'  => array( '更新プランの年度切替', '年度 更新プラン' ),
+				),
+			),
+			// --- 境界値：2語で該当する書類が無い場合 ---
+			array(
+				'test_condition_name' => '2語のキーワードで該当する書類が無い場合 => 0件で並び順の指定は発行日順のまま',
+				'conditions'          => array( 'bill_keyword' => '該当しない語 もう一つの該当しない語' ),
+				'expected'            => array(
+					'orderby' => 'date',
+					'titles'  => array(),
+				),
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			// 条件をクエリー文字列に組み立ててトップページ（書類一覧）に移動
+			$this->go_to( home_url( '/' ) . '?' . http_build_query( $case['conditions'] ) );
+
+			global $wp_query;
+
+			// 並び順の指定を検証
+			$this->assertSame(
+				$case['expected']['orderby'],
+				$wp_query->get( 'orderby' ),
+				$case['test_condition_name'] . '（orderby クエリー変数）'
+			);
+
+			// 実際に表示される書類の並びを検証
+			$this->assertSame(
+				$case['expected']['titles'],
+				wp_list_pluck( $wp_query->posts, 'post_title' ),
+				$case['test_condition_name'] . '（一覧に表示される書類の並び）'
+			);
+		}
+
+		// キーワードが無いときは並び順の指定に手を入れないこと（WordPress の既定のまま）を検証
+		// go_to() は $GLOBALS['wp_query'] を unset して作り直すため、
+		// 移動後の状態を見るには global 宣言を再度行って参照を張り直す必要がある
+		$this->go_to( home_url( '/' ) );
+		global $wp_query;
+		$this->assertSame(
+			'',
+			$wp_query->get( 'orderby' ),
+			'キーワードが無い場合 => orderby は WordPress の既定のまま（空）'
+		);
+
+		// 作成した書類を削除
+		foreach ( $order_post_ids as $order_post_id ) {
+			wp_delete_post( $order_post_id, true );
+		}
+	}
+
+	/**
 	 * bill_custom_home_post_type() のページ送り時のテスト
 	 *
 	 * 2ページ目以降でもキーワードの絞り込みが維持されること、
