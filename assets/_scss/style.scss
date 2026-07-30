@@ -203,7 +203,6 @@ form {
 			display: inline-block;
 			width:7em;
 		}
-		margin-bottom:0;
 	}
 	.search-submit {
 		width:48%;
@@ -212,6 +211,9 @@ form {
 
 }
 
+/* ==========================================================================
+   .search-box（書類一覧の絞り込み検索）
+   ========================================================================== */
 .search-box {
 	display: -webkit-flex; /* Safari */
 	display: flex;
@@ -220,11 +222,41 @@ form {
 	-webkit-justify-content: space-between; /* Safari */
 	justify-content:         space-between;
 
-	/* 「絞り込み」ボタンは同じ行に他の項目が並ばないため横幅いっぱいに表示する。
+	/* 検索対象の注記
+	   ========================================================================== */
+	/* Bootstrap の .help-block を利用。flex アイテムとして1行を占有させる。
+	   上下の余白は、入力項目の群（項目間 1em）と「絞り込み」ボタンの間に
+	   項目間より広い間隔ができるように調整している。 */
+	.help-block {
+		width:100%;
+		margin-top:0;
+		margin-bottom:0.5em;
+	}
+
+	/* 「絞り込み」ボタン
+	   ========================================================================== */
+	/* 同じ行に他の項目が並ばないため横幅いっぱいに表示する。
 	   form .search-submit の 48% を打ち消すが、同じクラスを使っている
 	   .export-box の CSV エクスポートボタンには影響させないため検索ボックス内に限定する。 */
 	.search-submit {
 		width:100%;
+		margin-top:0.5em;
+	}
+}
+
+/* 狭い画面での表示（Bootstrap 3 の sm ブレークポイント未満）
+   ========================================================================== */
+/* form dl の width:48% は display:table のため必要幅未満に縮まず、
+   狭い画面で「発行日」と「キーワード」の入力欄が重なって操作できなくなる。
+   そのため .search-box 内の項目は1カラムに折り返す。 */
+@media (max-width: 767px) {
+	.search-box {
+		dl {
+			width:100%;
+		}
+		.search-date input.form-control {
+			width:calc(50% - 1em);
+		}
 	}
 }
 

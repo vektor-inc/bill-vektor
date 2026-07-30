@@ -79,9 +79,11 @@ $end_date   = ( isset( $_GET['end_date'] ) && $_GET['end_date'] ) ? $_GET['end_d
 // （絞り込み後もどのキーワードで検索したのか分かるようにするため）
 $bill_keyword = bill_get_search_keyword();
 ?>
-<input type="text" class="form-control" value="<?php echo esc_attr( $bill_keyword ); ?>" name="bill_keyword" id="bill_keyword">
+<input type="search" class="form-control" value="<?php echo esc_attr( $bill_keyword ); ?>" name="bill_keyword" id="bill_keyword">
 </dd>
 </dl>
+
+<p class="help-block">キーワードは書類の「件名」を対象に検索します。</p>
 
 <button type="submit" name="action" value="send" class="search-submit btn btn-block btn-primary">絞り込み　<span class="glyphicon glyphicon-search"></span></button>
 

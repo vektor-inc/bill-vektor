@@ -43,13 +43,16 @@ function bill_custom_home_post_type( $query ) {
 		  キーワードの絞り込み
 		/*-------------------------------------------*/
 		$bill_keyword = bill_get_search_keyword();
-		if ( $bill_keyword ) {
+		// キーワードが「0」の1文字でも絞り込みが効くよう、truthy 判定ではなく空文字と比較する
+		if ( '' !== $bill_keyword ) {
 			// WordPress 標準のキーワード検索（s）にそのまま渡す。
 			// pre_get_posts は WP_Query::parse_query() の後に実行されるため、
 			// ここで s をセットしても is_search() は true にならず、
 			// index.php の一覧表示の分岐（is_front_page() / is_archive() / is_tax()）は維持される。
 			// WP_Query::parse_search() 内で stripslashes() されるため wp_slash() で付け直しておく。
 			$query->set( 's', wp_slash( $bill_keyword ) );
+			// 検索対象を書類の件名だけに限定する（本文がヒットするのを防ぎ、発行日順の並びも保つ）
+			$query->set( 'search_columns', bill_get_search_columns() );
 		}
 
 			return;

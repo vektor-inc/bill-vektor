@@ -96,9 +96,12 @@ if ( ! class_exists( 'CsvExport' ) ) {
 				// 検索ボックスと同じフォームから送信されるため、画面の絞り込み結果と
 				// エクスポート内容が食い違わないようにキーワードも抽出条件に反映する
 				$bill_keyword = bill_get_search_keyword();
-				if ( $bill_keyword ) {
+				// キーワードが「0」の1文字でも絞り込みが効くよう、truthy 判定ではなく空文字と比較する
+				if ( '' !== $bill_keyword ) {
 					// WP_Query::parse_search() 内で stripslashes() されるため wp_slash() で付け直しておく
 					$args['s'] = wp_slash( $bill_keyword );
+					// 画面の絞り込みと同じ結果になるよう、検索対象を書類の件名だけに限定する
+					$args['search_columns'] = bill_get_search_columns();
 				}
 
 				$posts = get_posts( $args );
