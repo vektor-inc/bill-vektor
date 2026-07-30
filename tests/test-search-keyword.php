@@ -67,32 +67,66 @@ class SearchKeywordTest extends WP_UnitTestCase {
 
 		// 検索対象の書類を作成する
 		// 発行日順（date DESC）が一意に決まるよう post_date を明示的にずらしている。
-		// 本文はキーワード判定に影響させないため空にする。
+		// 本文は「件名だけを検索対象にする」ことを検証する1件を除き、
+		// キーワード判定に影響させないため空にする。
 		$posts = array(
 			// 請求書（post）: 発行日 2024-01-01
 			array(
-				'post_title' => 'ロゴ制作費',
-				'post_type'  => 'post',
-				'post_date'  => '2024-01-01 00:00:00',
+				'post_title'   => 'ロゴ制作費',
+				'post_content' => '',
+				'post_type'    => 'post',
+				'post_date'    => '2024-01-01 00:00:00',
 			),
 			// 請求書（post）: 発行日 2024-02-01
 			array(
-				'post_title' => 'サイト制作費',
-				'post_type'  => 'post',
-				'post_date'  => '2024-02-01 00:00:00',
+				'post_title'   => 'サイト制作費',
+				'post_content' => '',
+				'post_type'    => 'post',
+				'post_date'    => '2024-02-01 00:00:00',
 			),
 			// 見積書（estimate）: 発行日 2024-03-01
 			array(
-				'post_title' => '保守費用',
-				'post_type'  => 'estimate',
-				'post_date'  => '2024-03-01 00:00:00',
+				'post_title'   => '保守費用',
+				'post_content' => '',
+				'post_type'    => 'estimate',
+				'post_date'    => '2024-03-01 00:00:00',
+			),
+			// 件名に「0」を含む書類（キーワードが "0" の1文字でも絞り込みが効くことの検証用）
+			array(
+				'post_title'   => '型番0123の部品代',
+				'post_content' => '',
+				'post_type'    => 'post',
+				'post_date'    => '2024-04-01 00:00:00',
+			),
+			// 件名にシングルクォートを含む書類（クォート入りキーワードで検索できることの検証用）
+			array(
+				'post_title'   => "O'Brien商会 年間保守",
+				'post_content' => '',
+				'post_type'    => 'post',
+				'post_date'    => '2024-05-01 00:00:00',
+			),
+			// 件名にバックスラッシュを含む書類（wp_slash() が外れると検索できなくなることの検証用）
+			// wp_insert_post() は内部で wp_unslash() するためスラッシュを付けた状態で渡す。
+			// 保存される件名は「バックスラッシュ\テスト書類」（バックスラッシュ1つ）になる。
+			array(
+				'post_title'   => 'バックスラッシュ\\\\テスト書類',
+				'post_content' => '',
+				'post_type'    => 'post',
+				'post_date'    => '2024-06-01 00:00:00',
+			),
+			// 本文にだけキーワードを含む書類（検索対象が件名に限定されていることの検証用）
+			array(
+				'post_title'   => '本文テスト書類',
+				'post_content' => '本文限定キーワード',
+				'post_type'    => 'post',
+				'post_date'    => '2024-07-01 00:00:00',
 			),
 		);
 		foreach ( $posts as $post ) {
 			$this->post_ids[ $post['post_title'] ] = wp_insert_post(
 				array(
 					'post_title'   => $post['post_title'],
-					'post_content' => '',
+					'post_content' => $post['post_content'],
 					'post_status'  => 'publish',
 					'post_type'    => $post['post_type'],
 					'post_date'    => $post['post_date'],
@@ -100,6 +134,7 @@ class SearchKeywordTest extends WP_UnitTestCase {
 			);
 		}
 	}
+
 
 	/**
 	 * テスト後のクリーンアップ
@@ -152,6 +187,13 @@ class SearchKeywordTest extends WP_UnitTestCase {
 				'test_condition_name' => 'キーワードにHTMLタグが含まれる場合 => タグとスクリプトの中身を除去した 制作',
 				'conditions'          => array( 'bill_keyword' => '<script>alert(1)</script>制作' ),
 				'expected'            => '制作',
+			),
+			array(
+				// 呼び出し側は返り値を空文字と比較して絞り込みの有無を判定するため、
+				// 「0」が空文字に丸められないことがここで担保されている必要がある
+				'test_condition_name' => 'キーワードが「0」の1文字の場合 => 0（空文字に丸められないこと）',
+				'conditions'          => array( 'bill_keyword' => '0' ),
+				'expected'            => '0',
 			),
 			array(
 				// WordPress は $_GET にスラッシュを付与するため、実際のリクエストではこの形で渡ってくる
@@ -208,6 +250,17 @@ class SearchKeywordTest extends WP_UnitTestCase {
 	 */
 	public function test_bill_custom_home_post_type() {
 
+		// 絞り込み条件が付かないケースの期待値（発行日の新しい順で全7件）
+		$all_titles = array(
+			'本文テスト書類',
+			'バックスラッシュ\テスト書類',
+			"O'Brien商会 年間保守",
+			'型番0123の部品代',
+			'保守費用',
+			'サイト制作費',
+			'ロゴ制作費',
+		);
+
 		$test_cases = array(
 			// --- 正常系：キーワードで絞り込まれる ---
 			array(
@@ -234,29 +287,68 @@ class SearchKeywordTest extends WP_UnitTestCase {
 					'titles' => array( '保守費用', 'サイト制作費', 'ロゴ制作費' ),
 				),
 			),
+			// --- 正常系：数字1文字・記号入りのキーワード ---
+			array(
+				// truthy 判定だと "0" が false になり絞り込みが無視されてしまうため、その回帰防止
+				'test_condition_name' => 'キーワードが「0」の1文字の場合 => 件名に「0」を含む書類のみ表示（絞り込みが無視されないこと）',
+				'conditions'          => array( 'bill_keyword' => '0' ),
+				'expected'            => array(
+					's'      => '0',
+					'titles' => array( '型番0123の部品代' ),
+				),
+			),
+			array(
+				'test_condition_name' => 'キーワードにシングルクォートを含む「O\'Brien」を指定した場合 => 該当する書類が表示される',
+				'conditions'          => array( 'bill_keyword' => "O'Brien" ),
+				'expected'            => array(
+					's'      => "O'Brien",
+					'titles' => array( "O'Brien商会 年間保守" ),
+				),
+			),
+			array(
+				// $_GET は WordPress によってスラッシュが付与されるため、リクエストでは
+				// バックスラッシュが2つになった状態で渡ってくる。
+				// 実装から wp_slash() が外れると WP_Query::parse_search() の stripslashes() で
+				// バックスラッシュが失われ、このケースがヒットしなくなる。
+				'test_condition_name' => 'キーワードにバックスラッシュを含む場合 => 該当する書類が表示される（スラッシュ処理が正しいこと）',
+				'conditions'          => array( 'bill_keyword' => 'バックスラッシュ\\\\テスト' ),
+				'expected'            => array(
+					's'      => 'バックスラッシュ\テスト',
+					'titles' => array( 'バックスラッシュ\テスト書類' ),
+				),
+			),
+			// --- 正常系：検索対象は件名だけ ---
+			array(
+				'test_condition_name' => '本文にだけ含まれるキーワードを指定した場合 => 件名に含まないため0件（検索対象が件名に限定されていること）',
+				'conditions'          => array( 'bill_keyword' => '本文限定キーワード' ),
+				'expected'            => array(
+					's'      => '本文限定キーワード',
+					'titles' => array(),
+				),
+			),
 			// --- 境界値：絞り込み条件が付かない ---
 			array(
-				'test_condition_name' => 'キーワードが空文字の場合 => 絞り込みなしで全3件を表示',
+				'test_condition_name' => 'キーワードが空文字の場合 => 絞り込みなしで全7件を表示',
 				'conditions'          => array( 'bill_keyword' => '' ),
 				'expected'            => array(
 					's'      => '',
-					'titles' => array( '保守費用', 'サイト制作費', 'ロゴ制作費' ),
+					'titles' => $all_titles,
 				),
 			),
 			array(
-				'test_condition_name' => 'キーワードが空白のみの場合 => 絞り込みなしで全3件を表示',
+				'test_condition_name' => 'キーワードが空白のみの場合 => 絞り込みなしで全7件を表示',
 				'conditions'          => array( 'bill_keyword' => '   ' ),
 				'expected'            => array(
 					's'      => '',
-					'titles' => array( '保守費用', 'サイト制作費', 'ロゴ制作費' ),
+					'titles' => $all_titles,
 				),
 			),
 			array(
-				'test_condition_name' => 'キーワードのパラメーター自体が無い場合 => 絞り込みなしで全3件を表示',
+				'test_condition_name' => 'キーワードのパラメーター自体が無い場合 => 絞り込みなしで全7件を表示',
 				'conditions'          => array(),
 				'expected'            => array(
 					's'      => '',
-					'titles' => array( '保守費用', 'サイト制作費', 'ロゴ制作費' ),
+					'titles' => $all_titles,
 				),
 			),
 			// --- 異常系：該当する書類がない ---
