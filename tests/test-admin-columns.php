@@ -78,6 +78,12 @@ class AdminColumnsTest extends WP_UnitTestCase {
 			)
 		);
 
+		/*
+		 * 無題の取引先が作成できていないと「取引先を選択済だが名前が空」の検証が
+		 * 「取引先が未設定」と同じ条件に退化してしまうため、作成できたことを確認する。
+		 */
+		$this->assertGreaterThan( 0, $this->untitled_client_id, '無題の登録済取引先が作成できている' );
+
 		// テスト用の見積書を作成
 		$this->estimate_id = wp_insert_post(
 			array(
@@ -115,9 +121,6 @@ class AdminColumnsTest extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_bill_get_client_name_by_post() {
-
-		// 無題の登録済取引先が作成できていることを確認（作成できていないと検証が成立しないため）
-		$this->assertGreaterThan( 0, $this->untitled_client_id, '無題の登録済取引先が作成できている' );
 
 		// テストの配列
 		$test_cases = array(
@@ -365,6 +368,17 @@ class AdminColumnsTest extends WP_UnitTestCase {
 				'expected'            => '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">取引先なし</span>',
 			),
 			array(
+				'test_condition_name' => '登録済取引先を選択しているが取引先が無題で保存されている場合 => ダッシュと代替テキスト「取引先なし」を出力',
+				'conditions'          => array(
+					'column_name' => $column_key,
+					'post_meta'   => array(
+						'bill_client_name_manual' => '',
+						'bill_client'             => 'untitled_client_id',
+					),
+				),
+				'expected'            => '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">取引先なし</span>',
+			),
+			array(
 				'test_condition_name' => '対象外のカラムが渡された場合 => 何も出力しない',
 				'conditions'          => array(
 					'column_name' => 'date',
@@ -377,8 +391,11 @@ class AdminColumnsTest extends WP_UnitTestCase {
 		);
 
 		foreach ( $test_cases as $case ) {
-			// カスタムフィールドを設定
+			// カスタムフィールドを設定（bill_client は set_up で作成した取引先のIDに差し替える）
 			foreach ( $case['conditions']['post_meta'] as $meta_name => $meta_value ) {
+				if ( 'untitled_client_id' === $meta_value ) {
+					$meta_value = $this->untitled_client_id;
+				}
 				update_post_meta( $this->estimate_id, $meta_name, $meta_value );
 			}
 
