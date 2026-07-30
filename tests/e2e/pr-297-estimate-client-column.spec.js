@@ -354,9 +354,19 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 			await expect(exportButton).toHaveAttribute('name', 'action');
 			await expect(exportButton).toHaveAttribute('value', 'csv_freee');
 
+			// CSV エクスポートは nonce 必須のため、エクスポートフォームの
+			// hidden フィールドから _wpnonce の値を取得する（issue #299 の対応）。
+			const nonce = await page
+				.locator('.export-box input[name="_wpnonce"]')
+				.first()
+				.inputValue();
+			expect(nonce).toBeTruthy();
+
 			// Playwright の同一ブラウザコンテキストから、ボタンと同じ GET を送り
 			// Content-Disposition と実際の CSV 本文を検証する。
-			const response = await page.request.get('/?action=csv_freee');
+			const response = await page.request.get(
+				`/?action=csv_freee&_wpnonce=${encodeURIComponent(nonce)}`
+			);
 			expect(response.ok()).toBe(true);
 			expect(response.headers()['content-disposition']).toContain('export.csv');
 			const csv = await response.text();

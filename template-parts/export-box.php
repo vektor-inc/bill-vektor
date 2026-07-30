@@ -1,5 +1,14 @@
 <div class="export-box">
 <h3>仕分帳データのエクスポート</h3>
+<?php
+// CSV エクスポートの CSRF 対策。
+// エクスポートボタンは index.php の GET フォーム内の submit ボタンのため、
+// wp_nonce_url() ではなく hidden フィールドで _wpnonce を送出する。
+// 第3引数を false にして _wp_http_referer は出力しない。
+// h3 の直後に置くのは、先頭に置くと h3:first-child のスタイル（margin-top: 0）が
+// 外れて見出しの上余白が他セクションとズレるため。
+wp_nonce_field( 'bill_csv_export', '_wpnonce', false );
+?>
 <p>各種会計データインポート用のCSVファイルをダウンロードする事ができます。<br>
 <a href="<?php echo home_url(); ?>/#search-box">※エクスポートしたい期間・キーワードなど必要に応じて上部検索ボックスで指定してください。</a></p>
 <h4>MFクラウド会計</h4>
