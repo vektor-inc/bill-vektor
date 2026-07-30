@@ -25,6 +25,8 @@
  * spec は投稿IDではなく見積書のタイトルで対象行を特定し、同じタイトルの行が
  * 1件であることを前提にしている。そのため同じタイトルの見積書が既にある環境では
  * 作成せずスキップし、二重作成でテストが壊れないようにしている。
+ * ゴミ箱にある投稿も既存として扱う。復元された時に同じタイトルが2件になり、
+ * 原因の分かりにくいテスト失敗になるのを避けるため。
  */
 
 /**
@@ -39,7 +41,8 @@ function bill_e2e_pr297_find_post_by_title( $title, $post_type ) {
 		array(
 			'post_type'        => $post_type,
 			'title'            => $title,
-			'post_status'      => 'any',
+			// 'any' はゴミ箱を含まないため trash を明示して重複作成を防ぐ
+			'post_status'      => array( 'any', 'trash' ),
 			'posts_per_page'   => 1,
 			'fields'           => 'ids',
 			'no_found_rows'    => true,
@@ -110,7 +113,8 @@ function bill_e2e_pr297_get_untitled_client() {
 	$post_ids = get_posts(
 		array(
 			'post_type'        => 'client',
-			'post_status'      => 'any',
+			// 'any' はゴミ箱を含まないため trash を明示して重複作成を防ぐ
+			'post_status'      => array( 'any', 'trash' ),
 			'posts_per_page'   => 1,
 			'fields'           => 'ids',
 			'no_found_rows'    => true,

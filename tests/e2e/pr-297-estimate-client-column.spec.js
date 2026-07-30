@@ -27,6 +27,23 @@ test.use({ storageState: 'tests/e2e/.auth-state.json' });
 const LIST_PATH = '/wp-admin/edit.php?post_type=estimate';
 
 /**
+ * 後片付けの削除ループの反復上限。
+ *
+ * nonce 切れなどで削除が成立しない場合に、テストのタイムアウトではなく
+ * 「削除できていない」と分かるエラーで止めるための保険。
+ */
+const MAX_CLEANUP_ITERATIONS = 20;
+
+/**
+ * 取引先列に指定している幅（assets/_scss/admin-style.scss の 26%）。
+ *
+ * ブラウザの丸めや管理画面側の余白で厳密に一致しないため、前後に許容幅を取る。
+ * SCSS の値を変えたときは、この基準値も合わせて更新する。
+ */
+const CLIENT_COLUMN_WIDTH_RATIO = 0.26;
+const CLIENT_COLUMN_WIDTH_TOLERANCE = 0.02;
+
+/**
  * 見積書タイトルから一覧の行を取得する。
  *
  * @param {import('@playwright/test').Page} page
@@ -62,18 +79,22 @@ async function renderedLineCount(locator) {
 async function permanentlyDeleteTestPosts(page, postType, titlePrefix) {
 	const typeQuery = postType === 'post' ? '' : `&post_type=${postType}`;
 	const trashPath = `/wp-admin/edit.php?post_status=trash${typeQuery}`;
-	while (true) {
+	for (let iteration = 0; iteration < MAX_CLEANUP_ITERATIONS; iteration += 1) {
 		// 1件削除すると通常一覧へリダイレクトされるため、毎回ゴミ箱を開き直す。
 		await page.goto(trashPath);
 		const rows = page.locator('#the-list tr').filter({
 			// ゴミ箱ではタイトルがリンクではなく strong > span になる。
 			has: page.locator('.column-title strong', { hasText: titlePrefix }),
 		});
-		if (!(await rows.count())) break;
+		if (!(await rows.count())) return;
 		const deleteHref = await rows.first().locator('.submitdelete').getAttribute('href');
 		if (!deleteHref) throw new Error('テスト投稿の完全削除 URL を取得できません。');
 		await page.goto(deleteHref);
 	}
+	// 上限まで回っても残っている場合は、削除が成立していないことを明示して止める。
+	throw new Error(
+		`テスト投稿の完全削除が ${MAX_CLEANUP_ITERATIONS} 回で終わりませんでした（${postType} / ${titlePrefix}）。`
+	);
 }
 
 /**
@@ -89,11 +110,16 @@ async function moveTestPostsToTrash(page, postType, titlePrefix) {
 	const rows = page.locator('#the-list tr').filter({
 		has: page.locator('.column-title .row-title', { hasText: titlePrefix }),
 	});
-	while (await rows.count()) {
+	for (let iteration = 0; iteration < MAX_CLEANUP_ITERATIONS; iteration += 1) {
+		if (!(await rows.count())) return;
 		const trashHref = await rows.first().locator('.submitdelete').getAttribute('href');
 		if (!trashHref) throw new Error('テスト投稿のゴミ箱 URL を取得できません。');
 		await page.goto(trashHref);
 	}
+	// 上限まで回っても残っている場合は、ゴミ箱への移動が成立していないことを明示して止める。
+	throw new Error(
+		`テスト投稿のゴミ箱への移動が ${MAX_CLEANUP_ITERATIONS} 回で終わりませんでした（${postType} / ${titlePrefix}）。`
+	);
 }
 
 test.describe('PR #297: 見積書一覧の取引先列', () => {
@@ -154,11 +180,17 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 		);
 		expect(parseFloat(width)).toBeGreaterThan(0);
 		const tableWidth = await page.locator('.wp-list-table').evaluate((element) => element.getBoundingClientRect().width);
-		expect(parseFloat(width) / tableWidth).toBeGreaterThan(0.24);
-		expect(parseFloat(width) / tableWidth).toBeLessThan(0.28);
+		// SCSS の指定（26%）どおりの比率になっていること。前後 2 ポイントを許容する。
+		expect(parseFloat(width) / tableWidth).toBeGreaterThan(CLIENT_COLUMN_WIDTH_RATIO - CLIENT_COLUMN_WIDTH_TOLERANCE);
+		expect(parseFloat(width) / tableWidth).toBeLessThan(CLIENT_COLUMN_WIDTH_RATIO + CLIENT_COLUMN_WIDTH_TOLERANCE);
 
+		/*
+		 * バージョンのクエリ文字列が付いていることだけを確認する。
+		 * バージョン番号を固定すると、テーマのバージョンを上げただけで
+		 * 機能と無関係にこのテストが落ちるため、値は問わない。
+		 */
 		const styleHref = await page.locator('link[href*="/assets/css/admin-style.css"]').getAttribute('href');
-		expect(styleHref).toMatch(/admin-style\.css\?ver=1\.12\.0(?:&|$)/);
+		expect(styleHref).toMatch(/admin-style\.css\?ver=\d+\.\d+/);
 	});
 
 	test('指定幅で崩れず、モバイルでは取引先ラベル付きの積み上げ表示になる', async ({ page }) => {
@@ -246,7 +278,8 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 		await expect(page.locator('#bill_client_name_manual')).toHaveValue('個人事業主 山田太郎');
 
 		// 同じ値のまま更新し、入力値が消えたり書き換わったりしないことを確認する。
-		const update = page.getByRole('button', { name: 'Update', exact: true });
+		// 更新ボタンのラベルはサイト言語で変わるため、英語・日本語の両方を受ける。
+		const update = page.getByRole('button', { name: /^(Update|更新)$/ });
 		await update.dispatchEvent('click');
 		await expect(page.locator('#message')).toContainText(/更新しました|Post updated/);
 		await expect(page.locator('#bill_client_name_manual')).toHaveValue('個人事業主 山田太郎');
