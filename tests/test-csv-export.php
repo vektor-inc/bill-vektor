@@ -342,6 +342,79 @@ class CsvExportTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * nonce 検証失敗時に fail-closed になることのテスト
+	 *
+	 * wp_nonce_ays() は内部で wp_die() を呼ぶが、wp_die_handler フィルターで
+	 * 「処理を終了せずに戻る」ハンドラへ差し替えることができる。その場合でも
+	 * can_export() が true を返さない（＝ CSV を出力しない）ことを検証する。
+	 *
+	 * 他のテストは wp_die を例外化して捕捉しているため、この経路だけは
+	 * 「戻ってくるハンドラ」を明示的に差し込まないと通らない。
+	 *
+	 * @return void
+	 */
+	public function test_can_export__fail_closed() {
+
+		$test_cases = array(
+			// --- 異常系：nonce なし ---
+			array(
+				'test_condition_name' => 'wp_die が戻る実装でも nonce なしなら false（CSV を出力しない）',
+				'conditions'          => array(
+					'user'   => 'admin',
+					'action' => 'csv_freee',
+					'nonce'  => 'none',
+				),
+				'expected'            => false,
+			),
+			// --- 異常系：不正な nonce ---
+			array(
+				'test_condition_name' => 'wp_die が戻る実装でも不正な nonce なら false（CSV を出力しない）',
+				'conditions'          => array(
+					'user'   => 'admin',
+					'action' => 'csv_mf',
+					'nonce'  => 'invalid',
+				),
+				'expected'            => false,
+			),
+			// --- 正常系：有効な nonce なら従来どおり true ---
+			array(
+				'test_condition_name' => 'wp_die が戻る実装でも有効な nonce なら true（従来どおりエクスポート可）',
+				'conditions'          => array(
+					'user'   => 'admin',
+					'action' => 'csv_freee',
+					'nonce'  => 'valid',
+				),
+				'expected'            => true,
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			// ログイン状態とリクエストパラメーターを設定する
+			$this->set_current_user_by_type( $case['conditions']['user'] );
+			$this->set_up_get_params( $case['conditions'] );
+
+			// wp_die を「何もせず戻る」実装に差し替え、フェイルオープンしないことを確認する
+			$die_handler = function () {
+				return function ( $message, $title = '', $args = array() ) {
+					// 意図的に処理を終了しない
+				};
+			};
+			add_filter( 'wp_die_handler', $die_handler );
+
+			// wp_nonce_ays() が出力するエラー画面の HTML を混ぜないようバッファリングする
+			ob_start();
+			$actual = CsvExport::can_export();
+			ob_end_clean();
+
+			remove_filter( 'wp_die_handler', $die_handler );
+			$_GET     = array();
+			$_REQUEST = array();
+
+			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+		}
+	}
+
+	/**
 	 * 寄稿者（contributor）が CSV をエクスポートできることのテスト
 	 *
 	 * ガードの権限は意図的に edit_posts としている。寄稿者は edit_posts を持つため

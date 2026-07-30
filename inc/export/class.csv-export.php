@@ -21,7 +21,9 @@ if ( ! class_exists( 'CsvExport' ) ) {
 		 * URL の action パラメーターがエクスポート指定で、かつ実行ユーザーが投稿の編集権限を
 		 * 持つ場合のみ true を返す。権限がない場合は wp_die せず false を返し、通常のページ
 		 * 描画に処理を委ねる（未ログイン時は wp フックのリダイレクトでログイン画面へ誘導される）。
-		 * nonce が欠落・不正な場合は CSRF とみなして wp_die で処理を中断する。
+		 * nonce が欠落・不正な場合は CSRF とみなし、wp_nonce_ays() でコアのエラー画面
+		 * （403）を表示して処理を中断する。万一 wp_die が戻る実装だった場合に備えて
+		 * false も返す（fail-closed）。
 		 *
 		 * @return bool エクスポート処理を続行してよい場合は true、対象外の場合は false。
 		 */
@@ -44,6 +46,11 @@ if ( ! class_exists( 'CsvExport' ) ) {
 			if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'bill_csv_export' ) ) {
 				// コアの nonce エラー画面に委ねる（403・ローカライズ済み文言・復帰リンクが揃う）
 				wp_nonce_ays( 'bill_csv_export' );
+				// wp_nonce_ays() は内部で wp_die() を呼ぶが、wp_die_handler フィルターで
+				// 処理を終了しないハンドラに差し替えられていると下まで流れてしまう。
+				// 検証を通っていないリクエストで CSV を出さないよう明示的に閉じる（fail-closed）。
+				// コアの check_admin_referer() も同じ理由で wp_nonce_ays() の直後に die() を置いている。
+				return false;
 			}
 
 			return true;

@@ -114,28 +114,61 @@ test.describe('issue #299 ログイン済みでも nonce 無しでは CSV を返
 		await expectNotCsvExport(response);
 	});
 
-	test('エクスポートフォームの nonce を付ければ CSV が返る', async ({
-		page,
-	}) => {
-		// トップページのエクスポートボックスから nonce の hidden フィールド値を取得する
-		await page.goto('/');
-		const nonce = await page
-			.locator('.export-box input[name="_wpnonce"]')
-			.first()
-			.inputValue();
-		expect(nonce).toBeTruthy();
+	/**
+	 * エクスポート経路ごとの期待値。
+	 *
+	 * MF 経路は mb_convert_encoding() で SJIS へ変換してから出力するため、
+	 * 文字コードと本文の検証方法が freee 経路と異なる。
+	 * Cache-Control（nocache_headers()）は両経路で検証する。
+	 */
+	const EXPORT_ROUTES = [
+		{
+			label: 'freee',
+			action: 'csv_freee',
+			charset: 'utf-8',
+			// SJIS 変換を挟まないのでそのままデコードできる
+			decode: (buffer) => buffer.toString('utf-8'),
+			firstColumn: '"収支区分"',
+		},
+		{
+			label: 'MF',
+			action: 'csv_mf',
+			charset: 'shift_jis',
+			// mb_convert_encoding() で SJIS になっているため SJIS としてデコードする
+			decode: (buffer) => new TextDecoder('shift_jis').decode(buffer),
+			firstColumn: '"取引No"',
+		},
+	];
 
-		// nonce 付きなら従来どおり CSV が返ること
-		const response = await page.request.get(
-			`/?action=csv_freee&_wpnonce=${encodeURIComponent(nonce)}`
-		);
-		expect(response.ok()).toBe(true);
-		expect(response.headers()['content-disposition']).toContain('export.csv');
-		expect(await response.text()).toContain('"収支区分"');
+	for (const route of EXPORT_ROUTES) {
+		test(`エクスポートフォームの nonce を付ければ ${route.label} 用 CSV が返り、キャッシュ抑止ヘッダーが付く`, async ({
+			page,
+		}) => {
+			// トップページのエクスポートボックスから nonce の hidden フィールド値を取得する
+			await page.goto('/');
+			const nonce = await page
+				.locator('.export-box input[name="_wpnonce"]')
+				.first()
+				.inputValue();
+			expect(nonce).toBeTruthy();
 
-		// 請求データがキャッシュされないよう nocache_headers() が効いていること
-		const cacheControl = response.headers()['cache-control'] || '';
-		expect(cacheControl).toContain('no-store');
-		expect(cacheControl).toContain('no-cache');
-	});
+			// nonce 付きなら従来どおり CSV が返ること
+			const response = await page.request.get(
+				`/?action=${route.action}&_wpnonce=${encodeURIComponent(nonce)}`
+			);
+			expect(response.ok()).toBe(true);
+			expect(response.headers()['content-disposition']).toContain('export.csv');
+			expect(response.headers()['content-type']).toContain(route.charset);
+
+			// 経路ごとの文字コードでデコードし、ヘッダー行が出力されていること
+			const csv = route.decode(await response.body());
+			expect(csv).toContain(route.firstColumn);
+
+			// 請求データがキャッシュされないよう nocache_headers() が効いていること
+			// （MF 経路は mb_convert_encoding() を挟むため、両経路とも検証する）
+			const cacheControl = response.headers()['cache-control'] || '';
+			expect(cacheControl).toContain('no-store');
+			expect(cacheControl).toContain('no-cache');
+		});
+	}
 });
