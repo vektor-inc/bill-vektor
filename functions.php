@@ -63,6 +63,7 @@ require_once dirname( __FILE__ ) . '/inc/custom-field/custom-field-table-bill.ph
 require_once dirname( __FILE__ ) . '/inc/setting-page/setting-page.php';
 require_once dirname( __FILE__ ) . '/inc/duplicate-doc/duplicate-doc.php';
 require_once dirname( __FILE__ ) . '/inc/export/class.csv-export.php';
+require_once dirname( __FILE__ ) . '/inc/functions-admin-columns.php';
 
 get_template_part( 'inc/template-tags' );
 get_template_part( 'inc/functions-limit-view' );
@@ -109,8 +110,8 @@ add_action( 'wp_enqueue_scripts', 'bill_theme_scripts' );
 -------------------------------------------
 */
 function bill_admin_scripts() {
-	// 管理画面用のcss
-	wp_enqueue_style( 'bill-admin-css', get_template_directory_uri() . '/assets/css/admin-style.css', BILLVEKTOR_THEME_VERSION, null );
+	// 管理画面用のcss（第3引数は依存関係、第4引数はバージョン）
+	wp_enqueue_style( 'bill-admin-css', get_template_directory_uri() . '/assets/css/admin-style.css', array(), BILLVEKTOR_THEME_VERSION );
 }
 add_action( 'admin_enqueue_scripts', 'bill_admin_scripts' );
 
