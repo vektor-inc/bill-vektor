@@ -378,13 +378,43 @@ function bill_get_terms() {
 	return $taxo_catelist;
 }
 
+/**
+ * 書類の取引先名を取得する
+ *
+ * 取引先（イレギュラー）が入力されていればそれを優先し、
+ * 入力がなければ取引先（登録済）の投稿タイトルを返す。
+ *
+ * @param WP_Post $post 書類の投稿オブジェクト。
+ * @return string 取引先名。取引先が未設定の場合は空文字。
+ */
 function bill_get_client_name( $post ) {
-	if ( $post->bill_client_name_manual ) {
-		$client_name = $post->bill_client_name_manual;
-	} else {
-		$client_name = get_the_title( $post->bill_client );
+	/*
+	 * 取引先（イレギュラー）が入力されている場合はそちらを優先する。
+	 * この値も保存時にサニタイズされておらず配列などが入り得るため、
+	 * 文字列・数値以外は未入力として扱う（戻り値を必ず文字列にする）。
+	 */
+	if ( is_scalar( $post->bill_client_name_manual ) && '' !== (string) $post->bill_client_name_manual ) {
+		return (string) $post->bill_client_name_manual;
 	}
-	return $client_name;
+
+	/*
+	 * 取引先（登録済）のIDは保存時にサニタイズされておらず配列などが入り得る。
+	 * 配列をそのまま整数変換すると 1 になり、投稿ID 1 のタイトルが
+	 * 取引先名として返ってしまうため、数値・文字列以外は 0 として扱う。
+	 */
+	$client_id = is_scalar( $post->bill_client ) ? absint( $post->bill_client ) : 0;
+
+	/*
+	 * 取引先が未選択（空・0・不正な値）の場合は空文字を返す。
+	 * get_the_title() は引数が空だとグローバルの $post を参照するため、
+	 * そのまま渡すと書類自身の件名が取引先名として返ってしまう。
+	 */
+	if ( ! $client_id ) {
+		return '';
+	}
+
+	// 登録済取引先の投稿タイトルを返す（投稿が存在しない場合は空文字が返る）
+	return get_the_title( $client_id );
 }
 
 /**
@@ -416,16 +446,10 @@ function bill_get_client_name_by_post( $post ) {
 	}
 
 	/*
-	 * 取引先（イレギュラー）・取引先（登録済）ともに未設定の場合は空文字を返す。
-	 * bill_get_client_name() は内部で get_the_title( $post->bill_client ) を呼ぶが、
-	 * get_the_title() に空の値を渡すとグローバルの $post が参照されるため、
-	 * 管理画面の一覧のようにグローバルの $post がセットされている場所では
-	 * 書類自身の件名が取引先名として返ってしまう。それを避けるため事前に判定する。
+	 * 取引先が未設定の場合に空文字を返す判定は bill_get_client_name() 側で行う。
+	 * 「イレギュラーと登録済のどちらを優先するか」という業務ルールを
+	 * 2箇所に持たせないため、ここでは判定せず委譲する。
 	 */
-	if ( empty( $post->bill_client_name_manual ) && empty( $post->bill_client ) ) {
-		return '';
-	}
-
 	return (string) bill_get_client_name( $post );
 }
 
