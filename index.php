@@ -79,7 +79,21 @@
 					 * 結果的にこの表示になっていたが、書類側の不具合修正でその経路が
 					 * 塞がるため、意図した表示としてここで明示する。
 					 */
-					echo '<a href="' . esc_url( get_the_permalink() ) . '" target="_blank">' . esc_html( get_the_title() ) . '</a>';
+					$client_name = (string) get_the_title();
+
+					if ( '' !== $client_name ) {
+						echo '<a href="' . esc_url( get_the_permalink() ) . '" target="_blank">' . esc_html( $client_name ) . '</a>';
+					} else {
+						/*
+						 * 無題で保存された取引先はリンクの文字列が無く、
+						 * そのままだとアクセシブルネームの無い空のリンクになる。
+						 * 名前を直しに行く導線を残すためリンク自体は維持し、
+						 * ダッシュと代替テキストでリンク先を説明する。
+						 * 代替テキストはリンク先の説明になるため、書類側の「取引先なし」
+						 * （値が無いという状態の説明）とは異なる文言にしている。
+						 */
+						echo '<a href="' . esc_url( get_the_permalink() ) . '" target="_blank"><span aria-hidden="true">&#8212;</span><span class="sr-only">' . esc_html__( '名称未設定の取引先', 'bill-vektor' ) . '</span></a>';
+					}
 				} elseif ( '' !== $client_name_manual ) {
 					echo esc_html( $client_name_manual );
 				} else {
