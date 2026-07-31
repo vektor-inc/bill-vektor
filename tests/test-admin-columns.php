@@ -292,6 +292,25 @@ class AdminColumnsTest extends WP_UnitTestCase {
 				'expected'            => array( 'cb', 'title', $column_key, 'taxonomy-estimate-cat', 'date' ),
 			),
 			array(
+				/*
+				 * 請求書（post）一覧は見積書より列が多く、作成者・カテゴリー・タグ・
+				 * コメントが並ぶ。列が増えても取引先がタイトルの直後に入ることを検証する。
+				 */
+				'test_condition_name' => '請求書一覧の標準的なカラム構成の場合 => タイトルの直後（作成者より前）に取引先を挿入',
+				'conditions'          => array(
+					'columns' => array(
+						'cb'         => '<input type="checkbox" />',
+						'title'      => 'タイトル',
+						'author'     => '作成者',
+						'categories' => 'カテゴリー',
+						'tags'       => 'タグ',
+						'comments'   => 'コメント',
+						'date'       => '日付',
+					),
+				),
+				'expected'            => array( 'cb', 'title', $column_key, 'author', 'categories', 'tags', 'comments', 'date' ),
+			),
+			array(
 				'test_condition_name' => 'タイトル列が無い場合 => 末尾に取引先を追加',
 				'conditions'          => array(
 					'columns' => array(
@@ -421,6 +440,67 @@ class AdminColumnsTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * bill_get_client_column_post_types() のテスト
+	 *
+	 * 取引先カラムの対象となる投稿タイプ（請求書・見積書）が含まれ、
+	 * 対象外の投稿タイプが含まれないことを検証する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_get_client_column_post_types() {
+
+		// テスト関数実行
+		$post_types = bill_get_client_column_post_types();
+
+		// テストの配列
+		$test_cases = array(
+			array(
+				'test_condition_name' => '請求書（post）の場合 => 対象に含まれる',
+				'conditions'          => array(
+					'post_type' => 'post',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '見積書（estimate）の場合 => 対象に含まれる',
+				'conditions'          => array(
+					'post_type' => 'estimate',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '領収書（receipt）の場合 => 対象外なので含まれない',
+				'conditions'          => array(
+					'post_type' => 'receipt',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '取引先（client）の場合 => 対象外なので含まれない',
+				'conditions'          => array(
+					'post_type' => 'client',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '固定ページ（page）の場合 => 対象外なので含まれない',
+				'conditions'          => array(
+					'post_type' => 'page',
+				),
+				'expected'            => false,
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			// 対象の投稿タイプに含まれているかを検証
+			$actual = in_array( $case['conditions']['post_type'], $post_types, true );
+
+			// 期待値テスト
+			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+		}
+	}
+
+	/**
 	 * bill_register_client_admin_column() のテスト
 	 *
 	 * 対象の投稿タイプに対してカラム追加・出力のフックが登録されることを検証する。
@@ -451,9 +531,29 @@ class AdminColumnsTest extends WP_UnitTestCase {
 				'expected'            => true,
 			),
 			array(
-				'test_condition_name' => '請求書（post）の場合 => 今回はスコープ外なので登録されていない',
+				'test_condition_name' => '請求書（post）の場合 => カラム追加フィルターが登録されている',
 				'conditions'          => array(
 					'hook_name'     => 'manage_post_posts_columns',
+					'callback_name' => 'bill_add_client_admin_column',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '請求書（post）の場合 => カラム出力アクションが登録されている',
+				'conditions'          => array(
+					'hook_name'     => 'manage_post_posts_custom_column',
+					'callback_name' => 'bill_render_client_admin_column',
+				),
+				'expected'            => true,
+			),
+			array(
+				/*
+				 * 領収書（receipt）は対象外のため、対象の投稿タイプにだけ
+				 * フックが登録されていることを異常系として検証する。
+				 */
+				'test_condition_name' => '領収書（receipt）の場合 => 対象外なので登録されていない',
+				'conditions'          => array(
+					'hook_name'     => 'manage_receipt_posts_columns',
 					'callback_name' => 'bill_add_client_admin_column',
 				),
 				'expected'            => false,

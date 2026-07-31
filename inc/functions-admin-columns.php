@@ -20,13 +20,14 @@ function bill_get_client_column_key() {
 /**
  * 取引先カラムを追加する書類の投稿タイプを取得する
  *
- * 請求書（post）・領収書（receipt）など他の書類種別にも表示する場合は
+ * 請求書は投稿タイプ post、見積書は estimate を使用している。
+ * 領収書（receipt）など他の書類種別にも表示する場合は
  * この配列に投稿タイプのスラッグを追加する。
  *
  * @return string[] 投稿タイプのスラッグの配列。
  */
 function bill_get_client_column_post_types() {
-	return array( 'estimate' );
+	return array( 'post', 'estimate' );
 }
 
 /**
