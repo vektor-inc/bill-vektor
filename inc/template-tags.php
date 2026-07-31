@@ -453,6 +453,119 @@ function bill_get_client_name_by_post( $post ) {
 	return (string) bill_get_client_name( $post );
 }
 
+/**
+ * 書類に紐づく取引先（登録済）の投稿IDを取得する
+ *
+ * bill_client には取引先の投稿IDが保存されるが、未設定の書類では空文字が入り、
+ * 保存時にサニタイズされていないため配列・オブジェクト・負数なども入り得る。
+ * これらを get_post_meta() や get_the_permalink() にそのまま渡すと、
+ * 数値へのキャストで無関係な投稿を参照したり、グローバルの $post が参照されて
+ * 書類自身の情報を取引先の情報として扱ってしまう。
+ * その検証をこの関数に集約し、呼び出し側は「有効な取引先IDかどうか」だけを見れば済むようにしている。
+ *
+ * @param int|WP_Post $post 書類の投稿IDまたは投稿オブジェクト。
+ * @return int 取引先の投稿ID。未設定・不正値・取引先が存在しない場合は 0。
+ */
+function bill_get_client_id( $post ) {
+	/*
+	 * 空の値を get_post() に渡すとグローバルの $post が返るため、
+	 * 意図しない書類の取引先IDを返さないよう先に判定する。
+	 */
+	if ( empty( $post ) ) {
+		return 0;
+	}
+
+	// 投稿IDでも投稿オブジェクトでも受け取れるように WP_Post に正規化する
+	$post = get_post( $post );
+
+	// 投稿が存在しない場合は取引先なしとして 0 を返す
+	if ( ! $post instanceof WP_Post ) {
+		return 0;
+	}
+
+	// 配列・オブジェクトなど数値（数値文字列を含む）以外は取引先が未設定として扱う
+	if ( ! isset( $post->bill_client ) || ! is_numeric( $post->bill_client ) ) {
+		return 0;
+	}
+
+	/*
+	 * 負数や小数が入っていた場合、absint() は符号や端数を落として別のIDに変えてしまう。
+	 * get_post_meta() も内部で absint() を通すため、-123 を渡すと
+	 * 投稿ID 123 のメタ値（＝別の取引先の省略名）を読んでしまう。
+	 * 参照先がずれないよう、元の値が正の整数そのものでない場合は
+	 * どの取引先を指しているか確定できないものとして不正値扱いにする。
+	 */
+	$client_id = absint( $post->bill_client );
+	if ( ! $client_id || (string) $client_id !== (string) $post->bill_client ) {
+		return 0;
+	}
+
+	// 削除済みなど実在しない取引先IDが残っている場合も取引先なしとして扱う
+	if ( ! get_post( $client_id ) ) {
+		return 0;
+	}
+
+	return $client_id;
+}
+
+/**
+ * 表示用の取引先名（省略名優先）を取得する
+ *
+ * 取引先（登録済）に省略名（client_short_name）が登録されていればその省略名を返し、
+ * 登録されていなければ通常の取引先名を返す。
+ * 書類一覧の取引先欄と CSV エクスポートで同じ判定を使うため、この関数に集約している。
+ * （同じ業務ルールが複数箇所に散っていると、仕様変更時に片方だけ直して取り残される事故が起きるため）
+ *
+ * 「取引先（イレギュラー）と（登録済）のどちらを優先するか」の業務ルールは
+ * bill_get_client_name() だけが持つため、この関数では判定しない。
+ *
+ * @param int|WP_Post $post 書類の投稿IDまたは投稿オブジェクト。
+ * @return string 表示用の取引先名。取引先が未設定の場合や投稿が存在しない場合は空文字。
+ */
+function bill_get_client_short_name( $post ) {
+	/*
+	 * 空の値を get_post() に渡すとグローバルの $post が返るため、
+	 * 意図しない書類の取引先名を返さないよう先に判定する。
+	 */
+	if ( empty( $post ) ) {
+		return '';
+	}
+
+	// 投稿IDでも投稿オブジェクトでも受け取れるように WP_Post に正規化する
+	$post = get_post( $post );
+
+	// 投稿が存在しない場合は空文字を返す
+	if ( ! $post instanceof WP_Post ) {
+		return '';
+	}
+
+	// 取引先（登録済）のID（未設定・不正値の場合は 0）
+	$client_id = bill_get_client_id( $post );
+
+	if ( $client_id ) {
+		$client_short_name = get_post_meta( $client_id, 'client_short_name', true );
+
+		/*
+		 * 省略名も無加工の $_POST が保存されるため配列などが入り得る。
+		 * 文字列・数値以外は未登録として扱い、登録されていればそれを返す。
+		 */
+		if ( is_scalar( $client_short_name ) && '' !== (string) $client_short_name ) {
+			return (string) $client_short_name;
+		}
+	}
+
+	/*
+	 * 省略名が無い場合の取引先名は bill_get_client_name_by_post() に委譲する。
+	 * ただし委譲先のIDガードは absint() のみで -123 を 123 として扱ってしまうため、
+	 * この関数で検証済みのIDに差し替えたコピーを渡し、参照先がずれないようにする。
+	 * 取引先（イレギュラー）の値はそのまま渡すので、優先順位の判定は委譲先のままになる。
+	 */
+	$validated_post              = clone $post;
+	$validated_post->bill_client = $client_id;
+
+	return (string) bill_get_client_name_by_post( $validated_post );
+}
+
 function bill_get_client_honorific( $post ) {
 	if ( empty( $post->bill_client_name_manual ) ) {
 		$client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
