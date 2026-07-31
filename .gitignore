@@ -16,4 +16,4 @@ dist/
 test-results/
 tests/e2e/.auth-state.json
 tests/e2e/screenshots/
-tests/e2e/.test-data-266.json
+tests/e2e/.test-data-*.json

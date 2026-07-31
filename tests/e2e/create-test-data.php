@@ -22,9 +22,18 @@
  * 再実行のたびに同じ投稿が増えていくと、テストがどれを開けばよいか
  * 判別できなくなるためです。
  *
- * 作成・再利用した投稿IDは tests/e2e/.test-data-266.json に書き出します。
+ * 作成・再利用した投稿IDとタイトルは tests/e2e/.test-data-266.json に書き出します。
  * 投稿IDは環境（既存の投稿数）によって変わるため、
- * tests/e2e/pr-266-tax-calculation.spec.js はこのファイルを読んで対象URLを組み立てます。
+ * tests/e2e/test-data-266.js がこのファイルを読んで対象URLを組み立て、
+ * spec と take-screenshots.js の両方がそれを参照します。
+ *
+ * 書き出す形式:
+ *   { "tax_round_default": { "id": 12, "title": "[e2e-test] 税込6000円（四捨五入）デフォルト" }, ... }
+ *
+ * タイトルも書き出すのは、マニフェストがデータベースと紐付いていないためです。
+ * wp-env clean や DB 入れ替えで投稿が消えてもマニフェストは残るため、
+ * 古いIDのページを開いても「6,001が無いこと」のような否定形の検証は素通りしてしまいます。
+ * テスト側で「意図した投稿が表示されているか」をタイトルで確認できるようにしています。
  */
 
 // 投稿IDの書き出し先。spec 側と同じ tests/e2e/ 配下に置く
@@ -40,16 +49,18 @@ const BILL_E2E_266_MANIFEST_PATH = __DIR__ . '/.test-data-266.json';
 function bill_e2e_266_find_post_by_title( $title ) {
 	$post_ids = get_posts(
 		array(
-			'post_type'        => 'post',
+			'post_type'      => 'post',
 			// 'title' は post_title の完全一致検索（部分一致の 's' ではない）
-			'title'            => $title,
+			'title'          => $title,
 			// 'any' はゴミ箱を含まないため trash を明示し、
 			// ゴミ箱に残った投稿を見落として重複作成するのを防ぐ
-			'post_status'      => array( 'any', 'trash' ),
-			'posts_per_page'   => 1,
-			'fields'           => 'ids',
-			'no_found_rows'    => true,
-			'suppress_filters' => false,
+			'post_status'    => array( 'any', 'trash' ),
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			// suppress_filters は既定の true のままにする。
+			// false にすると他プラグインの posts_where 等でフィクスチャ投稿が
+			// 検索結果から隠され、重複作成してしまう恐れがあるため
 		)
 	);
 
@@ -188,21 +199,25 @@ $bill_e2e_266_fixtures = array(
 	),
 );
 
-// 各テスト投稿を作成または再利用し、投稿IDを集める
-$bill_e2e_266_post_ids = array();
+// 各テスト投稿を作成または再利用し、投稿IDとタイトルを集める
+$bill_e2e_266_manifest = array();
 foreach ( $bill_e2e_266_fixtures as $bill_e2e_266_key => $bill_e2e_266_fixture ) {
-	$bill_e2e_266_post_ids[ $bill_e2e_266_key ] = bill_e2e_266_upsert_post(
-		$bill_e2e_266_key,
-		$bill_e2e_266_fixture['title'],
-		$bill_e2e_266_fixture['items'],
-		$bill_e2e_266_fixture['tax_fraction']
+	$bill_e2e_266_manifest[ $bill_e2e_266_key ] = array(
+		'id'    => bill_e2e_266_upsert_post(
+			$bill_e2e_266_key,
+			$bill_e2e_266_fixture['title'],
+			$bill_e2e_266_fixture['items'],
+			$bill_e2e_266_fixture['tax_fraction']
+		),
+		// テスト側が「意図した投稿を開けているか」を確認するために使う
+		'title' => $bill_e2e_266_fixture['title'],
 	);
 }
 
-// spec 側が読み取れるよう投稿IDを JSON で書き出す
-$bill_e2e_266_json = wp_json_encode( $bill_e2e_266_post_ids, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
+// テスト側が読み取れるよう投稿IDとタイトルを JSON で書き出す
+$bill_e2e_266_json = wp_json_encode( $bill_e2e_266_manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
 if ( false === $bill_e2e_266_json ) {
-	WP_CLI::error( '投稿IDの JSON 変換に失敗しました。' );
+	WP_CLI::error( 'テストデータの JSON 変換に失敗しました。' );
 }
 
 // 書き込みに失敗したまま進むと spec 側が古いIDを読んで
