@@ -51,9 +51,19 @@ class AdminColumnsTest extends WP_UnitTestCase {
 	private $untitled_client_id;
 
 	/**
+	 * 取引先ではない投稿（固定ページ）の投稿IDを保持する
+	 *
+	 * bill_client に取引先以外の投稿IDが保存されている状態を再現するために使う。
+	 *
+	 * @var int
+	 */
+	private $non_client_id;
+
+	/**
 	 * テスト前の共通セットアップ
 	 *
-	 * テスト用の見積書と登録済取引先（通常・無題）を作成する。
+	 * テスト用の見積書と登録済取引先（通常・無題）、
+	 * および取引先ではない投稿を作成する。
 	 *
 	 * @return void
 	 */
@@ -84,6 +94,26 @@ class AdminColumnsTest extends WP_UnitTestCase {
 		 */
 		$this->assertGreaterThan( 0, $this->untitled_client_id, '無題の登録済取引先が作成できている' );
 
+		/*
+		 * 取引先ではない投稿（非公開の固定ページ）を作成する。
+		 * bill_client に取引先以外の投稿IDが保存されていると、この投稿のタイトルが
+		 * 取引先カラムに出力されてしまうため、その状態を再現するために使う。
+		 */
+		$this->non_client_id = wp_insert_post(
+			array(
+				'post_title'  => '取引先ではない非公開ページ',
+				'post_status' => 'private',
+				'post_type'   => 'page',
+			)
+		);
+
+		/*
+		 * 取引先ではない投稿のタイトルが空だと、修正前でもダッシュが出力されて
+		 * 「他の投稿のタイトルが漏れる」不具合を検出できないため、
+		 * タイトルを取得できることを確認する。
+		 */
+		$this->assertNotSame( '', get_the_title( $this->non_client_id ), '取引先ではない投稿にタイトルがある' );
+
 		// テスト用の見積書を作成
 		$this->estimate_id = wp_insert_post(
 			array(
@@ -108,6 +138,7 @@ class AdminColumnsTest extends WP_UnitTestCase {
 		wp_delete_post( $this->estimate_id, true );
 		wp_delete_post( $this->client_id, true );
 		wp_delete_post( $this->untitled_client_id, true );
+		wp_delete_post( $this->non_client_id, true );
 
 		parent::tear_down();
 	}
@@ -398,6 +429,36 @@ class AdminColumnsTest extends WP_UnitTestCase {
 				'expected'            => '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">取引先なし</span>',
 			),
 			array(
+				/*
+				 * bill_client に不正な値が入っていても、無関係な投稿のタイトルを
+				 * 出力しないことを出力レベルで検証する（報告された症状はこの層で起きたため）。
+				 */
+				'test_condition_name' => 'bill_client が取引先以外の投稿を指している場合 => ダッシュと代替テキスト「取引先なし」を出力',
+				'conditions'          => array(
+					'column_name' => $column_key,
+					'post_meta'   => array(
+						'bill_client_name_manual' => '',
+						'bill_client'             => 'non_client_id',
+					),
+				),
+				'expected'            => '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">取引先なし</span>',
+			),
+			array(
+				/*
+				 * absint() は符号を落とすため、-123 をそのまま通すと
+				 * 投稿ID 123 のタイトルが取引先カラムに出力されてしまう。
+				 */
+				'test_condition_name' => 'bill_client に負数が入っている場合 => ダッシュと代替テキスト「取引先なし」を出力',
+				'conditions'          => array(
+					'column_name' => $column_key,
+					'post_meta'   => array(
+						'bill_client_name_manual' => '',
+						'bill_client'             => 'non_client_id_negative',
+					),
+				),
+				'expected'            => '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">取引先なし</span>',
+			),
+			array(
 				'test_condition_name' => '対象外のカラムが渡された場合 => 何も出力しない',
 				'conditions'          => array(
 					'column_name' => 'date',
@@ -414,6 +475,13 @@ class AdminColumnsTest extends WP_UnitTestCase {
 			foreach ( $case['conditions']['post_meta'] as $meta_name => $meta_value ) {
 				if ( 'untitled_client_id' === $meta_value ) {
 					$meta_value = $this->untitled_client_id;
+				}
+				if ( 'non_client_id' === $meta_value ) {
+					$meta_value = $this->non_client_id;
+				}
+				if ( 'non_client_id_negative' === $meta_value ) {
+					// 取引先ではない投稿IDの負数（absint() を通すとそのIDに戻る）
+					$meta_value = '-' . $this->non_client_id;
 				}
 				update_post_meta( $this->estimate_id, $meta_name, $meta_value );
 			}

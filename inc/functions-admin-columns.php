@@ -81,7 +81,10 @@ function bill_add_client_admin_column( $columns ) {
  * 取引先カラムの内容を出力する
  *
  * 取引先名の取得は bill_get_client_name_by_post() に委譲するため、
- * 書類本体・PDFタイトル・CSVエクスポートと同じ取引先名が表示される。
+ * 書類本体・PDFのファイル名と同じ正式名が表示される。
+ * CSVエクスポート（inc/export/class.csv-export.php）とフロント側の書類一覧
+ * （index.php）は bill_get_client_short_name() を使うため省略名が優先され、
+ * 省略名が登録されている取引先ではこのカラムと表示が異なる。
  * 取引先へのリンクは不要なため、名前のみをエスケープして出力する。
  *
  * @param string $column_name 出力対象のカラムキー。

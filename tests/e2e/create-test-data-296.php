@@ -42,14 +42,16 @@
 function bill_e2e_296_find_post_by_title( $title, $post_type ) {
 	$post_ids = get_posts(
 		array(
-			'post_type'        => $post_type,
-			'title'            => $title,
+			'post_type'      => $post_type,
+			'title'          => $title,
 			// 'any' はゴミ箱を含まないため trash を明示して重複作成を防ぐ
-			'post_status'      => array( 'any', 'trash' ),
-			'posts_per_page'   => 1,
-			'fields'           => 'ids',
-			'no_found_rows'    => true,
-			'suppress_filters' => false,
+			'post_status'    => array( 'any', 'trash' ),
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			// suppress_filters は既定の true のままにする。
+			// false にすると他プラグインの posts_where 等でフィクスチャ投稿が
+			// 検索結果から隠され、重複作成してしまう恐れがあるため
 		)
 	);
 
@@ -115,15 +117,17 @@ function bill_e2e_296_get_untitled_client() {
 
 	$post_ids = get_posts(
 		array(
-			'post_type'        => 'client',
+			'post_type'      => 'client',
 			// 'any' はゴミ箱を含まないため trash を明示して重複作成を防ぐ
-			'post_status'      => array( 'any', 'trash' ),
-			'posts_per_page'   => 1,
-			'fields'           => 'ids',
-			'no_found_rows'    => true,
-			'suppress_filters' => false,
-			'meta_key'         => $marker_key,
-			'meta_value'       => '1',
+			'post_status'    => array( 'any', 'trash' ),
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			// suppress_filters は既定の true のままにする。
+			// false にすると他プラグインの posts_where 等でフィクスチャ投稿が
+			// 検索結果から隠され、重複作成してしまう恐れがあるため
+			'meta_key'       => $marker_key,
+			'meta_value'     => '1',
 		)
 	);
 
@@ -152,6 +156,40 @@ function bill_e2e_296_get_untitled_client() {
 	echo "Created client: （タイトルなし） (ID: {$client_id})\n";
 
 	return $client_id;
+}
+
+/**
+ * 請求書に付与するカテゴリーのターム ID を取得または作成する
+ *
+ * カテゴリーはターム ID の決め打ち（例: array( 1 )）を避け、名前から解決する。
+ * そのIDのカテゴリーが無い環境では黙って無視され、カテゴリー列が空のまま
+ * 幅を確認することになって前提が崩れるため。
+ *
+ * @param string $name カテゴリー名。
+ * @return int カテゴリーのターム ID。
+ */
+function bill_e2e_296_get_category_id( $name ) {
+	$category = term_exists( $name, 'category' );
+
+	// 無ければ作成する（環境に依存せず必ずカテゴリーが付くようにするため）
+	if ( ! $category ) {
+		$category = wp_insert_term( $name, 'category' );
+	}
+
+	// wp_insert_term() は失敗時に WP_Error を返すため、作成に失敗していないか確認する
+	if ( is_wp_error( $category ) ) {
+		/*
+		 * 名前は違うがスラッグが衝突する場合も term_exists エラーになる。
+		 * このとき get_error_data() に既存のターム ID が入るため、
+		 * 再実行が止まらないよう既存のIDを再利用する。
+		 */
+		if ( 'term_exists' === $category->get_error_code() && $category->get_error_data() ) {
+			return (int) $category->get_error_data();
+		}
+		WP_CLI::error( 'カテゴリーの作成に失敗しました（' . $name . '）: ' . $category->get_error_message() );
+	}
+
+	return (int) $category['term_id'];
 }
 
 /*
@@ -213,17 +251,28 @@ foreach ( $invoices as $invoice ) {
 	 */
 	$post_id = wp_insert_post(
 		array(
-			'post_title'    => $invoice['title'],
-			'post_type'     => 'post',
-			'post_status'   => 'publish',
-			'post_category' => array( 1 ),
-			'tags_input'    => array( '制作費', '保守費' ),
+			'post_title'  => $invoice['title'],
+			'post_type'   => 'post',
+			'post_status' => 'publish',
+			'tags_input'  => array( '制作費', '保守費' ),
 		)
 	);
 
 	// wp_insert_post() は失敗時に WP_Error を返すため、投稿作成に失敗していないか確認する
 	if ( is_wp_error( $post_id ) ) {
 		WP_CLI::error( '請求書の作成に失敗しました（' . $invoice['title'] . '）: ' . $post_id->get_error_message() );
+	}
+
+	/*
+	 * カテゴリーは名前から解決したターム ID で付与する。
+	 * wp_set_post_terms() は階層化タクソノミー（category）に渡した値を intval() で
+	 * IDに丸めるため、名前の文字列を渡しても 0 になって何も付与されない。
+	 */
+	$category_result = wp_set_post_terms( $post_id, array( bill_e2e_296_get_category_id( '請求書テスト' ) ), 'category' );
+
+	// wp_set_post_terms() は失敗時に WP_Error を返すため、付与できたか確認する
+	if ( is_wp_error( $category_result ) ) {
+		WP_CLI::error( 'カテゴリーの付与に失敗しました（' . $invoice['title'] . '）: ' . $category_result->get_error_message() );
 	}
 
 	// 取引先（イレギュラー）の手入力値
