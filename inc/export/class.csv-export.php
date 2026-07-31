@@ -176,10 +176,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 				$bill_tax_each    = bill_vektor_invoice_each_tax( $post );
 
 				// 取引先名（省略名があれば省略名で表示）
-				$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
-				if ( ! $client_name ) {
-					$client_name = bill_get_client_name( $post );
-				}
+				$client_name = bill_get_client_short_name( $post );
 
 				// $client_invoice = get_post_meta( $post->bill_client, 'client_invoice', true );
 
@@ -272,10 +269,7 @@ if ( ! class_exists( 'CsvExport' ) ) {
 					$date_pay         = date( 'Y/n/j', bill_raw_date( $bill_limit_date ) );
 					$bill_total_price = bill_vektor_invoice_total_tax( $post );
 					// 取引先名（省略名があれば省略名で表示）
-					$client_name = get_post_meta( $post->bill_client, 'client_short_name', true );
-					if ( ! $client_name ) {
-						$client_name = bill_get_client_name( $post );
-					}
+					$client_name = bill_get_client_short_name( $post );
 
 					$c   = array();
 					$c[] = '"' . $number . '"';                           // 取引No

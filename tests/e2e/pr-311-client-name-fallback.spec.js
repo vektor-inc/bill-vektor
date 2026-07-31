@@ -62,7 +62,7 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		]) {
 			const cell = frontClientCell(page, title);
 			await expect(cell.locator('[aria-hidden="true"]')).toHaveText('—');
-			await expect(cell.locator('.sr-only')).toHaveText('取引先なし');
+			await expect(cell.locator('.screen-reader-text')).toHaveText('取引先なし');
 			await expect(cell.locator('a')).toHaveCount(0);
 			await expect(cell).not.toContainText(title);
 			await expect(cell).not.toContainText('Hello world!');
@@ -95,7 +95,7 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		await expect(untitledLink).toHaveCount(1);
 		await expect(untitledLink).toHaveAttribute('target', '_blank');
 		await expect(untitledLink.locator('[aria-hidden="true"]')).toHaveText('—');
-		await expect(untitledLink.locator('.sr-only')).toHaveText('名称未設定の取引先');
+		await expect(untitledLink.locator('.screen-reader-text')).toHaveText('名称未設定の取引先');
 		expect((await untitledLink.innerHTML()).trim()).not.toBe('');
 	});
 

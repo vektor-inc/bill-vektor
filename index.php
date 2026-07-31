@@ -92,32 +92,18 @@
 						 * 代替テキストはリンク先の説明になるため、書類側の「取引先なし」
 						 * （値が無いという状態の説明）とは異なる文言にしている。
 						 */
-						echo '<a href="' . esc_url( get_the_permalink() ) . '" target="_blank"><span aria-hidden="true">&#8212;</span><span class="sr-only">' . esc_html__( '名称未設定の取引先', 'bill-vektor' ) . '</span></a>';
+						echo '<a href="' . esc_url( get_the_permalink() ) . '" target="_blank"><span aria-hidden="true">&#8212;</span><span class="screen-reader-text">' . esc_html__( '名称未設定の取引先', 'bill-vektor' ) . '</span></a>';
 					}
 				} elseif ( '' !== $client_name_manual ) {
 					echo esc_html( $client_name_manual );
 				} else {
 					/*
-					 * 取引先（登録済）のIDは保存時にサニタイズされておらず配列などが入り得る。
-					 * 配列をそのまま整数変換すると 1 になり無関係な投稿を参照してしまうため、
-					 * 数値・文字列以外は 0 として扱う。
+					 * 取引先（登録済）のIDと表示名（省略名があれば省略名）は共通関数に委譲する。
+					 * IDの検証・省略名の有無による出し分けをこの箇所に重複させないため、
+					 * CSVエクスポートと同じ関数を使う。
 					 */
-					$client_id = is_scalar( $post->bill_client ) ? absint( $post->bill_client ) : 0;
-
-					// 一覧では省略名を優先して表示する（取引先が特定できる場合のみ取得する）
-					$client_name = $client_id ? get_post_meta( $client_id, 'client_short_name', true ) : '';
-
-					// 省略名も無加工の $_POST が保存されるため、文字列以外が入っていた場合は無視する
-					$client_name = is_scalar( $client_name ) ? (string) $client_name : '';
-
-					/*
-					 * 省略名が無い場合の取引先名は共通関数に委譲する。
-					 * 取引先が未設定のときに書類自身の件名が表示されないよう、
-					 * 取引先名の組み立てをこの箇所に重複させない。
-					 */
-					if ( '' === $client_name ) {
-						$client_name = bill_get_client_name( $post );
-					}
+					$client_id   = bill_get_client_id( $post );
+					$client_name = bill_get_client_short_name( $post );
 
 					if ( $client_id && '' !== $client_name ) {
 						// 取引先（登録済）が特定できている場合のみ取引先ページへのリンクにする
@@ -127,10 +113,11 @@
 						 * 取引先が未設定の場合はダッシュを表示する。
 						 * この一覧は罫線が無く、空セルだと値が無いのか列がずれているのか
 						 * 判別できないため、値が無いことを明示する。
-						 * .screen-reader-text はこのテーマでは display:none で
-						 * 支援技術からも消えてしまうため、Bootstrap の .sr-only を使う。
+						 * 代替テキストのクラスは、管理画面の取引先カラムと同じ .screen-reader-text に揃える。
+						 * このテーマの .screen-reader-text は assets/_scss/style.scss で
+						 * 視覚的非表示（clip 方式）として定義しており、支援技術からは読み上げられる。
 						 */
-						echo '<span aria-hidden="true">&#8212;</span><span class="sr-only">' . esc_html__( '取引先なし', 'bill-vektor' ) . '</span>';
+						echo '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">' . esc_html__( '取引先なし', 'bill-vektor' ) . '</span>';
 					}
 				}
 				?>
