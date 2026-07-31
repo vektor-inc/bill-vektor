@@ -113,10 +113,9 @@
 						 * 取引先が未設定の場合はダッシュを表示する。
 						 * この一覧は罫線が無く、空セルだと値が無いのか列がずれているのか
 						 * 判別できないため、値が無いことを明示する。
-						 * 代替テキストのクラスは、管理画面の取引先カラムと同じ
-						 * .screen-reader-text に揃える（このテーマの .screen-reader-text は
-						 * display:none で支援技術からも消えてしまっていたため、
-						 * 視覚的非表示になるよう assets/_scss/style.scss を修正済み）。
+						 * 代替テキストのクラスは、管理画面の取引先カラムと同じ .screen-reader-text に揃える。
+						 * このテーマの .screen-reader-text は assets/_scss/style.scss で
+						 * 視覚的非表示（clip 方式）として定義しており、支援技術からは読み上げられる。
 						 */
 						echo '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">' . esc_html__( '取引先なし', 'bill-vektor' ) . '</span>';
 					}
