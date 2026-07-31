@@ -9,8 +9,15 @@ const { test, expect } = require('@playwright/test');
  * 対象行を特定する。
  *
  * 実行前に、参照する見積書・取引先を作成しておく必要がある。
- *   npx wp-env run cli wp eval-file wp-content/themes/bill-vektor/tests/e2e/create-test-data-pr-297.php
+ * どちらもテーマのディレクトリ（このリポジトリのルート）で実行する。
+ *   npx wp-env run cli --env-cwd="wp-content/themes/$(basename "$PWD")" wp eval-file tests/e2e/create-test-data-pr-297.php
  *   npx playwright test tests/e2e/pr-297-estimate-client-column.spec.js
+ *
+ * テーマのディレクトリ名は git worktree などで bill-vektor 以外になることがあるため、
+ * --env-cwd はカレントディレクトリ名から求める。
+ * package.json の phpunit スクリプトはシェルのパラメータ展開で同じ値を求めているが、
+ * その記法はブロックコメントの終端と同じ文字並びを含みコメント内に書けないため、
+ * ここでは同じ結果になる basename を使う。
  *
  * wp-env のポートを既定（8895）から変えている場合は WP_BASE_URL で指定する。
  *   WP_BASE_URL=http://localhost:9112 npx playwright test tests/e2e/pr-297-estimate-client-column.spec.js
