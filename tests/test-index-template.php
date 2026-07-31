@@ -190,7 +190,7 @@ class IndexTemplateTest extends WP_UnitTestCase {
 				'test_condition_name' => '無題の取引先の取引先カラム => ダッシュと代替テキスト「名称未設定の取引先」を表示する',
 				'conditions'          => array(
 					'row'    => 1,
-					'needle' => '<span aria-hidden="true">&#8212;</span><span class="sr-only">名称未設定の取引先</span>',
+					'needle' => '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">名称未設定の取引先</span>',
 				),
 				'expected'            => true,
 			),
