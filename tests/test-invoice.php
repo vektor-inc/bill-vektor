@@ -5,15 +5,19 @@
  * @package BillVektor
  */
 /*
-$ cd $(wp theme path --dir bill-vektor)
+テーマのディレクトリ名は git worktree などで bill-vektor 以外になることがあるため、
+テーマのパスは固定値で書かず、テーマのディレクトリ（このリポジトリのルート）を起点にする。
+
+テスト環境の準備（テーマのディレクトリで実行する）
 $ bash bin/install-wp-tests.sh wordpress_test root 'WordPress' localhost latest
 
-/*
-cd /app
-bash setup-phpunit.sh
-source ~/.bashrc
-cd $(wp theme path --dir bill-vektor)
-phpunit
+テストの実行（テーマのディレクトリで実行する）
+$ THEME_DIR=$PWD
+$ cd /app
+$ bash setup-phpunit.sh
+$ source ~/.bashrc
+$ cd "$THEME_DIR"
+$ phpunit
 */
 
 /**

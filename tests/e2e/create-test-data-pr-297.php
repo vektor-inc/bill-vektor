@@ -3,8 +3,14 @@
  * PR #297 e2e テスト用データ作成スクリプト
  * wp-env run cli で実行する
  *
- * 実行方法:
- *   npx wp-env run cli wp eval-file wp-content/themes/bill-vektor/tests/e2e/create-test-data-pr-297.php
+ * 実行方法（テーマのディレクトリ＝このリポジトリのルートで実行する）:
+ *   npx wp-env run cli --env-cwd="wp-content/themes/$(basename "$PWD")" wp eval-file tests/e2e/create-test-data-pr-297.php
+ *
+ * テーマのディレクトリ名は git worktree などで bill-vektor 以外になることがあるため、
+ * --env-cwd はカレントディレクトリ名から求める。
+ * package.json の phpunit スクリプトはシェルのパラメータ展開で同じ値を求めているが、
+ * その記法はブロックコメントの終端と同じ文字並びを含みコメント内に書けないため、
+ * ここでは同じ結果になる basename を使う。
  *
  * tests/e2e/pr-297-estimate-client-column.spec.js が参照する見積書と取引先を作成する。
  *
