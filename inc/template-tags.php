@@ -388,9 +388,13 @@ function bill_get_terms() {
  * @return string 取引先名。取引先が未設定の場合は空文字。
  */
 function bill_get_client_name( $post ) {
-	// 取引先（イレギュラー）が入力されている場合はそちらを優先する
-	if ( ! empty( $post->bill_client_name_manual ) ) {
-		return $post->bill_client_name_manual;
+	/*
+	 * 取引先（イレギュラー）が入力されている場合はそちらを優先する。
+	 * この値も保存時にサニタイズされておらず配列などが入り得るため、
+	 * 文字列・数値以外は未入力として扱う（戻り値を必ず文字列にする）。
+	 */
+	if ( is_scalar( $post->bill_client_name_manual ) && '' !== (string) $post->bill_client_name_manual ) {
+		return (string) $post->bill_client_name_manual;
 	}
 
 	/*

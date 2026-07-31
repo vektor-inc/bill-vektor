@@ -215,6 +215,26 @@ class TemplateTagsTest extends WP_UnitTestCase {
 				'expected'            => '',
 			),
 			array(
+				'test_condition_name' => 'bill_client にオブジェクトが保存されている場合 => 空文字（他の投稿のタイトルを返さない）',
+				'conditions'          => array(
+					'post_meta' => array(
+						'bill_client_name_manual' => '',
+						'bill_client'             => 'injected_object',
+					),
+				),
+				'expected'            => '',
+			),
+			array(
+				'test_condition_name' => 'bill_client_name_manual に配列が保存されている場合 => 空文字（配列をそのまま返さない）',
+				'conditions'          => array(
+					'post_meta' => array(
+						'bill_client_name_manual' => 'injected_array',
+						'bill_client'             => '',
+					),
+				),
+				'expected'            => '',
+			),
+			array(
 				'test_condition_name' => '削除済の取引先IDが bill_client に残っている場合 => 空文字',
 				'conditions'          => array(
 					'post_meta' => array(
@@ -248,6 +268,10 @@ class TemplateTagsTest extends WP_UnitTestCase {
 				if ( 'injected_array' === $meta_value ) {
 					// bill_client[]=1 のような送信で保存され得る配列を再現する
 					$meta_value = array( $injected_post_id );
+				}
+				if ( 'injected_object' === $meta_value ) {
+					// メタにオブジェクトが保存されている場合を再現する
+					$meta_value = (object) array( 'ID' => $injected_post_id );
 				}
 				update_post_meta( $this->estimate_id, $meta_name, $meta_value );
 			}
