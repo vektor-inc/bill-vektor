@@ -23,10 +23,12 @@ $bill_relogin_url = wp_logout_url( wp_login_url( home_url( '/' ) ) );
 		<div class="col-md-12">
 			<div class="section">
 
-				<h1><?php esc_html_e( 'この画面を表示する権限がありません', 'bill-vektor' ); ?></h1>
+				<!-- 見出しのサイズと余白を他のページと揃えるため、index.php と同じ .page-header で囲む -->
+				<header class="page-header">
+					<h1><?php esc_html_e( 'この画面を表示する権限がありません', 'bill-vektor' ); ?></h1>
+				</header>
 
-				<p><?php esc_html_e( '請求書・見積書の閲覧には、投稿を編集できる権限が必要です。', 'bill-vektor' ); ?></p>
-
+				<!-- 「自分が今どの状態なのか」を最初に示す（理由と行動はその後に続ける） -->
 				<p>
 				<?php
 				if ( $bill_role_label ) {
@@ -46,9 +48,28 @@ $bill_relogin_url = wp_logout_url( wp_login_url( home_url( '/' ) ) );
 				?>
 				</p>
 
-				<p><?php esc_html_e( '書類を閲覧できるアカウントをお持ちの場合は、そのアカウントでログインし直してください。', 'bill-vektor' ); ?></p>
+				<?php
+				// 必要な権限は「投稿」ではなくロール名で伝える。
+				// この製品は管理画面の「投稿」を「請求書」に置換してユーザーから隠しているため、
+				// この画面だけ「投稿」と表示すると一貫しない。
+				?>
+				<p><?php esc_html_e( '請求書・見積書などの書類を閲覧するには、書類を作成・編集できる権限（寄稿者以上）が必要です。', 'bill-vektor' ); ?></p>
 
-				<p><a href="<?php echo esc_url( $bill_relogin_url ); ?>"><?php esc_html_e( '別のアカウントでログインする', 'bill-vektor' ); ?></a></p>
+				<?php
+				// 権限を持つアカウントを持っている人・持っていない人の両方に次の一手を示す。
+				// この画面には管理バーが出ないため、出口はこのページ内で揃えきる必要がある。
+				?>
+				<p>
+					<?php esc_html_e( '書類を閲覧できるアカウントをお持ちの場合は、ログアウトして、そのアカウントでログインし直してください。', 'bill-vektor' ); ?>
+					<?php esc_html_e( 'お持ちでない場合は、サイトの管理者に権限の変更を依頼してください。', 'bill-vektor' ); ?>
+				</p>
+
+				<?php
+				// Bootstrap は a 要素の下線を消すため、リンクのままだと色だけで本文と区別されてしまう。
+				// この画面唯一の出口なので、テーマ既存のボタン様式に合わせる。
+				// 押すと現在のセッションが切れることが分かる文言にする。
+				?>
+				<p><a class="btn btn-primary" href="<?php echo esc_url( $bill_relogin_url ); ?>"><?php esc_html_e( 'ログアウトして別のアカウントでログインする', 'bill-vektor' ); ?></a></p>
 
 			</div><!-- [ /.section ] -->
 		</div>
