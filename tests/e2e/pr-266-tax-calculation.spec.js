@@ -1,6 +1,8 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * PR #266 e2e テスト
@@ -12,19 +14,71 @@ const { test, expect } = require('@playwright/test');
  *
  * bill-vektor テーマはログインが必要なため、
  * global-setup.js で取得したログイン済み storageState を全テストで使い回す。
+ *
+ * テストデータの投稿IDは環境（既存の投稿数）によって変わるため、
+ * create-test-data.php が書き出す .test-data-266.json から読み込む。
  */
 
-// テストデータの Post ID（create-test-data.php で作成）
-const TEST_POSTS = {
-	// Post ID: 4 - 税込6000円（四捨五入・消費税デフォルト）
-	tax_round_default: '/?p=4',
-	// Post ID: 5 - 税込6000円（四捨五入・消費税切り上げ）
-	tax_round_ceil: '/?p=5',
-	// Post ID: 6 - 税抜10000円（デグレ確認）
-	tax_excluded: '/?p=6',
-	// Post ID: 7 - 税抜3333円×3個 消費税切り捨て（デグレ確認）
-	tax_excluded_3333: '/?p=7',
-};
+// create-test-data.php が投稿IDを書き出すマニフェストのパス
+const MANIFEST_PATH = path.join(__dirname, '.test-data-266.json');
+
+// マニフェストに必ず含まれているべきキー（テスト対象の4投稿）
+const REQUIRED_KEYS = [
+	'tax_round_default',
+	'tax_round_ceil',
+	'tax_excluded',
+	'tax_excluded_3333',
+];
+
+// マニフェストが無い・壊れている場合に案内する再作成コマンド
+const SETUP_HINT =
+	'テストデータを作成してから実行してください:\n' +
+	"  npx wp-env run cli --env-cwd='wp-content/themes/bill-vektor' wp eval-file tests/e2e/create-test-data.php";
+
+/**
+ * テストデータのマニフェストを読み込み、各投稿の相対URLを組み立てる
+ *
+ * 投稿IDのハードコードをやめてマニフェスト経由にしたのは、
+ * 環境ごとに自動採番される投稿IDが変わり、別の投稿を開いてしまうため。
+ * マニフェストが無い／キーが欠けている場合は、undefined のまま goto して
+ * 原因の分かりにくい失敗になるのを避けるため、ここで明示的に落とす。
+ *
+ * @return {Record<string, string>} キーごとの相対URL（例: { tax_round_default: '/?p=12' }）
+ */
+function loadTestPostUrls() {
+	if (!fs.existsSync(MANIFEST_PATH)) {
+		throw new Error(
+			`テストデータのマニフェストが見つかりません: ${MANIFEST_PATH}\n${SETUP_HINT}`
+		);
+	}
+
+	let manifest;
+	try {
+		manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+	} catch (error) {
+		throw new Error(
+			`テストデータのマニフェストを読み込めませんでした: ${MANIFEST_PATH}\n${error.message}\n${SETUP_HINT}`
+		);
+	}
+
+	// 値が正の整数の投稿IDになっているキーだけを有効とみなす
+	const missingKeys = REQUIRED_KEYS.filter(
+		(key) => !Number.isInteger(manifest[key]) || manifest[key] <= 0
+	);
+	if (missingKeys.length > 0) {
+		throw new Error(
+			`テストデータのマニフェストに投稿IDがありません: ${missingKeys.join(', ')}\n` +
+				`（${MANIFEST_PATH}）\n${SETUP_HINT}`
+		);
+	}
+
+	return Object.fromEntries(
+		REQUIRED_KEYS.map((key) => [key, `/?p=${manifest[key]}`])
+	);
+}
+
+// テストデータの相対URL（create-test-data.php で作成した投稿を参照する）
+const TEST_POSTS = loadTestPostUrls();
 
 // global-setup.js で保存したログイン済み Cookie を使用する
 // これにより各テストで再ログインが不要になる

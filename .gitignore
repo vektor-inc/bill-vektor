@@ -12,7 +12,8 @@ vendor/
 dist/
 .phpunit.result.cache
 
-# Playwright e2e テストの一時生成物（実行結果・ログイン済みセッション・スクリーンショット）
+# Playwright e2e テストの一時生成物（実行結果・ログイン済みセッション・スクリーンショット・テストデータの投稿ID）
 test-results/
 tests/e2e/.auth-state.json
 tests/e2e/screenshots/
+tests/e2e/.test-data-266.json
