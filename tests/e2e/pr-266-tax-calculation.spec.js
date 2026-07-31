@@ -1,6 +1,7 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+const { gotoTestPost } = require('./test-data-266');
 
 /**
  * PR #266 e2e テスト
@@ -12,19 +13,12 @@ const { test, expect } = require('@playwright/test');
  *
  * bill-vektor テーマはログインが必要なため、
  * global-setup.js で取得したログイン済み storageState を全テストで使い回す。
+ *
+ * テストデータの投稿IDは環境（既存の投稿数）によって変わるため、
+ * test-data-266.js 経由で create-test-data.php が書き出したマニフェストから読み込む。
+ * gotoTestPost() は意図した投稿が表示されていることまで確認するので、
+ * 投稿が消えた環境で否定形の検証が素通りする「空振り PASS」も防げる。
  */
-
-// テストデータの Post ID（create-test-data.php で作成）
-const TEST_POSTS = {
-	// Post ID: 4 - 税込6000円（四捨五入・消費税デフォルト）
-	tax_round_default: '/?p=4',
-	// Post ID: 5 - 税込6000円（四捨五入・消費税切り上げ）
-	tax_round_ceil: '/?p=5',
-	// Post ID: 6 - 税抜10000円（デグレ確認）
-	tax_excluded: '/?p=6',
-	// Post ID: 7 - 税抜3333円×3個 消費税切り捨て（デグレ確認）
-	tax_excluded_3333: '/?p=7',
-};
 
 // global-setup.js で保存したログイン済み Cookie を使用する
 // これにより各テストで再ログインが不要になる
@@ -39,9 +33,8 @@ test.describe('PR #266: 税込入力の端数処理二重適用バグ修正確�
 	 * - 修正後: 税込合計が 6,000円（正しい値）
 	 */
 	test('税込6000円（四捨五入・消費税デフォルト）で税込合計が6000円になること', async ({ page }) => {
-		// テスト対象の請求書ページを開く
-		await page.goto(TEST_POSTS.tax_round_default);
-		await expect(page).toHaveTitle(/.+/);
+		// テスト対象の請求書ページを開く（意図した投稿が表示されているかも確認される）
+		await gotoTestPost(page, 'tax_round_default');
 
 		const pageContent = await page.content();
 
@@ -58,8 +51,7 @@ test.describe('PR #266: 税込入力の端数処理二重適用バグ修正確�
 	 * - 修正後: 税込合計が 6,000円（税込入力では bill_tax_fraction は効かない）
 	 */
 	test('税込6000円（四捨五入・消費税切り上げ）で税込合計が6000円になること', async ({ page }) => {
-		await page.goto(TEST_POSTS.tax_round_ceil);
-		await expect(page).toHaveTitle(/.+/);
+		await gotoTestPost(page, 'tax_round_ceil');
 
 		const pageContent = await page.content();
 
@@ -75,8 +67,7 @@ test.describe('PR #266: 税込入力の端数処理二重適用バグ修正確�
 	 * - 期待値: 税込合計 11,000円
 	 */
 	test('税抜10000円（消費税切り捨て）で税込合計が11000円になること（デグレ確認）', async ({ page }) => {
-		await page.goto(TEST_POSTS.tax_excluded);
-		await expect(page).toHaveTitle(/.+/);
+		await gotoTestPost(page, 'tax_excluded');
 
 		const pageContent = await page.content();
 		expect(pageContent).toContain('11,000');
@@ -88,8 +79,7 @@ test.describe('PR #266: 税込入力の端数処理二重適用バグ修正確�
 	 * - 計算: 税抜合計 9,999円 × 0.1 = 999.9 → floor → 999円、税込合計 10,998円
 	 */
 	test('税抜3333円×3個（消費税切り捨て）で税込合計が10998円になること（デグレ確認）', async ({ page }) => {
-		await page.goto(TEST_POSTS.tax_excluded_3333);
-		await expect(page).toHaveTitle(/.+/);
+		await gotoTestPost(page, 'tax_excluded_3333');
 
 		const pageContent = await page.content();
 		expect(pageContent).toContain('10,998');
@@ -107,8 +97,7 @@ test.describe('PR #266: 合計金額テーブルの詳細表示確認', () => {
 	 * - 税込合計: 6,000円
 	 */
 	test('税込6000円の合計金額テーブルで税抜・消費税・税込の各値が正しいこと', async ({ page }) => {
-		await page.goto(TEST_POSTS.tax_round_default);
-		await expect(page).toHaveTitle(/.+/);
+		await gotoTestPost(page, 'tax_round_default');
 
 		const pageContent = await page.content();
 
@@ -129,7 +118,7 @@ test.describe('PR #266: スクリーンショット撮影', () => {
 	 * 合計金額テーブルの表示を確認するためのスクリーンショット
 	 */
 	test('after: 税込6000円（四捨五入）の合計金額テーブル表示', async ({ page }) => {
-		await page.goto(TEST_POSTS.tax_round_default);
+		await gotoTestPost(page, 'tax_round_default');
 		await page.waitForLoadState('networkidle');
 		// スクリーンショットを tests/e2e/screenshots/ に保存
 		await page.screenshot({
@@ -139,7 +128,7 @@ test.describe('PR #266: スクリーンショット撮影', () => {
 	});
 
 	test('after: 税抜10000円の合計金額テーブル表示（デグレ確認）', async ({ page }) => {
-		await page.goto(TEST_POSTS.tax_excluded);
+		await gotoTestPost(page, 'tax_excluded');
 		await page.waitForLoadState('networkidle');
 		await page.screenshot({
 			path: 'tests/e2e/screenshots/after-tax-excluded-10000.png',
@@ -148,7 +137,7 @@ test.describe('PR #266: スクリーンショット撮影', () => {
 	});
 
 	test('after: 税抜3333円×3個（消費税切り捨て）の表示（デグレ確認）', async ({ page }) => {
-		await page.goto(TEST_POSTS.tax_excluded_3333);
+		await gotoTestPost(page, 'tax_excluded_3333');
 		await page.waitForLoadState('networkidle');
 		await page.screenshot({
 			path: 'tests/e2e/screenshots/after-tax-excluded-3333x3.png',
