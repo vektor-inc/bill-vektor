@@ -58,18 +58,20 @@ $bill_relogin_url = wp_logout_url( wp_login_url( home_url( '/' ) ) );
 				<?php
 				// 権限を持つアカウントを持っている人・持っていない人の両方に次の一手を示す。
 				// この画面には管理バーが出ないため、出口はこのページ内で揃えきる必要がある。
+				// 読者が違う（アカウントを持っている人／持っていない人）ので段落を分ける。
+				// 1つの <p> に並べると日本語の文末「。」の後に半角スペースが入ってしまう問題も避けられる。
 				?>
-				<p>
-					<?php esc_html_e( '書類を閲覧できるアカウントをお持ちの場合は、ログアウトして、そのアカウントでログインし直してください。', 'bill-vektor' ); ?>
-					<?php esc_html_e( 'お持ちでない場合は、サイトの管理者に権限の変更を依頼してください。', 'bill-vektor' ); ?>
-				</p>
+				<p><?php esc_html_e( '書類を閲覧できるアカウントをお持ちの場合は、ログアウトして、そのアカウントでログインし直してください。', 'bill-vektor' ); ?></p>
+
+				<p><?php esc_html_e( 'お持ちでない場合は、サイトの管理者に権限の変更を依頼してください。', 'bill-vektor' ); ?></p>
 
 				<?php
 				// Bootstrap は a 要素の下線を消すため、リンクのままだと色だけで本文と区別されてしまう。
 				// この画面唯一の出口なので、テーマ既存のボタン様式に合わせる。
-				// 押すと現在のセッションが切れることが分かる文言にする。
+				// 押すと現在のセッションが切れることが分かる文言にしつつ、Bootstrap の
+				// .btn{white-space:nowrap} で狭い画面幅でもボタンが切れない長さに収める。
 				?>
-				<p><a class="btn btn-primary" href="<?php echo esc_url( $bill_relogin_url ); ?>"><?php esc_html_e( 'ログアウトして別のアカウントでログインする', 'bill-vektor' ); ?></a></p>
+				<p><a class="btn btn-primary" href="<?php echo esc_url( $bill_relogin_url ); ?>"><?php esc_html_e( 'ログアウトしてログインし直す', 'bill-vektor' ); ?></a></p>
 
 			</div><!-- [ /.section ] -->
 		</div>
