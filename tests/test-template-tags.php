@@ -176,6 +176,16 @@ class TemplateTagsTest extends WP_UnitTestCase {
 				'expected'            => '個人事業主テスト',
 			),
 			array(
+				'test_condition_name' => '取引先（イレギュラー）に "0" が入力されている場合 => "0"（登録済取引先へフォールバックしない）',
+				'conditions'          => array(
+					'post_meta' => array(
+						'bill_client_name_manual' => '0',
+						'bill_client'             => 'client_id',
+					),
+				),
+				'expected'            => '0',
+			),
+			array(
 				'test_condition_name' => '取引先が両方とも未設定の場合 => 空文字（書類自身の件名を返さない）',
 				'conditions'          => array(
 					'post_meta' => array(
@@ -270,8 +280,16 @@ class TemplateTagsTest extends WP_UnitTestCase {
 					$meta_value = array( $injected_post_id );
 				}
 				if ( 'injected_object' === $meta_value ) {
-					// メタにオブジェクトが保存されている場合を再現する
-					$meta_value = (object) array( 'ID' => $injected_post_id );
+					/*
+					 * メタにオブジェクトが保存されている場合を再現する。
+					 * post_title を持たせないと WP_Post の既定値 '' が返り、
+					 * 修正前でも空文字になってテストが赤くならないため、
+					 * 注入される値を明示的に持たせる。
+					 */
+					$meta_value = (object) array(
+						'ID'         => $injected_post_id,
+						'post_title' => '注入されたタイトル',
+					);
 				}
 				update_post_meta( $this->estimate_id, $meta_name, $meta_value );
 			}

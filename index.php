@@ -72,7 +72,15 @@
 				// 取引先（イレギュラー）も無加工の $_POST が保存されるため、文字列以外は未入力として扱う
 				$client_name_manual = is_scalar( $post->bill_client_name_manual ) ? (string) $post->bill_client_name_manual : '';
 
-				if ( '' !== $client_name_manual ) {
+				if ( 'client' === $page_post_type['slug'] ) {
+					/*
+					 * 取引先一覧ではこのカラムの行そのものが取引先なので、自身の名前を表示する。
+					 * 従来は get_the_title() がグローバルの $post を参照することで
+					 * 結果的にこの表示になっていたが、書類側の不具合修正でその経路が
+					 * 塞がるため、意図した表示としてここで明示する。
+					 */
+					echo '<a href="' . esc_url( get_the_permalink() ) . '" target="_blank">' . esc_html( get_the_title() ) . '</a>';
+				} elseif ( '' !== $client_name_manual ) {
 					echo esc_html( $client_name_manual );
 				} else {
 					/*
@@ -86,24 +94,29 @@
 					$client_name = $client_id ? get_post_meta( $client_id, 'client_short_name', true ) : '';
 
 					// 省略名も無加工の $_POST が保存されるため、文字列以外が入っていた場合は無視する
-					if ( ! is_scalar( $client_name ) ) {
-						$client_name = '';
-					}
+					$client_name = is_scalar( $client_name ) ? (string) $client_name : '';
 
 					/*
 					 * 省略名が無い場合の取引先名は共通関数に委譲する。
 					 * 取引先が未設定のときに書類自身の件名が表示されないよう、
 					 * 取引先名の組み立てをこの箇所に重複させない。
 					 */
-					if ( ! $client_name ) {
+					if ( '' === $client_name ) {
 						$client_name = bill_get_client_name( $post );
 					}
 
-					// 取引先（登録済）が特定できている場合のみ取引先ページへのリンクにする
 					if ( $client_id && '' !== $client_name ) {
+						// 取引先（登録済）が特定できている場合のみ取引先ページへのリンクにする
 						echo '<a href="' . esc_url( get_the_permalink( $client_id ) ) . '" target="_blank">' . esc_html( $client_name ) . '</a>';
 					} else {
-						echo esc_html( $client_name );
+						/*
+						 * 取引先が未設定の場合はダッシュを表示する。
+						 * この一覧は罫線が無く、空セルだと値が無いのか列がずれているのか
+						 * 判別できないため、値が無いことを明示する。
+						 * .screen-reader-text はこのテーマでは display:none で
+						 * 支援技術からも消えてしまうため、Bootstrap の .sr-only を使う。
+						 */
+						echo '<span aria-hidden="true">&#8212;</span><span class="sr-only">' . esc_html__( '取引先なし', 'bill-vektor' ) . '</span>';
 					}
 				}
 				?>
