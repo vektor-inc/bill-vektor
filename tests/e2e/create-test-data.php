@@ -25,7 +25,7 @@
  * 作成・再利用した投稿IDとタイトルは tests/e2e/.test-data-266.json に書き出します。
  * 投稿IDは環境（既存の投稿数）によって変わるため、
  * tests/e2e/test-data-266.js がこのファイルを読んで対象URLを組み立て、
- * spec と take-screenshots.js の両方がそれを参照します。
+ * tests/e2e/pr-266-tax-calculation.spec.js がそれを参照します。
  *
  * 書き出す形式:
  *   { "tax_round_default": { "id": 12, "title": "[e2e-test] 税込6000円（四捨五入）デフォルト" }, ... }
@@ -136,6 +136,10 @@ function bill_e2e_266_upsert_post( $key, $title, $items, $tax_fraction = null ) 
 }
 
 // 作成するテスト投稿の定義。キーは spec 側が参照するマニフェストのキーと対応する
+//
+// 注意: 件名に " ' -- ... や Wordpress などを含めないこと。
+// WordPress の表示用フィルタ（wptexturize / capital_P_dangit 等）でページタイトルが
+// 変換され、テスト側の件名照合が一致しなくなるため。
 $bill_e2e_266_fixtures = array(
 	// 1. 税込6000円（四捨五入）+ 消費税デフォルト（四捨五入）
 	'tax_round_default' => array(

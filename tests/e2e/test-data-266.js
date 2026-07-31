@@ -12,7 +12,7 @@ const path = require('path');
  * 以前は spec 側で /?p=4 のように決め打ちしていたが、環境が変わると
  * 別の投稿を開く・存在せず失敗するため、マニフェスト経由に統一した。
  *
- * spec と take-screenshots.js の両方から require して使う。
+ * pr-266-tax-calculation.spec.js から require して使う。
  */
 
 // create-test-data.php が投稿IDを書き出すマニフェストのパス
