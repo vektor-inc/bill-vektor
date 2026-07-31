@@ -3,8 +3,11 @@
  * PR #298 e2e テスト用データ作成スクリプト
  * wp-env run cli で実行する
  *
- * 実行コマンド:
- * npx wp-env run cli --env-cwd='wp-content/themes/bill-vektor' wp eval-file tests/e2e/create-test-data-298.php
+ * 実行コマンド（テーマディレクトリで実行する）:
+ * npx wp-env run cli --env-cwd="wp-content/themes/${PWD##*/}" wp eval-file tests/e2e/create-test-data-298.php
+ *
+ * テーマのディレクトリ名は git worktree などで bill-vektor 以外になることがあるため、
+ * --env-cwd はカレントディレクトリ名から求める。
  *
  * 作成するデータ:
  * - 取引先 1件（株式会社テスト商事）

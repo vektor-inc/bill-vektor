@@ -13,7 +13,11 @@ const path = require('path');
  * 実行前に、テストデータ作成スクリプトで書類・取引先を作成しておくこと。
  * 件名・発行日はスクリプト側の値と対になっているため、片方だけを変更しないこと。
  *
- *   npx wp-env run cli --env-cwd='wp-content/themes/bill-vektor' wp eval-file tests/e2e/create-test-data-298.php
+ * テーマのディレクトリ名は git worktree などで bill-vektor 以外になることがあるため、
+ * --env-cwd はテーマディレクトリ（このリポジトリのルート）で実行した時の
+ * カレントディレクトリ名から求める。
+ *
+ *   npx wp-env run cli --env-cwd="wp-content/themes/${PWD##*/}" wp eval-file tests/e2e/create-test-data-298.php
  *
  * スクリプトは繰り返し実行しても同じ結果になる（同じ件名の書類があれば再利用する）。
  * DB の import / reset / export は行わない。
