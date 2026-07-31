@@ -52,9 +52,14 @@ function bill_e2e_273_find_post_by_title( $title ) {
 			'post_type'      => 'post',
 			// 'title' は post_title の完全一致検索（部分一致の 's' ではない）
 			'title'          => $title,
-			// 'any' はゴミ箱を含まないため trash を明示し、
-			// ゴミ箱に残った投稿を見落として重複作成するのを防ぐ
-			'post_status'    => array( 'any', 'trash' ),
+			// 探したい状態をすべて明示する。
+			// 'any' は「検索から除外する設定（exclude_from_search）の投稿状態を除く」という
+			// 指定で、配列で 'any' と併記しても除外設定のない draft・pending は拾えない。
+			// 拾い漏らすと同じ件名の投稿を重複して作ってしまい冪等でなくなるため、
+			// ゴミ箱（trash）を含めて状態を並べて指定している
+			// （tests/e2e/create-test-data.php は array( 'any', 'trash' ) のままだが、
+			//   そちらは PR #276 の成果物のため本 PR では変更していない）
+			'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future', 'trash' ),
 			'posts_per_page' => 1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,
@@ -132,10 +137,6 @@ function bill_e2e_273_upsert_post( $key, $title, $items ) {
 // 品目1行分の配列は inc/custom-field/custom-field-table.php の入力欄と対応しており、
 // name（品目名）・count（数量）・unit（単位）・price（単価）・
 // tax-rate（消費税率）・tax-type（税抜か税込か）を持つ。
-//
-// 注意: 件名に " ' -- ... や Wordpress などを含めないこと。
-// WordPress の表示用フィルタ（wptexturize / capital_P_dangit 等）でタイトルが
-// 変換され、テスト側の件名照合が一致しなくなるため。
 $bill_e2e_273_fixtures = array(
 	// 品目テーブルの操作確認用。行A / 行B / 行C の3行を持たせる
 	'flexible_table' => array(
