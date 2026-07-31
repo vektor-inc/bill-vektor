@@ -53,9 +53,27 @@ class TemplateTagsTest extends WP_UnitTestCase {
 	private $untitled_client_id;
 
 	/**
+	 * 取引先ではない投稿（固定ページ）の投稿IDを保持する
+	 *
+	 * bill_client に取引先以外の投稿IDが保存されている状態を再現するために使う。
+	 *
+	 * @var int
+	 */
+	private $non_client_id;
+
+	/**
+	 * 取引先ではない投稿のタイトル
+	 *
+	 * このタイトルが取引先名として漏れないことを検証するため保持する。
+	 *
+	 * @var string
+	 */
+	private $non_client_title = '取引先ではない非公開ページ';
+
+	/**
 	 * テスト前の共通セットアップ
 	 *
-	 * テスト用の見積書と登録済取引先（通常・無題）を作成する。
+	 * テスト用の見積書と登録済取引先（通常・無題）、および取引先ではない投稿を作成する。
 	 *
 	 * @return void
 	 */
@@ -86,6 +104,26 @@ class TemplateTagsTest extends WP_UnitTestCase {
 		 */
 		$this->assertGreaterThan( 0, $this->untitled_client_id, '無題の登録済取引先が作成できている' );
 
+		/*
+		 * 取引先ではない投稿（非公開の固定ページ）を作成する。
+		 * bill_client に取引先以外の投稿IDが保存されていると、その投稿のタイトルが
+		 * 取引先名として表示されてしまうため、その状態を再現するために使う。
+		 */
+		$this->non_client_id = wp_insert_post(
+			array(
+				'post_title'  => $this->non_client_title,
+				'post_status' => 'private',
+				'post_type'   => 'page',
+			)
+		);
+
+		/*
+		 * 取引先ではない投稿のタイトルが空だと、修正前でも空文字が返って
+		 * 「他の投稿のタイトルが漏れる」不具合を検出できないため、
+		 * タイトルを取得できることを確認する。
+		 */
+		$this->assertNotSame( '', get_the_title( $this->non_client_id ), '取引先ではない投稿にタイトルがある' );
+
 		// テスト用の見積書を作成
 		$this->estimate_id = wp_insert_post(
 			array(
@@ -110,6 +148,7 @@ class TemplateTagsTest extends WP_UnitTestCase {
 		wp_delete_post( $this->estimate_id, true );
 		wp_delete_post( $this->client_id, true );
 		wp_delete_post( $this->untitled_client_id, true );
+		wp_delete_post( $this->non_client_id, true );
 
 		parent::tear_down();
 	}
@@ -264,6 +303,49 @@ class TemplateTagsTest extends WP_UnitTestCase {
 				),
 				'expected'            => '',
 			),
+			array(
+				/*
+				 * absint() は符号を落とすため、-123 をそのまま通すと
+				 * 投稿ID 123 のタイトルを取引先名として返してしまう。
+				 */
+				'test_condition_name' => 'bill_client に負数が入っている場合 => 空文字（絶対値のIDの投稿のタイトルを返さない）',
+				'conditions'          => array(
+					'post_meta' => array(
+						'bill_client_name_manual' => '',
+						'bill_client'             => 'non_client_id_negative',
+					),
+				),
+				'expected'            => '',
+			),
+			array(
+				/*
+				 * (int) キャストは末尾の非数値を捨てるため、'123abc' をそのまま通すと
+				 * 投稿ID 123 のタイトルを取引先名として返してしまう。
+				 */
+				'test_condition_name' => 'bill_client に数字以外を含む値が入っている場合 => 空文字（数値部分のIDの投稿のタイトルを返さない）',
+				'conditions'          => array(
+					'post_meta' => array(
+						'bill_client_name_manual' => '',
+						'bill_client'             => 'non_client_id_with_suffix',
+					),
+				),
+				'expected'            => '',
+			),
+			array(
+				/*
+				 * 実在する投稿IDでも取引先（client）以外を指している場合は取引先なしとして扱う。
+				 * 非公開ページのIDが保存されていると、そのタイトルが取引先名として
+				 * 書類や書類一覧に表示されてしまうため。
+				 */
+				'test_condition_name' => 'bill_client が実在する取引先以外の投稿（固定ページ）を指している場合 => 空文字',
+				'conditions'          => array(
+					'post_meta' => array(
+						'bill_client_name_manual' => '',
+						'bill_client'             => 'non_client_id',
+					),
+				),
+				'expected'            => '',
+			),
 		);
 
 		foreach ( $test_cases as $case ) {
@@ -274,6 +356,17 @@ class TemplateTagsTest extends WP_UnitTestCase {
 				}
 				if ( 'untitled_client_id' === $meta_value ) {
 					$meta_value = $this->untitled_client_id;
+				}
+				if ( 'non_client_id' === $meta_value ) {
+					$meta_value = $this->non_client_id;
+				}
+				if ( 'non_client_id_negative' === $meta_value ) {
+					// 取引先ではない投稿IDの負数（absint() を通すとそのIDに戻る）
+					$meta_value = '-' . $this->non_client_id;
+				}
+				if ( 'non_client_id_with_suffix' === $meta_value ) {
+					// 取引先ではない投稿IDに文字列を付けた値（(int) キャストするとそのIDに戻る）
+					$meta_value = $this->non_client_id . 'abc';
 				}
 				if ( 'injected_array' === $meta_value ) {
 					// bill_client[]=1 のような送信で保存され得る配列を再現する

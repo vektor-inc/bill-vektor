@@ -20,13 +20,14 @@ function bill_get_client_column_key() {
 /**
  * 取引先カラムを追加する書類の投稿タイプを取得する
  *
- * 請求書（post）・領収書（receipt）など他の書類種別にも表示する場合は
+ * 請求書は投稿タイプ post、見積書は estimate を使用している。
+ * 領収書（receipt）など他の書類種別にも表示する場合は
  * この配列に投稿タイプのスラッグを追加する。
  *
  * @return string[] 投稿タイプのスラッグの配列。
  */
 function bill_get_client_column_post_types() {
-	return array( 'estimate' );
+	return array( 'post', 'estimate' );
 }
 
 /**
@@ -80,7 +81,10 @@ function bill_add_client_admin_column( $columns ) {
  * 取引先カラムの内容を出力する
  *
  * 取引先名の取得は bill_get_client_name_by_post() に委譲するため、
- * 書類本体・PDFタイトル・CSVエクスポートと同じ取引先名が表示される。
+ * 書類本体・PDFのファイル名と同じ正式名が表示される。
+ * CSVエクスポート（inc/export/class.csv-export.php）とフロント側の書類一覧
+ * （index.php）は bill_get_client_short_name() を使うため省略名が優先され、
+ * 省略名が登録されている取引先ではこのカラムと表示が異なる。
  * 取引先へのリンクは不要なため、名前のみをエスケープして出力する。
  *
  * @param string $column_name 出力対象のカラムキー。

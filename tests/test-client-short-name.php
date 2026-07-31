@@ -65,9 +65,19 @@ class ClientShortNameTest extends WP_UnitTestCase {
 	private $no_short_name_client_title = '有限会社省略名なし';
 
 	/**
+	 * 取引先ではない投稿（固定ページ）の投稿IDを保持する
+	 *
+	 * bill_client に取引先以外の投稿IDが保存されている状態を再現するために使う。
+	 *
+	 * @var int
+	 */
+	private $non_client_id;
+
+	/**
 	 * テスト前の共通セットアップ
 	 *
-	 * テスト用の書類と、省略名あり・省略名なしの取引先を作成する。
+	 * テスト用の書類と、省略名あり・省略名なしの取引先、
+	 * および取引先ではない投稿を作成する。
 	 *
 	 * @return void
 	 */
@@ -90,6 +100,18 @@ class ClientShortNameTest extends WP_UnitTestCase {
 				'post_title'  => $this->no_short_name_client_title,
 				'post_status' => 'publish',
 				'post_type'   => 'client',
+			)
+		);
+
+		/*
+		 * 取引先ではない投稿（非公開の固定ページ）を作成する。
+		 * bill_client に取引先以外の投稿IDが保存されている状態を再現するために使う。
+		 */
+		$this->non_client_id = wp_insert_post(
+			array(
+				'post_title'  => '取引先ではない非公開ページ',
+				'post_status' => 'private',
+				'post_type'   => 'page',
 			)
 		);
 
@@ -117,6 +139,7 @@ class ClientShortNameTest extends WP_UnitTestCase {
 		wp_delete_post( $this->bill_id, true );
 		wp_delete_post( $this->client_id, true );
 		wp_delete_post( $this->no_short_name_client_id, true );
+		wp_delete_post( $this->non_client_id, true );
 
 		parent::tear_down();
 	}
@@ -457,6 +480,18 @@ class ClientShortNameTest extends WP_UnitTestCase {
 				'expected'            => 0,
 			),
 			array(
+				/*
+				 * 実在する投稿IDでも取引先（client）以外を指している場合は 0 を返す。
+				 * 非公開ページなど別の投稿のIDが保存されていると、その投稿のタイトルが
+				 * 取引先名として書類やその一覧に表示されてしまうため。
+				 */
+				'test_condition_name' => 'bill_client が実在する取引先以外の投稿（固定ページ）を指している場合 => 0',
+				'conditions'          => array(
+					'bill_client' => 'non_client_id',
+				),
+				'expected'            => 0,
+			),
+			array(
 				'test_condition_name' => 'bill_client に配列が入っている場合 => 0（型ガード）',
 				'conditions'          => array(
 					'bill_client' => array( 'invalid' ),
@@ -485,6 +520,10 @@ class ClientShortNameTest extends WP_UnitTestCase {
 			if ( 'client_id_decimal' === $meta_value ) {
 				// 実在する取引先IDに小数部を付けた値（absint() を通すとIDに戻る）
 				$meta_value = $this->client_id . '.9';
+			}
+			if ( 'non_client_id' === $meta_value ) {
+				// 実在するが取引先（client）ではない投稿のID
+				$meta_value = $this->non_client_id;
 			}
 			update_post_meta( $this->bill_id, 'bill_client', $meta_value );
 
