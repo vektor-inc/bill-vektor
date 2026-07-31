@@ -418,9 +418,28 @@ test.describe('issue #299 権限によるエクスポート欄の出し分け', 
 
 			// 同じページのまま、作成したユーザーへログインし直す
 			await loginAs(page, user.login, password);
-			await page.goto('/');
+			const response = await page.goto('/');
 
-			// 1. エクスポート欄が DOM ごと存在しないこと
+			/*
+			 * 1. そもそも一覧画面に到達できず、403 の案内ページになること
+			 *
+			 * PR #319 以前は、購読者でもトップページの一覧と絞り込み検索を操作でき、
+			 * 「エクスポート欄だけが出ない」状態だった。そのため以前のこのテストは
+			 * 「エクスポート欄が無いこと」と「検索ボックスは従来どおり使えること」を
+			 * 確認していた。PR #319 で編集権限の無いユーザーはフロント側の閲覧自体を
+			 * 遮断するようになったため、検索ボックスの確認は成立しなくなっている。
+			 * このテストの意図（編集権限が無ければ CSV を取得できない）は変えず、
+			 * より手前で止まっていることを確認する形に更新している。
+			 */
+			expect(response && response.status()).toBe(403);
+			await expect(
+				page.getByRole('heading', {
+					level: 1,
+					name: 'この画面を表示する権限がありません',
+				})
+			).toBeVisible();
+
+			// 2. エクスポート欄が DOM ごと存在しないこと
 			await expect(page.locator('#csv-export')).toHaveCount(0);
 			await expect(page.locator('.export-box')).toHaveCount(0);
 			await expect(page.getByText('仕分帳データのエクスポート')).toHaveCount(0);
@@ -433,18 +452,12 @@ test.describe('issue #299 権限によるエクスポート欄の出し分け', 
 			// エクスポート欄と一緒に nonce フィールドも出ないこと
 			await expect(page.locator('input[name="_wpnonce"]')).toHaveCount(0);
 
-			// 2. 検索ボックスは従来どおり表示され、絞り込みも動作すること
-			await expect(page.locator('#search-box')).toBeVisible();
-			await page.locator('#post_type').selectOption('estimate');
-			await Promise.all([
-				page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
-				clickNative(page.getByRole('button', { name: /絞り込み/ })),
-			]);
-			expect(page.url()).toContain('post_type=estimate');
-			await expect(page.locator('#post_type')).toHaveValue('estimate');
-			await expect(page.locator('#search-box')).toBeVisible();
-
-			// 3. 直接 URL を叩いても CSV が返らないこと
+			/*
+			 * 3. 直接 URL を叩いても CSV が返らないこと
+			 *
+			 * CSV の出力は init フックで動き、閲覧制限の wp フックより前に実行される。
+			 * 403 の案内ページとは独立した保証になるため、この確認は残しておく。
+			 */
 			for (const action of ['csv_freee', 'csv_mf']) {
 				const response = await page.request.get(`/?action=${action}`, {
 					maxRedirects: 0,
