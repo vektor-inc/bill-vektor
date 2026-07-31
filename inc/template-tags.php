@@ -531,7 +531,11 @@ function bill_get_client_short_name( $post ) {
 		return '';
 	}
 
-	// 投稿IDでも投稿オブジェクトでも受け取れるように WP_Post に正規化する
+	/*
+	 * 投稿IDでも投稿オブジェクトでも受け取れるように WP_Post に正規化する。
+	 * この正規化は、後述する検証済みIDの差し替え（clone）が効くための前提でもあるため、
+	 * WP_Post を受け取る場合でも省略しないこと。
+	 */
 	$post = get_post( $post );
 
 	// 投稿が存在しない場合は空文字を返す
@@ -559,6 +563,16 @@ function bill_get_client_short_name( $post ) {
 	 * ただし委譲先のIDガードは absint() のみで -123 を 123 として扱ってしまうため、
 	 * この関数で検証済みのIDに差し替えたコピーを渡し、参照先がずれないようにする。
 	 * 取引先（イレギュラー）の値はそのまま渡すので、優先順位の判定は委譲先のままになる。
+	 *
+	 * 不正値だった場合（$client_id が 0）も必ず代入する。代入を省くと bill_client は
+	 * WP_Post の magic property のままになり、弾いたはずの -123 が委譲先に渡って
+	 * absint() で 123 になってしまうため、0 の代入で取引先なしを明示する。
+	 *
+	 * この差し替えは、冒頭の get_post() による正規化で $post の filter が raw に
+	 * なっていることが前提。委譲先の get_post() は WP_Post をそのまま返し、
+	 * WP_Post::filter( 'raw' ) も filter が raw なら同じオブジェクトを返すため、
+	 * 代入した bill_client が保持される。filter が raw 以外だと WP_Post が
+	 * キャッシュから作り直され、代入した値が失われて上記のガードが無効になる。
 	 */
 	$validated_post              = clone $post;
 	$validated_post->bill_client = $client_id;
