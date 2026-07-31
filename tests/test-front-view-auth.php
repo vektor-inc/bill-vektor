@@ -58,6 +58,15 @@ class FrontViewAuthTest extends WP_UnitTestCase {
 	const TEST_ROLE_B_NAME = 'テストロールB';
 
 	/**
+	 * 存在しないユーザーID
+	 *
+	 * 実在しないIDを渡されたときに閉じる側へ倒れることの検証に使う。
+	 *
+	 * @var int
+	 */
+	const MISSING_USER_ID = 99999999;
+
+	/**
 	 * ロールをキーにしたテスト用ユーザーIDの配列
 	 *
 	 * @var int[]
@@ -168,6 +177,32 @@ class FrontViewAuthTest extends WP_UnitTestCase {
 		}
 
 		wp_set_current_user( $this->user_ids[ $role ] );
+	}
+
+	/**
+	 * テスト条件の指定から bill_can_view_documents() へ渡す引数を組み立てる
+	 *
+	 * 「WP_User を渡した場合」「ユーザーIDを int で渡した場合」「数値文字列で渡した場合」を
+	 * 同じテーブルで扱えるようにする。
+	 *
+	 * @param string $user_arg `<型>:<対象>` 形式の指定。型は object / id / string_id。
+	 *                         対象は $this->user_ids のキー、または存在しないIDを表す missing。
+	 * @return WP_User|int|string 判定対象を表す引数。
+	 */
+	private function resolve_user_arg( $user_arg ) {
+		list( $type, $target ) = explode( ':', $user_arg );
+
+		$user_id = ( 'missing' === $target ) ? self::MISSING_USER_ID : $this->user_ids[ $target ];
+
+		if ( 'object' === $type ) {
+			return new WP_User( $user_id );
+		}
+
+		if ( 'string_id' === $type ) {
+			return (string) $user_id;
+		}
+
+		return (int) $user_id;
 	}
 
 	/**
@@ -310,6 +345,51 @@ class FrontViewAuthTest extends WP_UnitTestCase {
 				),
 				'expected'            => true,
 			),
+			array(
+				'test_condition_name' => '購読者でログイン中に管理者の WP_User を渡した場合 => true（渡したユーザーで判定する）',
+				'conditions'          => array(
+					'role'     => 'subscriber',
+					'filter'   => '',
+					'user_arg' => 'object:administrator',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '購読者でログイン中に管理者のユーザーIDを渡した場合 => true（IDでも渡したユーザーで判定する）',
+				'conditions'          => array(
+					'role'     => 'subscriber',
+					'filter'   => '',
+					'user_arg' => 'id:administrator',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '管理者でログイン中に購読者のユーザーIDを渡した場合 => false（ログイン中のユーザーで判定しない）',
+				'conditions'          => array(
+					'role'     => 'administrator',
+					'filter'   => '',
+					'user_arg' => 'id:subscriber',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '管理者でログイン中に購読者のユーザーIDを数値文字列で渡した場合 => false',
+				'conditions'          => array(
+					'role'     => 'administrator',
+					'filter'   => '',
+					'user_arg' => 'string_id:subscriber',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '管理者でログイン中に存在しないユーザーIDを渡した場合 => false（閉じる側に倒す）',
+				'conditions'          => array(
+					'role'     => 'administrator',
+					'filter'   => '',
+					'user_arg' => 'id:missing',
+				),
+				'expected'            => false,
+			),
 		);
 
 		foreach ( $test_cases as $case ) {
@@ -327,8 +407,12 @@ class FrontViewAuthTest extends WP_UnitTestCase {
 				add_filter( 'bill_vektor_can_view_documents', $filter_callback, 10, 2 );
 			}
 
-			// テスト関数実行
-			$actual = bill_can_view_documents();
+			// テスト関数実行（判定対象の指定が無い場合はログイン中のユーザーを判定させる）
+			if ( empty( $case['conditions']['user_arg'] ) ) {
+				$actual = bill_can_view_documents();
+			} else {
+				$actual = bill_can_view_documents( $this->resolve_user_arg( $case['conditions']['user_arg'] ) );
+			}
 
 			// 期待値テスト
 			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
@@ -414,6 +498,154 @@ class FrontViewAuthTest extends WP_UnitTestCase {
 			// 期待値テスト
 			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
 		}
+	}
+
+	/**
+	 * bill_reset_query_for_forbidden_page() のテスト
+	 *
+	 * 403 のページを描画する前に、書類を参照しているグローバル（$wp_query / $wp_the_query / $post）が
+	 * すべて空になることを検証する。
+	 *
+	 * この無害化が 403 のページからの情報漏れ対策の要になっている。ここが素通しになると
+	 * <title>・canonical・oEmbed の discovery リンク・フィードリンク・前後の記事リンク・
+	 * 管理バーの編集リンクから書類の件名やスラッグが出力されるため、
+	 * 「実行前は書類が入っていること」まで含めて検証する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_reset_query_for_forbidden_page() {
+
+		$test_cases = array(
+			array(
+				'test_condition_name' => '請求書の個別ページ（?p=ID）で実行した場合 => 書類を参照しているグローバルが全て空になる',
+				'conditions'          => array( 'target' => 'invoice' ),
+				'expected'            => array(
+					'is_singular_before' => true,
+					'is_singular_after'  => false,
+					'queried_object'     => null,
+					'post'               => null,
+				),
+			),
+			array(
+				'test_condition_name' => 'トップページで実行した場合 => 書類を参照しているグローバルが全て空になる',
+				'conditions'          => array( 'target' => 'home' ),
+				'expected'            => array(
+					'is_singular_before' => false,
+					'is_singular_after'  => false,
+					'queried_object'     => null,
+					'post'               => null,
+				),
+			),
+			array(
+				'test_condition_name' => '存在しないID（?p=99999999）で実行した場合 => 書類を参照しているグローバルが全て空になる',
+				'conditions'          => array( 'target' => 'missing' ),
+				'expected'            => array(
+					'is_singular_before' => false,
+					'is_singular_after'  => false,
+					'queried_object'     => null,
+					'post'               => null,
+				),
+			),
+		);
+
+		// go_to() は wp アクションを実行するため、ガードが付いたままだとクエリを
+		// 組み立てる段階で遮断されてしまう。ここでは外しておく。
+		remove_action( 'wp', 'bill_no_login_redirect' );
+
+		// 書類を閲覧できるユーザーで go_to() する（遮断されずにクエリが組み上がる状態を作る）
+		$this->set_current_user_by_role( 'administrator' );
+
+		foreach ( $test_cases as $case ) {
+			$name = $case['test_condition_name'];
+
+			// テストURLに移動
+			$target_urls = array(
+				'invoice' => home_url( '/?p=' . $this->invoice_post_id ),
+				'home'    => home_url( '/' ),
+				'missing' => home_url( '/?p=' . self::MISSING_USER_ID ),
+			);
+			$this->go_to( $target_urls[ $case['conditions']['target'] ] );
+
+			// 実行前の状態を確認する（無害化処理を消しても緑のままにならないようにするため）
+			$this->assertSame( $case['expected']['is_singular_before'], is_singular(), $name . '（実行前の is_singular）' );
+			if ( $case['expected']['is_singular_before'] ) {
+				$this->assertSame( $this->invoice_post_id, $GLOBALS['post']->ID, $name . '（実行前は書類が入っていること）' );
+				$this->assertSame( $this->invoice_post_id, $GLOBALS['wp_the_query']->get_queried_object_id(), $name . '（実行前は $wp_the_query も書類を指していること）' );
+			}
+
+			// テスト関数実行
+			bill_reset_query_for_forbidden_page();
+
+			// 期待値テスト
+			$this->assertSame( $case['expected']['is_singular_after'], is_singular(), $name . '（実行後の is_singular）' );
+			$this->assertSame( $case['expected']['queried_object'], get_queried_object(), $name . '（実行後の get_queried_object）' );
+			$this->assertSame( $case['expected']['post'], $GLOBALS['post'], $name . '（実行後の $post）' );
+
+			// $wp_the_query も同じ空のクエリを指していること
+			// （管理バーの編集リンクは $wp_the_query を見るため、$wp_query だけでは足りない）
+			$this->assertSame( $GLOBALS['wp_query'], $GLOBALS['wp_the_query'], $name . '（$wp_the_query が $wp_query と同じインスタンスであること）' );
+			$this->assertNull( $GLOBALS['wp_the_query']->get_queried_object(), $name . '（実行後の $wp_the_query の get_queried_object）' );
+		}
+
+		// 外したガードを戻し、後続のテストのためにクエリを通常の状態へ戻す
+		add_action( 'wp', 'bill_no_login_redirect' );
+		$this->go_to( home_url( '/' ) );
+	}
+
+	/**
+	 * bill_get_forbidden_document_title() のテスト
+	 *
+	 * 403 のページの <title> が、先行するフィルターの値によらず固定の文言になることを検証する。
+	 * bill_title_custom() は個別ページで「請求書_取引先名_御中_件名_発行日」を返すため、
+	 * ここで上書きできていないと塞いだはずの画面のタブに取引先名と件名が出てしまう。
+	 *
+	 * @return void
+	 */
+	public function test_bill_get_forbidden_document_title() {
+
+		$test_cases = array(
+			array(
+				'test_condition_name' => 'サイト名が「テストサイト」の場合 => 権限が無い旨の文言にサイト名を続けた文字列',
+				'conditions'          => array(
+					'options' => array( 'blogname' => 'テストサイト' ),
+					'title'   => '',
+				),
+				'expected'            => 'この画面を表示する権限がありません - テストサイト',
+			),
+			array(
+				'test_condition_name' => 'サイト名が「BillVektor」の場合 => 権限が無い旨の文言にサイト名を続けた文字列',
+				'conditions'          => array(
+					'options' => array( 'blogname' => 'BillVektor' ),
+					'title'   => '',
+				),
+				'expected'            => 'この画面を表示する権限がありません - BillVektor',
+			),
+			array(
+				'test_condition_name' => '先行するフィルターが書類の件名を返していた場合 => 上書きして件名を出力しない',
+				'conditions'          => array(
+					'options' => array( 'blogname' => 'テストサイト' ),
+					'title'   => '請求書_株式会社テスト_御中_サイト制作費_20240101',
+				),
+				'expected'            => 'この画面を表示する権限がありません - テストサイト',
+			),
+		);
+
+		// テスト前のサイト名を控えておく
+		$original_blogname = get_option( 'blogname' );
+
+		foreach ( $test_cases as $case ) {
+			// オプション値を設定
+			update_option( 'blogname', $case['conditions']['options']['blogname'] );
+
+			// テスト関数実行
+			$actual = bill_get_forbidden_document_title( $case['conditions']['title'] );
+
+			// 期待値テスト
+			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+		}
+
+		// オプション値を元に戻す
+		update_option( 'blogname', $original_blogname );
 	}
 
 	/**

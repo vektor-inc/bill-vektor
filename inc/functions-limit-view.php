@@ -36,7 +36,14 @@ function bill_no_login_redirect( $content = null ) {
 	// 保護されているため対象外とする。
 	// なお wp アクションは wp-blog-header.php からしか発火せず、管理画面や
 	// admin-ajax.php では実行されないため、この判定自体は保険として残している。
-	if ( is_admin() ) {
+	//
+	// ここで is_admin() を使ってはいけない。is_admin() は $GLOBALS['current_screen'] が
+	// あればそちらを優先して見るため、フロント側で set_current_screen() を呼ぶプラグインが
+	// 同居すると WP_Screen::get() が in_admin = 'site' を立てて is_admin() が true になる。
+	// そうなるとこのガードが丸ごと素通りし、未ログインの第三者にサイト全体が開いてしまう。
+	// WP_ADMIN は wp-admin/admin.php が読み込まれた時点で定義される定数で、
+	// プラグインから後付けで立てられる current_screen と違って乗っ取られない。
+	if ( defined( 'WP_ADMIN' ) && WP_ADMIN ) {
 		return;
 	}
 
@@ -81,13 +88,26 @@ add_action( 'wp', 'bill_no_login_redirect' );
  * リダイレクトや exit を含まない判定だけの関数にしているのは、PHPUnit から直接
  * 呼び出して権限ごとの結果を検証できるようにするため（CsvExport::can_export() と同じ方針）。
  *
- * @param WP_User|null $user 判定対象のユーザー。null の場合はログイン中のユーザーを判定する。
+ * @param WP_User|int|null $user 判定対象のユーザー。WP_User かユーザーIDを受け取る。
+ *                               null の場合はログイン中のユーザーを判定する。
  * @return bool 閲覧できる場合は true、未ログインまたは権限が無い場合は false。
  */
 function bill_can_view_documents( $user = null ) {
-	// 引数が省略された場合はログイン中のユーザーを対象にする
 	if ( ! $user instanceof WP_User ) {
-		$user = wp_get_current_user();
+		// user_can() がユーザーIDを受け取るため、拡張側がIDを渡すのは自然な使い方になる。
+		// WP_User だけを受け付けて他を切り捨てると、ID を渡されたときに黙って
+		// ログイン中のユーザーを判定してしまい、権限のある閲覧者として通してしまう。
+		if ( is_numeric( $user ) ) {
+			$user = get_userdata( (int) $user );
+		} else {
+			// 引数が省略された場合はログイン中のユーザーを対象にする
+			$user = wp_get_current_user();
+		}
+	}
+
+	// 存在しないユーザーIDを渡された場合は get_userdata() が false を返す。閉じる側に倒す
+	if ( ! $user instanceof WP_User ) {
+		return false;
 	}
 
 	// 未ログイン（ID が 0）はここで確定させ、フィルターにも通さない。
@@ -192,16 +212,13 @@ function bill_render_forbidden_page() {
 	nocache_headers();
 	status_header( 403 );
 
-	/*
-	 * メインクエリを空の WP_Query に差し替えてから描画する。
-	 * 引数なしの WP_Query はクエリを実行せず is_singular() などの条件分岐タグが全て false に
-	 * なるため、wp_head() が出力する <title>・canonical・oEmbed の discovery リンク・
-	 * フィードリンク・前後の記事リンクから書類の件名やスラッグが漏れるのを、
-	 * 出力元を1つずつ潰さずにまとめて防げる。この直後に exit するため副作用は残らない。
-	 */
-	global $wp_query;
-	// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- 403 のページから書類の情報が漏れないよう、意図的にメインクエリを空にする
-	$wp_query = new WP_Query();
+	// フィードのリクエストでは WP::send_headers() が wp フックより前に
+	// application/rss+xml を送出済みで、そのままだと HTML を RSS として返してしまう。
+	// ここで HTML に上書きする
+	header( 'Content-Type: text/html; charset=' . get_option( 'blog_charset' ) );
+
+	// 書類の情報を参照しているグローバルを空にしてから描画する
+	bill_reset_query_for_forbidden_page();
 
 	// 空のクエリではサイト名だけの <title> になるため、状況が分かる文言に差し替える
 	add_filter( 'pre_get_document_title', 'bill_get_forbidden_document_title', 99 );
@@ -211,6 +228,36 @@ function bill_render_forbidden_page() {
 	get_footer();
 
 	exit;
+}
+
+/**
+ * 403 のページを描画する前に、書類の情報を参照しているグローバルを空にする
+ *
+ * メインクエリを引数なしの WP_Query に差し替える。引数なしの WP_Query はクエリを実行せず
+ * is_singular() などの条件分岐タグが全て false になるため、wp_head() が出力する
+ * <title>・canonical・oEmbed の discovery リンク・フィードリンク・前後の記事リンクから
+ * 書類の件名やスラッグが漏れるのを、出力元を1つずつ潰さずにまとめて防げる。
+ *
+ * $wp_the_query と $post も同時に空にする。$wp_query だけ差し替えても、
+ * 管理バーの編集リンク（wp_admin_bar_edit_menu()）は $wp_the_query を、
+ * SEO 系・構造化データ系の拡張は wp_head / wp_footer で global $post を直接読むため、
+ * これらが書類を参照し続けてしまう。
+ *
+ * 呼び出し元は直後に exit するため、差し替えによる副作用は残らない。
+ *
+ * @return void
+ */
+function bill_reset_query_for_forbidden_page() {
+	global $wp_query;
+
+	// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- 403 のページから書類の情報が漏れないよう、意図的にメインクエリを空にする
+	$wp_query = new WP_Query();
+
+	// 通常のリクエストと同様に、メインクエリと同じインスタンスを指させる
+	$GLOBALS['wp_the_query'] = $wp_query;
+
+	// global $post を直接読む拡張が書類を出力しないよう空にする
+	$GLOBALS['post'] = null;
 }
 
 /*
