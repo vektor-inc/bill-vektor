@@ -127,7 +127,10 @@ function bill_e2e_273_upsert_post( $key, $title, $items ) {
 	// 再実行時に同じメタキーが複数ぶら下がり、行数が変わるのを防ぐため
 	update_post_meta( $post_id, 'bill_items', $items );
 
-	echo 'Edit URL: ' . get_edit_post_link( $post_id, 'url' ) . "\n";
+	// get_edit_post_link() は編集権限が無いと null を返す。
+	// wp eval-file を --user なしで実行すると権限が無い扱いになり
+	// 空表示になってしまうため、権限に依存しない admin_url() で組み立てる
+	echo 'Edit URL: ' . admin_url( 'post.php?post=' . $post_id . '&action=edit' ) . "\n";
 
 	return $post_id;
 }

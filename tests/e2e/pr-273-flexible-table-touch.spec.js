@@ -26,17 +26,25 @@ const { gotoEditPost } = require('./test-data-273');
  *   別の投稿でも偶然通る検証が素通りする「空振り PASS」も防げる。
  *
  * タッチ再現条件について:
- *   jquery-touch-punch（タッチ操作を jQuery UI 向けのマウス操作に変換するライブラリ）は
- *   本来 wp_is_mobile() が true の場合のみ読み込まれるが、
- *   「VK All in One Expansion Unit」プラグインが管理画面全体で
- *   wp-color-picker（→ iris → jquery-touch-punch）を無条件 enqueue するため、
- *   このプラグインを有効化した状態でのみ本来のバグを再現できる。
- *   そのため、タッチ操作を再現する describe は
+ *   このバグの再現には jquery-touch-punch
+ *   （タッチ操作を jQuery UI 向けのマウス操作に変換するライブラリ）が必要だが、
+ *   これが読み込まれるかどうかは環境によって変わる。確認できている経路は2つある。
+ *
+ *   1. WordPress コアの投稿編集画面（wp-admin/edit-form-advanced.php）が
+ *      wp_is_mobile() の場合に読み込む。コアの wp_is_mobile() は
+ *      クライアントヒント（Sec-CH-UA-Mobile ヘッダ）を最優先で判定し、
+ *      Playwright の isMobile: true はこのヘッダを ?1 で送るため、
+ *      下記の test.use() を付けた describe ではプラグイン無しでも読み込まれる。
+ *   2. 「VK All in One Expansion Unit」プラグインが管理画面全体で
+ *      wp-color-picker（→ iris → jquery-touch-punch）を無条件 enqueue する。
+ *
+ *   どちらの経路も環境やコア・プラグインの実装変更で変わりうるため、
+ *   タッチ操作を再現する describe は読み込み経路を前提にせず、
  *   jquery-touch-punch が実際に読み込まれているかをページ上で判定し、
  *   読み込まれていなければ test.skip() で理由を添えてスキップする。
- *   プラグインの有効・無効ではなくテストが必要としている条件そのもので
- *   判定しているので、読み込み経路が変わってもテストは壊れない。
- *   マウス操作の describe はプラグインに依存しないため常に実行する。
+ *   テストが必要としている条件そのもので判定しているので、
+ *   読み込み経路が増減してもテストは壊れない。
+ *   マウス操作の describe は touch-punch に依存しないため常に実行する。
  */
 
 // global-setup.js で保存したログイン済み Cookie を使用する
@@ -193,7 +201,10 @@ test.describe('PR #273: タッチデバイスでの入力欄タップ確認（iP
 		const touchPunchLoaded = await isTouchPunchLoaded(page);
 		test.skip(
 			!touchPunchLoaded,
-			'jquery-touch-punch（タッチ操作をマウス操作に変換するライブラリ）が読み込まれていないため、タッチ操作でのバグを再現できません。VK All in One Expansion Unit を有効化した環境で実行してください。'
+			'jquery-touch-punch（タッチ操作をマウス操作に変換するライブラリ）が読み込まれていないため、タッチ操作でのバグを再現できません。' +
+				'通常は投稿編集画面が wp_is_mobile() の場合に読み込みますが、' +
+				'サーバー側でクライアントヒント（Sec-CH-UA-Mobile）が届かない構成などでは読み込まれません。' +
+				'VK All in One Expansion Unit を有効化すると、この判定によらず読み込まれます。'
 		);
 	});
 
