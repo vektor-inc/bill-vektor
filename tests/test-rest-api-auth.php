@@ -558,6 +558,50 @@ class RestApiAuthTest extends WP_UnitTestCase {
 					'exposed'       => array(),
 				),
 			),
+			// --- B-2案の例外：自分自身のユーザー情報（/wp/v2/users/me の完全一致）は閲覧権限が無くても通る ---
+			array(
+				'test_condition_name' => '購読者が自分自身のユーザー情報（/wp/v2/users/me）にアクセスした場合 => nullを返して200（コアのユーザー設定永続化を妨げない）',
+				'conditions'          => array(
+					'user'         => 'subscriber',
+					'route'        => '/wp/v2/users/me',
+					'params'       => array(),
+					'prior_result' => null,
+				),
+				'expected'            => array(
+					'filter_result' => 'null',
+					'status'        => 200,
+					'exposed'       => array(),
+				),
+			),
+			array(
+				'test_condition_name' => '購読者が/wp/v2/users/meに継ぎ足したパスにアクセスした場合 => 403（完全一致以外は例外にしない）',
+				'conditions'          => array(
+					'user'         => 'subscriber',
+					'route'        => '/wp/v2/users/me/xxx',
+					'params'       => array(),
+					'prior_result' => null,
+				),
+				'expected'            => array(
+					'filter_result' => 'WP_Error(403)',
+					'status'        => 403,
+					'exposed'       => array(),
+				),
+			),
+			array(
+				'test_condition_name' => '購読者が他人（管理者）のユーザー情報を数値IDで指定した場合 => 403（"me"以外の指定は例外にしない。issue #320で塞いだユーザー名の露出そのもの）',
+				'conditions'          => array(
+					'user'         => 'subscriber',
+					// 実行時にしか分からない他人（管理者）のユーザーIDへ差し替えるプレースホルダー
+					'route'        => '/wp/v2/users/__OTHER_ID__',
+					'params'       => array(),
+					'prior_result' => null,
+				),
+				'expected'            => array(
+					'filter_result' => 'WP_Error(403)',
+					'status'        => 403,
+					'exposed'       => array(),
+				),
+			),
 		);
 
 		// 実行時にしか分からないユーザーIDをルートのプレースホルダーへ差し込む
@@ -768,6 +812,129 @@ class RestApiAuthTest extends WP_UnitTestCase {
 			}
 
 			$actual = bill_rest_is_own_application_passwords_request();
+
+			// 期待値テスト
+			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+
+			// ログイン状態と rest_route をリセットする
+			wp_set_current_user( 0 );
+			unset( $GLOBALS['wp']->query_vars['rest_route'] );
+		}
+	}
+
+	/**
+	 * bill_rest_is_own_user_info_request() のテスト
+	 *
+	 * B-2案で追加した「自分自身のユーザー情報（/wp/v2/users/me の完全一致）」の例外が、
+	 * 完全一致のみを許可し、一覧（/wp/v2/users）・継ぎ足し（/wp/v2/users/me/xxx）・
+	 * 他人の数値ID（/wp/v2/users/<他人のID>）のいずれも通さないことを検証する。
+	 * とくに /wp/v2/users（末尾に me が付かない一覧）を通さないことは、issue #320 で塞いだ
+	 * 「権限のないユーザーにユーザー名を返してしまう」抜け道そのものの再発防止であり、
+	 * このテストの中で最も重要な固定化。
+	 *
+	 * @return void
+	 */
+	public function test_bill_rest_is_own_user_info_request() {
+
+		$test_cases = array(
+			// --- 正常系：本人自身のエンドポイント ---
+			array(
+				'test_condition_name' => '/wp/v2/users/me を指定した場合 => true',
+				'conditions'          => array(
+					'user'  => 'subscriber',
+					'route' => '/wp/v2/users/me',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '/wp/v2/users/me に末尾スラッシュを付けて指定した場合 => true（untrailingslashit()で除去してから判定する）',
+				'conditions'          => array(
+					'user'  => 'subscriber',
+					'route' => '/wp/v2/users/me/',
+				),
+				'expected'            => true,
+			),
+			// --- 異常系・境界値：一覧・継ぎ足し・他人の指定、未ログイン ---
+			array(
+				'test_condition_name' => '/wp/v2/users（末尾にmeが付かない一覧）を指定した場合 => false（issue #320で塞いだユーザー名の露出を再発させない、最重要の固定化）',
+				'conditions'          => array(
+					'user'  => 'subscriber',
+					'route' => '/wp/v2/users',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '/wp/v2/users/me の後ろに文字列を継ぎ足したパスを指定した場合 => false（末尾アンカーにより部分一致で通らない）',
+				'conditions'          => array(
+					'user'  => 'subscriber',
+					'route' => '/wp/v2/users/me/xxx',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '数値IDで他人（管理者）のユーザー情報を指定した場合 => false（"me"以外は例外にしない）',
+				'conditions'          => array(
+					'user'  => 'subscriber',
+					// 実行時にしか分からない他人（管理者）のユーザーIDへ差し替えるプレースホルダー
+					'route' => '/wp/v2/users/__OTHER_ID__',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '数値IDで自分自身のユーザー情報を指定した場合 => false（コアが実際に使う形は"me"のみのため、数値IDは"自分自身"でも例外にしない）',
+				'conditions'          => array(
+					'user'  => 'subscriber',
+					// 実行時にしか分からない自分自身のユーザーIDへ差し替えるプレースホルダー
+					'route' => '/wp/v2/users/__SELF_ID__',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '未ログインで/wp/v2/users/meを指定した場合 => false（既存の未ログインガードの確認）',
+				'conditions'          => array(
+					'user'  => 'anonymous',
+					'route' => '/wp/v2/users/me',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => 'REST のルートが未確定（$GLOBALS[\'wp\']にrest_routeが無い）場合 => false（安全側に倒す）',
+				'conditions'          => array(
+					'user'  => 'subscriber',
+					'route' => false, // rest_route を設定しないことを表す
+				),
+				'expected'            => false,
+			),
+		);
+
+		// 実行時にしか分からないユーザーIDをルートのプレースホルダーへ差し込む
+		// （配列のインデックス番号に依存すると、ケースの追加・並べ替えでずれるため文字列置換にする。
+		//  'route' が false のケース（rest_route 未確定）は置換対象外のため is_string() で除外する）
+		foreach ( $test_cases as $index => $case ) {
+			if ( ! is_string( $case['conditions']['route'] ) ) {
+				continue;
+			}
+			$test_cases[ $index ]['conditions']['route'] = str_replace(
+				array( '__SELF_ID__', '__OTHER_ID__' ),
+				array( $this->subscriber_user_id, $this->admin_user_id ),
+				$case['conditions']['route']
+			);
+		}
+
+		foreach ( $test_cases as $case ) {
+			// ログイン状態を設定する
+			$this->set_current_user_by_type( $case['conditions']['user'] );
+
+			// 現在の REST ルートを再現する
+			// (コア（rest_api_loaded()）が check_authentication() 実行より前に
+			//  $GLOBALS['wp']->query_vars['rest_route'] へ確定させる値と同じ形式で設定する)
+			if ( false === $case['conditions']['route'] ) {
+				unset( $GLOBALS['wp']->query_vars['rest_route'] );
+			} else {
+				$GLOBALS['wp']->query_vars['rest_route'] = $case['conditions']['route'];
+			}
+
+			$actual = bill_rest_is_own_user_info_request();
 
 			// 期待値テスト
 			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
