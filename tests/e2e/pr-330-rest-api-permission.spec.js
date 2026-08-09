@@ -342,19 +342,33 @@ test.describe.serial('PR #330 REST API の閲覧権限', () => {
 		// wp-includes/js/dist/preferences-persistence.js が、購読者を含む全ての
 		// ログインユーザーの管理画面で GET /wp/v2/users/me?context=edit を常時呼んでおり、
 		// この例外が無いと購読者は管理画面のどのページを開いてもコンソールに 403 と
-		// TypeError が出続けていた。ここではダッシュボードを開いて実際にその挙動が
-		// 再現しないことまで確認する（アプリケーションパスワードのケースと違い、
-		// wpApiSettings.nonce を使わずコアと同じ context=edit 付きの素のGETで検証できる。
-		// /wp/v2/users/me の GET は permission_callback が '__return_true' で
-		// nonce 検証の対象外のため、匿名扱いへのリセットが起きない）。
+		// TypeError が出続けていた。
+		//
+		// 修正前のテストでは「permission_callback が '__return_true' だから nonce は
+		// 不要」としていたが、これは誤り。X-WP-Nonce を付けない素の GET だと、
+		// permission_callback の中身に関係なく、コアの rest_cookie_check_errors()
+		// （rest_authentication_errors フィルター、本テーマの判定より後に実行される）が
+		// 「nonce の無いCookie認証リクエスト」を wp_set_current_user(0) で匿名扱いに
+		// リセットしてしまう。/wp/v2/users/me の実処理（get_current_item()）は
+		// permission_callback を経由せず get_current_user_id() を直接見るため、
+		// この匿名リセットの影響をそのまま受けて 401 になる（本PRの変更とは無関係の
+		// WordPress Core の一般的な挙動。application-passwords のテストで最初に
+		// 踏んだのと同じ落とし穴）。実際の画面と同じ経路を再現するため、
+		// プロフィール画面が読み込む nonce（wpApiSettings.nonce）を使って呼び出す。
 		await loginAs(page, USERS.subscriber);
 
-		await page.goto('/wp-admin/index.php', {
+		await page.goto('/wp-admin/profile.php', {
 			waitUntil: 'domcontentloaded',
 		});
+		const nonce = await page.evaluate(() => {
+			// @ts-ignore wpApiSettings はコアが管理画面にインラインで出力するグローバル
+			return window.wpApiSettings && window.wpApiSettings.nonce;
+		});
+		expect(nonce).toBeTruthy();
 
 		const response = await page.request.get(
-			'/wp-json/wp/v2/users/me?context=edit'
+			'/wp-json/wp/v2/users/me?context=edit',
+			{ headers: { 'X-WP-Nonce': nonce } }
 		);
 		expect(response.status()).toBe(200);
 
@@ -365,7 +379,13 @@ test.describe.serial('PR #330 REST API の閲覧権限', () => {
 		// 一覧（/wp/v2/users）が引き続き塞がれていることも同じテスト内で固定化する。
 		// 一覧までB-2案の例外に含めてしまう後退が最も避けたい事故のため、
 		// 「meは通る」だけでなく「一覧は通らない」を対で確認する。
-		const listResponse = await page.request.get('/wp-json/wp/v2/users');
+		// こちらは nonce があっても無くても 403（bill_rest_forbidden）になるべき経路のため、
+		// nonce を付けたまま確認する（本テーマの拒否がコアの匿名リセットより先に効くことの確認）。
+		const listResponse = await page.request.get('/wp-json/wp/v2/users', {
+			headers: { 'X-WP-Nonce': nonce },
+		});
 		expect(listResponse.status()).toBe(403);
+		const listBody = await listResponse.text();
+		expect(listBody).toContain('bill_rest_forbidden');
 	});
 });
