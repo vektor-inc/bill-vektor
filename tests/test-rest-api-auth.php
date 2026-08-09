@@ -60,6 +60,17 @@ class RestApiAuthTest extends WP_UnitTestCase {
 	private $invoice_post_id;
 
 	/**
+	 * request_rest_route() が最後にディスパッチしたレスポンスの生データ
+	 *
+	 * exposed（件名・ユーザー名一覧）の抽出はコレクション応答（配列の配列）を前提にしており、
+	 * /wp/v2/users/me のような単一アイテムの応答では何も検査せず素通り（常に真）になってしまう。
+	 * 「本人の情報しか返っていないこと」を個別に確認したいケースのために、生データを保持しておく。
+	 *
+	 * @var array|null
+	 */
+	private $last_response_data;
+
+	/**
 	 * テスト前の共通セットアップ
 	 *
 	 * REST サーバーを初期化し、テスト用ユーザーと請求書を作成する。
@@ -222,6 +233,11 @@ class RestApiAuthTest extends WP_UnitTestCase {
 	 * bill_rest_is_own_application_passwords_request() がその値を見て自分自身のアプリケーション
 	 * パスワードのエンドポイントかどうかを判定するため。ここで設定しないと本番の状況を再現できない。
 	 *
+	 * ディスパッチしたレスポンスの生データは $this->last_response_data にも保持する。
+	 * 'exposed' の抽出はコレクション応答（配列の配列）しか見ていないため、/wp/v2/users/me の
+	 * ような単一アイテムの応答では常に空になり検査が空振りする。単一アイテムの内容を個別に
+	 * 確認したい場合は、呼び出し元でこのプロパティを直接見ること。
+	 *
 	 * @param string      $route        アクセスするルート（例: '/wp/v2/posts'）。
 	 * @param array       $params       リクエストパラメーター。
 	 * @param string|null $prior_result 先行フィルターの結果。'error_403' / 'authenticated' / 'false_value' / null。
@@ -240,6 +256,9 @@ class RestApiAuthTest extends WP_UnitTestCase {
 
 		// 実際のリクエストと同じく、認証フィルターが走る前にルートを確定させておく
 		$GLOBALS['wp']->query_vars['rest_route'] = $route;
+
+		// 前回のケースのレスポンスを持ち越さない
+		$this->last_response_data = null;
 
 		$server = rest_get_server();
 
@@ -276,6 +295,9 @@ class RestApiAuthTest extends WP_UnitTestCase {
 					}
 				}
 			}
+
+			// 単一アイテムの応答（/wp/v2/users/me など）を個別に検査したいケースのために保持する
+			$this->last_response_data = $data;
 
 			$actual = array(
 				'status'  => $response->get_status(),
@@ -562,10 +584,14 @@ class RestApiAuthTest extends WP_UnitTestCase {
 			array(
 				'test_condition_name' => '購読者が自分自身のユーザー情報（/wp/v2/users/me）にアクセスした場合 => nullを返して200（コアのユーザー設定永続化を妨げない）',
 				'conditions'          => array(
-					'user'         => 'subscriber',
-					'route'        => '/wp/v2/users/me',
-					'params'       => array(),
-					'prior_result' => null,
+					'user'                => 'subscriber',
+					'route'               => '/wp/v2/users/me',
+					'params'              => array(),
+					'prior_result'        => null,
+					// 'exposed' の抽出は単一アイテムの応答に対しては何も検査せず素通りしてしまう
+					// （コレクション応答しか見ていないため）。「本人の情報しか返っていないこと」を
+					// 実際に確認するため、応答の id が購読者本人のIDと一致することを別途検証する
+					'expect_own_user_id' => true,
 				),
 				'expected'            => array(
 					'filter_result' => 'null',
@@ -660,6 +686,17 @@ class RestApiAuthTest extends WP_UnitTestCase {
 
 			// 期待値テスト
 			$this->assertEquals( $case['expected'], $actual, $case['test_condition_name'] );
+
+			// 'exposed' の抽出は単一アイテムの応答（/wp/v2/users/me 等）では何も検査せず
+			// 素通りしてしまうため、「本人の情報しか返っていないこと」を id で個別に確認する
+			if ( ! empty( $case['conditions']['expect_own_user_id'] ) ) {
+				$this->assertIsArray( $this->last_response_data, $case['test_condition_name'] . '（応答データの取得確認）' );
+				$this->assertSame(
+					$this->subscriber_user_id,
+					isset( $this->last_response_data['id'] ) ? $this->last_response_data['id'] : null,
+					$case['test_condition_name'] . '（応答のidが購読者本人と一致すること）'
+				);
+			}
 
 			// ログイン状態をリセットする
 			wp_set_current_user( 0 );
@@ -905,11 +942,21 @@ class RestApiAuthTest extends WP_UnitTestCase {
 				),
 				'expected'            => false,
 			),
+			array(
+				'test_condition_name' => 'rest_routeが文字列でない場合（?rest_route[]=のような配列化）=> false（is_string()のfail-closed分岐。例外1側の対称なケース）',
+				'conditions'          => array(
+					'user'  => 'subscriber',
+					// 文字列以外を指定した rest_route（配列）をそのまま query_vars に設定するための値
+					'route' => array( '/wp/v2/users/me' ),
+				),
+				'expected'            => false,
+			),
 		);
 
 		// 実行時にしか分からないユーザーIDをルートのプレースホルダーへ差し込む
 		// （配列のインデックス番号に依存すると、ケースの追加・並べ替えでずれるため文字列置換にする。
-		//  'route' が false のケース（rest_route 未確定）は置換対象外のため is_string() で除外する）
+		//  'route' が false のケース（rest_route 未確定）・配列のケース（非文字列化）は
+		//  置換対象外のため is_string() で除外する）
 		foreach ( $test_cases as $index => $case ) {
 			if ( ! is_string( $case['conditions']['route'] ) ) {
 				continue;

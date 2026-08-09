@@ -464,6 +464,19 @@ function bill_rest_is_own_application_passwords_request() {
  *     （/wp/v2/users/me/application-passwords のような形は、この関数ではなく
  *     bill_rest_is_own_application_passwords_request() 側の責務として引き続き扱う）
  *
+ * 【重要】bill_rest_is_own_application_passwords_request() と違い、このルートには
+ * コア側の第二の防御が無い。GET /wp/v2/users/me の permission_callback は '__return_true'
+ * で無条件に許可されており、また /wp/v2/users（一覧）の get_items_permissions_check() も
+ * roles・capabilities・context=edit・orderby=email|registered_date・who=authors のいずれかを
+ * 指定した場合にしか list_users を要求しない。つまり既定の context=view で /wp/v2/users を
+ * 呼べば、ログインしてさえいれば誰でも 200 で投稿者名の一覧を取得できてしまい、コア側には
+ * これを止める仕組みが無い（例外1のように「万一この関数の判定に不備があってもコアの
+ * permission_callback が守ってくれる」という多層防御が、この例外には存在しない）。
+ * したがって、この関数の「/wp/v2/users/me の完全一致」というアンカーだけが唯一の防壁であり、
+ * ここを緩める（例: 前方一致にする、/wp/v2/users も含めてしまう）と、issue #320 の
+ * 「権限の無いユーザーにユーザー名の一覧を見せてしまう」問題がそのまま再発する。
+ * 将来この関数を変更する際は、この完全一致を絶対に緩めないこと。
+ *
  * @return bool 自分自身のユーザー情報（/wp/v2/users/me）へのリクエストなら true。
  */
 function bill_rest_is_own_user_info_request() {
