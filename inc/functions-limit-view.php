@@ -262,25 +262,42 @@ function bill_reset_query_for_forbidden_page() {
 
 /*
 ---------------------------------------------
-  REST API _ require login
+  REST API _ require view permission
 ---------------------------------------------
 */
 /**
- * 未ログインの REST API リクエストを拒否する
+ * 書類の閲覧権限が無いログインユーザーの REST API リクエストを拒否する
  *
  * bill_no_login_redirect() は wp フックで動くため、wp フックが実行されない REST API の
- * リクエストでは発火しない。そのため、このガードが無いと未ログインの第三者が
- * /wp-json/wp/v2/posts などから請求書の件名・発行日・パーマリンク・投稿者を取得できてしまう。
- * BillVektor はサイト全体がログイン必須の業務ツールで、匿名で REST API を利用する
- * 正当な利用者が存在しないため、ルート単位の許可リストは設けず一律で拒否する。
- * ログイン済みのリクエストは素通しするため、管理画面やブロックエディターには影響しない。
- * Application Passwords などの Cookie 以外の認証方式も、determine_current_user の時点で
- * ユーザーが確定するため影響を受けない。
+ * リクエストでは発火しない。そのため、このガードが無いと未ログインの第三者や、閲覧権限の無い
+ * ログインユーザー（購読者など）が /wp-json/wp/v2/posts などから請求書の件名・発行日・
+ * パーマリンク・投稿者を取得できてしまう。
+ *
+ * かつてはフロント（bill_no_login_redirect()）が「ログイン済みでも書類の閲覧権限
+ * （bill_can_view_documents()）が無ければ拒否」まで見ているのに対し、この関数は
+ * 「ログインしているかどうか」しか見ておらず、購読者のような閲覧権限の無いログインユーザーの
+ * リクエストを素通ししていた。フロントで塞いだはずの書類の情報が REST API 経由では見えてしまう
+ * 抜け道になっていたため、この関数もフロントと同じ「閲覧権限が必須」の基準に格上げする。
+ *
+ * 例外は「自分自身のアプリケーションパスワード（/wp/v2/users/<id>/application-passwords 系）」
+ * の1つだけに限定している。アプリケーションパスワードはユーザー自身のログイン情報の管理であり、
+ * 書類の情報を一切含まないため「書類を閲覧できるか」とは無関係の関心事である。ここを塞ぐと、
+ * 購読者が自分のプロフィール画面を開いただけで（何も操作していないのに）アプリケーションパス
+ * ワードの一覧取得がエラーになり、画面の一部が壊れて見える体験になってしまう。例外をこの1つに
+ * 限定しているのは、それ以外のエンドポイントには「書類の閲覧権限とは無関係に許可してよい」
+ * 理由が無いためで、安易に対象を広げると B案（原則拒否・最小限の例外のみ許可）の前提が崩れる。
+ * 対象を「本人自身」に厳密に絞っている理由は bill_rest_is_own_application_passwords_request()
+ * のコメントを参照。
+ *
+ * ログイン済みで閲覧権限のあるリクエストは素通しするため、管理画面やブロックエディターには
+ * 影響しない。Application Passwords などの Cookie 以外の認証方式も、determine_current_user
+ * の時点でユーザーが確定するため影響を受けない。
  *
  * @param mixed $result 先行するフィルターが返した認証結果。WP_Error / true / 未判定の null。
- * @return mixed 未ログインの場合は 401 の WP_Error。それ以外は $result をそのまま返す。
+ * @return mixed 未ログイン（401）または閲覧権限が無い（403、アプリケーションパスワードの
+ *               自分自身向けエンドポイントを除く）場合は WP_Error。それ以外は $result をそのまま返す。
  */
-function bill_rest_require_login( $result ) {
+function bill_rest_require_view_permission( $result ) {
 	// 既に認証結果が入っている場合は、他のプラグインが入れたエラー（WP_Error）や
 	// 認証済みの明示（true）を潰さないよう、そのまま返す。
 	// 判定はコア（rest_cookie_check_errors() 等）と同じ ! empty() に揃える。
@@ -301,12 +318,99 @@ function bill_rest_require_login( $result ) {
 		);
 	}
 
-	// ログイン済みの場合は判定せず、後続のフィルター（コアの Cookie 認証チェック等）に委ねる。
-	// ここで true を返すと rest_cookie_check_errors()（優先度100）が即 return してしまい、
-	// Cookie 認証の REST リクエストに対する nonce 検証（CSRF対策）が失われるため $result を返す
-	return $result;
+	// フロントと同じ判定（bill_can_view_documents()）で書類を閲覧できるユーザーは通す。
+	// bill_vektor_can_view_documents フィルターで閲覧許可を広げたサイトでは、
+	// その判定がそのまま REST API にも反映される。
+	// ここで true を返さず $result を返すのは、後続のフィルター（コアの Cookie 認証チェック等）に
+	// 判定を委ねるため。true を返すと rest_cookie_check_errors()（優先度100）が即 return してしまい、
+	// Cookie 認証の REST リクエストに対する nonce 検証（CSRF対策）が失われる
+	if ( bill_can_view_documents() ) {
+		return $result;
+	}
+
+	// 唯一の例外: 自分自身のアプリケーションパスワードのエンドポイント。
+	// 対象を本人自身に厳密に絞る理由は bill_rest_is_own_application_passwords_request() を参照
+	if ( bill_rest_is_own_application_passwords_request() ) {
+		return $result;
+	}
+
+	// 閲覧権限が無いログインユーザーは 403（権限不足）で拒否する。
+	// ユーザー名・ロール名など個人情報になり得る情報は JSON の応答に含めない
+	// （フロント側の403ページと違い、REST APIのレスポンスは誰が見るか制御できないため）。
+	return new WP_Error(
+		'bill_rest_forbidden',
+		__( '書類を閲覧できる権限がありません。', 'bill-vektor' ) . __( '別のアカウントに心当たりがある場合はログインし直し、権限が必要な場合はサイトの管理者にお問い合わせください。', 'bill-vektor' ),
+		array( 'status' => 403 )
+	);
 }
-add_filter( 'rest_authentication_errors', 'bill_rest_require_login' );
+add_filter( 'rest_authentication_errors', 'bill_rest_require_view_permission' );
+
+/**
+ * 現在の REST リクエストが「本人自身」のアプリケーションパスワードのエンドポイントかどうかを判定する
+ *
+ * 対象は WP_REST_Application_Passwords_Controller が登録する以下のルート。
+ *   - 一覧取得・新規追加・全削除:   /wp/v2/users/<id>/application-passwords
+ *   - 使用中のパスワードの参照:     /wp/v2/users/<id>/application-passwords/introspect
+ *   - 個別の参照・更新・削除:       /wp/v2/users/<id>/application-passwords/<uuid>
+ * <id> はコアの登録パターン（(?:[\d]+|me)）に合わせて数値または "me" のみを許可する。
+ * introspect も <uuid> と同じく「1セグメントの文字列」として正規表現側では区別していない
+ * （後述のパターン参照）。区別する必要が無いため、あえて別の分岐にしていない。
+ *
+ * rest_authentication_errors フィルターにはコアが `apply_filters( 'rest_authentication_errors', null )`
+ * としか渡してこないため、WP_REST_Request を受け取れない。$_SERVER['REQUEST_URI'] を自前で
+ * パースする案もあったが、それだとパーマリンク形式（/wp-json/...）と非パーマリンク形式
+ * （/?rest_route=...）の両方を自力で吸収する必要があり、判定の実装が増える分だけ誤りが
+ * 入り込む余地も増える。代わりに、コア自身（rest_api_loaded()）が同じ判定のために使っている
+ * $GLOBALS['wp']->query_vars['rest_route'] を読む。この値は rest_authentication_errors が
+ * 発火する前に必ず確定しており、コアが serve_request() に渡すルートと完全に同じものなので、
+ * 自前のパース処理を持たずにコアと必ず同じ判定になる。
+ *
+ * ルートの一致だけで許可せず、パスに含まれる <id> がログイン中の本人かどうかまで確認している。
+ * ここが緩い（部分一致・strpos 等）と、購読者が自分以外の id を指定してこのエンドポイントに
+ * 触れられてしまう。前後を ^ $ でアンカーした完全一致の正規表現にしているのも同じ理由で、
+ * 末尾に別のパスを足す・途中に別セグメントを混ぜるといった細工でこの判定をすり抜けられないようにするため。
+ *
+ * なお、この関数が true を返しても素通しになるのは「書類の閲覧権限」というこのテーマ独自の
+ * ゲートだけで、その先で必ず実行されるコア自身の permission_callback（list_app_passwords 等の
+ * ケーパビリティ判定）は無効化されない。そのため、万一この判定に不備があっても、
+ * 他人のアプリケーションパスワードの実際の閲覧・作成・削除はコア側の権限チェックで防がれる
+ * （多層防御）。
+ *
+ * @return bool 本人自身のアプリケーションパスワードのエンドポイントへのリクエストなら true。
+ */
+function bill_rest_is_own_application_passwords_request() {
+	// 呼び出し元（bill_rest_require_view_permission()）では未ログインを先に 401 で
+	// 弾いているため現状はここに未ログインで到達しないが、この関数名は「本人自身か」を
+	// 判定する関数であり、未ログイン（本人と呼べるユーザーが存在しない）状態で true を
+	// 返すのは名前と矛盾する。将来この関数が別の場所から再利用されたり、呼び出し元の
+	// 判定順が変わったりしたときの保険として、ここでも明示的に未ログインを弾いておく
+	if ( ! is_user_logged_in() ) {
+		return false;
+	}
+
+	if ( empty( $GLOBALS['wp'] ) || ! isset( $GLOBALS['wp']->query_vars['rest_route'] ) || ! is_string( $GLOBALS['wp']->query_vars['rest_route'] ) ) {
+		return false;
+	}
+
+	// コア（rest_api_loaded()）と同じく末尾スラッシュを除去してから判定する
+	$route = untrailingslashit( $GLOBALS['wp']->query_vars['rest_route'] );
+
+	// "introspect" は "[\w-]+" に完全に包含されるため、あえて別の選択肢にしていない
+	// （個別に特別扱いしているように見せない）
+	$pattern = '#^/wp/v2/users/(?P<user_id>[0-9]+|me)/application-passwords(?:/[\w-]+)?$#';
+
+	if ( ! preg_match( $pattern, $route, $matches ) ) {
+		return false;
+	}
+
+	// "me" は常にログイン中の本人自身を指す
+	if ( 'me' === $matches['user_id'] ) {
+		return true;
+	}
+
+	// 数値IDの場合は、ログイン中のユーザーIDと完全に一致する場合のみ本人自身とみなす
+	return get_current_user_id() === (int) $matches['user_id'];
+}
 
 /*
 ---------------------------------------------
