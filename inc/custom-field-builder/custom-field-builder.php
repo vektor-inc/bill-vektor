@@ -217,8 +217,14 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 				return;
 			}
 
-			// 変更履歴（リビジョン）に対しては書き込まない
-			// （投稿の更新時、WordPress が変更履歴を作る過程でも save_post が発火するため）
+			/*
+			 * 変更履歴（リビジョン）に対しては書き込まない。
+			 * この関数は save_post フックの引数（$post_id）を使わず global $post だけを
+			 * 読み書きに使っており、global $post はリクエスト全体で元の投稿を指したまま
+			 * 変わらない（リビジョン作成の入れ子処理からは影響を受けない）。
+			 * そのため実経路ではこの判定は常に false になる。global $post がリビジョンを
+			 * 指した状態で呼ばれる将来の呼び出し方に対する保険として残している。
+			 */
 			if ( wp_is_post_revision( $post->ID ) ) {
 				return;
 			}
@@ -230,7 +236,7 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 
 			// 自動保存ルーチンかどうかチェック。そうだった場合は何もしない（記事の自動保存処理として呼び出された場合の対策）
 			if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-				return $post_id; }
+				return; }
 
 			foreach ( $custom_fields_array as $key => $value ) {
 
