@@ -467,45 +467,57 @@ class TemplateTagsTest extends WP_UnitTestCase {
 		 */
 		remove_action( 'wp', 'bill_no_login_redirect' );
 
-		// カテゴリーアーカイブ（is_category() 分岐）の検証用に、専用のカテゴリーと投稿を用意する
-		$term          = wp_insert_term( 'テスト用カテゴリー_' . __METHOD__, 'category' );
-		$category_id   = is_wp_error( $term ) ? 0 : $term['term_id'];
-		$category_post = wp_insert_post(
-			array(
-				'post_title'  => 'カテゴリーアーカイブ確認用の投稿',
-				'post_status' => 'publish',
-				'post_type'   => 'post',
-			)
-		);
-		wp_set_post_terms( $category_post, array( $category_id ), 'category' );
-
 		/*
-		 * タクソノミー判定のガード確認用（レビュー指摘: 紐づく投稿タイプが複数／0個の場合の誤判定防止）に、
-		 * 複数の投稿タイプに紐づくタクソノミーと、どの投稿タイプにも紐づかないタクソノミーを用意する。
+		 * finally で後片付けする対象の変数を、try に入る前に初期化しておく。
+		 * remove_action() の直後から try に入れることで、以降の準備（タームや
+		 * タクソノミーの作成）中に例外が起きても finally が必ず実行され、
+		 * リダイレクト処理を外したまま・検証用タクソノミーを登録したままの状態を
+		 * 後続のテストへ持ち越さないようにする。
 		 */
-		register_taxonomy(
-			'bill_test_multi_type_tax',
-			array( 'post', 'estimate' ),
-			array(
-				'public'    => true,
-				'query_var' => 'bill_multi_type_tax',
-			)
-		);
-		$multi_type_term    = wp_insert_term( 'マルチタイプ確認用_' . __METHOD__, 'bill_test_multi_type_tax' );
-		$multi_type_term_id = is_wp_error( $multi_type_term ) ? 0 : $multi_type_term['term_id'];
-
-		register_taxonomy(
-			'bill_test_no_type_tax',
-			array(),
-			array(
-				'public'    => true,
-				'query_var' => 'bill_no_type_tax',
-			)
-		);
-		$no_type_term    = wp_insert_term( '投稿タイプなし確認用_' . __METHOD__, 'bill_test_no_type_tax' );
-		$no_type_term_id = is_wp_error( $no_type_term ) ? 0 : $no_type_term['term_id'];
+		$category_id        = 0;
+		$category_post      = 0;
+		$multi_type_term_id = 0;
+		$no_type_term_id    = 0;
 
 		try {
+			// カテゴリーアーカイブ（is_category() 分岐）の検証用に、専用のカテゴリーと投稿を用意する
+			$term          = wp_insert_term( 'テスト用カテゴリー_' . __METHOD__, 'category' );
+			$category_id   = is_wp_error( $term ) ? 0 : $term['term_id'];
+			$category_post = wp_insert_post(
+				array(
+					'post_title'  => 'カテゴリーアーカイブ確認用の投稿',
+					'post_status' => 'publish',
+					'post_type'   => 'post',
+				)
+			);
+			wp_set_post_terms( $category_post, array( $category_id ), 'category' );
+
+			/*
+			 * タクソノミー判定のガード確認用（レビュー指摘: 紐づく投稿タイプが複数／0個の場合の誤判定防止）に、
+			 * 複数の投稿タイプに紐づくタクソノミーと、どの投稿タイプにも紐づかないタクソノミーを用意する。
+			 */
+			register_taxonomy(
+				'bill_test_multi_type_tax',
+				array( 'post', 'estimate' ),
+				array(
+					'public'    => true,
+					'query_var' => 'bill_multi_type_tax',
+				)
+			);
+			$multi_type_term    = wp_insert_term( 'マルチタイプ確認用_' . __METHOD__, 'bill_test_multi_type_tax' );
+			$multi_type_term_id = is_wp_error( $multi_type_term ) ? 0 : $multi_type_term['term_id'];
+
+			register_taxonomy(
+				'bill_test_no_type_tax',
+				array(),
+				array(
+					'public'    => true,
+					'query_var' => 'bill_no_type_tax',
+				)
+			);
+			$no_type_term    = wp_insert_term( '投稿タイプなし確認用_' . __METHOD__, 'bill_test_no_type_tax' );
+			$no_type_term_id = is_wp_error( $no_type_term ) ? 0 : $no_type_term['term_id'];
+
 			// カテゴリー・検証用タクソノミーが作成できていないと以降の検証が意味を成さないため確認する
 			$this->assertGreaterThan( 0, $category_id, '検証用カテゴリーが作成できている' );
 			$this->assertGreaterThan( 0, $multi_type_term_id, '複数の投稿タイプに紐づく検証用タームが作成できている' );
@@ -596,11 +608,20 @@ class TemplateTagsTest extends WP_UnitTestCase {
 				$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
 			}
 		} finally {
+			/*
+			 * try 内の go_to() で移動したままの状態（絞り込みクエリー等）を残さないよう、
+			 * フロントページへ戻す。bill_no_login_redirect() をまだ戻す前に実行することで、
+			 * 未ログイン状態でもリダイレクトの影響を受けずに実行できる。
+			 */
+			$this->go_to( home_url( '/' ) );
+
 			// リダイレクト処理を元に戻す
 			add_action( 'wp', 'bill_no_login_redirect' );
 
 			// 検証用に作成したカテゴリー・投稿を削除する
-			wp_delete_post( $category_post, true );
+			if ( $category_post ) {
+				wp_delete_post( $category_post, true );
+			}
 			if ( $category_id ) {
 				wp_delete_term( $category_id, 'category' );
 			}
@@ -640,7 +661,7 @@ class TemplateTagsTest extends WP_UnitTestCase {
 					'post_type_slug'        => 'post',
 					'single_list_post_type' => '',
 				),
-				'expected'            => '<a href="' . esc_url( home_url( '/?post_type=post' ) ) . '">請求書</a>',
+				'expected'            => '<a href="' . home_url( '/?post_type=post' ) . '">請求書</a>',
 			),
 			array(
 				/*
@@ -652,7 +673,7 @@ class TemplateTagsTest extends WP_UnitTestCase {
 					'post_type_slug'        => 'post',
 					'single_list_post_type' => 'estimate',
 				),
-				'expected'            => '<a href="' . esc_url( home_url( '/?post_type=post' ) ) . '">請求書</a>',
+				'expected'            => '<a href="' . home_url( '/?post_type=post' ) . '">請求書</a>',
 			),
 			array(
 				'test_condition_name' => '取引先一覧（単一種別に絞り込まれている）の取引先の行 => リンクにせずラベルをテキスト表示',

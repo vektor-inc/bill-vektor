@@ -413,8 +413,13 @@ function bill_get_single_post_type_slug() {
 		// object_type が空、またはプロパティ自体が無い場合に備えて配列へフォールバックする。
 		$object_types = ( $taxonomy_object && ! empty( $taxonomy_object->object_type ) ) ? $taxonomy_object->object_type : array();
 
-		// 紐づく投稿タイプがちょうど1つのときだけ、その投稿タイプに絞り込まれていると判定する。
-		$slug = ( 1 === count( $object_types ) ) ? $object_types[0] : '';
+		/*
+		 * 紐づく投稿タイプがちょうど1つのときだけ、その投稿タイプに絞り込まれていると判定する。
+		 * 要素が1つでも、配列のキーが 0 である保証は無い（プラグインが投稿タイプの登録を
+		 * 解除すると array( 1 => 'estimate' ) のようにキーが詰まらないまま残ることがある）ため、
+		 * $object_types[0] ではなく reset() で先頭要素を取得する。
+		 */
+		$slug = ( 1 === count( $object_types ) ) ? reset( $object_types ) : '';
 	} else {
 		// フロントページの混在表示、またはそれ以外の判定できないケースは絞り込みなし扱い。
 		$slug = '';
