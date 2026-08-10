@@ -97,6 +97,7 @@ class CustomFieldBuilderNonceTickTest extends WP_UnitTestCase {
 
 		delete_post_meta( $this->post_id, 'nonce_tick_test_field' );
 		wp_delete_post( $this->post_id, true );
+		unset( $GLOBALS['post'] );
 
 		remove_filter( 'nonce_life', array( $this, 'filter_nonce_life' ) );
 		wp_set_current_user( 0 );
@@ -118,17 +119,21 @@ class CustomFieldBuilderNonceTickTest extends WP_UnitTestCase {
 	 * wp_nonce_tick() が指定した tick 値を返すように nonce_life を逆算して設定する
 	 *
 	 * wp_nonce_tick() は `ceil( time() / ( nonce_life / 2 ) )` で tick を算出する。
-	 * そのため `nonce_life = 2 * time() / $target_tick` を返すようにすれば、
-	 * 現在時刻を基準に狙った tick 値を作れる。
+	 * `nonce_life = 2 * time() / $target_tick` にすると ceil() の結果がちょうど
+	 * $target_tick になる境界の真上を狙うことになり、テスト実行中に time() が
+	 * 1秒進んだだけで tick が意図せずずれてしまう（例: 5.0 → 5.0000000029 で ceil が 6 になる）。
+	 * そのため tick の窓の「真ん中」（$target_tick - 0.5）を狙うことで、
+	 * 実行中に time() が多少進んでも tick が変わらないようにする。
 	 *
 	 * 設定できたことを毎回 assert する。フィルターが効いていない場合に
 	 * 気づかないまま「たまたま」テストが通ってしまう事故を防ぐため。
 	 *
-	 * @param int $target_tick 狙う tick 値（小さい整数を推奨。時刻のわずかなずれに強くなる）。
+	 * @param int $target_tick 狙う tick 値。
 	 * @return void
 	 */
 	private function set_nonce_tick( $target_tick ) {
-		$this->fake_nonce_life = 2 * time() / $target_tick;
+		// tick の窓の「真ん中」を狙うことで、テスト実行中に time() が進んでも tick が変わらないようにする
+		$this->fake_nonce_life = 2 * time() / ( $target_tick - 0.5 );
 
 		$this->assertSame(
 			$target_tick,

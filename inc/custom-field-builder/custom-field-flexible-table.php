@@ -137,6 +137,17 @@ class VK_Custom_Field_Builder_Flexible_Table {
 			return;
 		}
 
+		// 変更履歴（リビジョン）に対しては書き込まない
+		// （投稿の更新時、WordPress が変更履歴を作る過程でも save_post が発火するため）
+		if ( wp_is_post_revision( $post->ID ) ) {
+			return;
+		}
+
+		// nonce だけでなく、この投稿を編集してよい利用者かも確認する（多層防御）
+		if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+			return;
+		}
+
 		// 自動保存ルーチンかどうかチェック。そうだった場合は何もしない（記事の自動保存処理として呼び出された場合の対策）
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 			return;
