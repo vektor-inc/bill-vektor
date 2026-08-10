@@ -70,6 +70,10 @@ class PostTypeFilterTest extends Bill_Document_List_TestCase {
 				)
 			);
 		}
+
+		// 取引先（bill_client）の絞り込みテスト用に、見積書テスト書類にだけ
+		// 取引先IDのメタを設定しておく（他の書類には設定しない）
+		update_post_meta( $this->post_ids['見積書テスト書類'], 'bill_client', '42' );
 	}
 
 	/**
@@ -183,15 +187,46 @@ class PostTypeFilterTest extends Bill_Document_List_TestCase {
 	 *
 	 * post_type は WordPress コアの public_query_vars に含まれ、この関数より前に走る
 	 * WP::parse_request() によって $_GET['post_type'] がそのまま query_vars に入る。
-	 * トップページ以外ではこの関数が post_type を上書きしないため、配列指定を含めて
-	 * WordPress 標準の挙動がそのまま有効になることを固定する（issue #318 のレビューで
-	 * 指摘された「トップページに限った挙動である」という前提を担保するテスト）。
+	 * トップページ以外では post_type が配列または未指定（sanitize_key() で空文字に
+	 * 丸められた場合を含む）のときはこの関数が post_type を上書きしないため、
+	 * WordPress 標準の挙動がそのまま有効になる。一方、文字列で指定された場合は
+	 * ページの種類を問わず sanitize_key() を通した値で上書きされる。
+	 * 正常系（文字列指定・未指定）と異常系（配列指定）を対比させることで、
+	 * 「トップページに限った挙動である」という前提（issue #318 のレビューで指摘）を
+	 * 固定する。
 	 *
 	 * @return void
 	 */
 	public function test_bill_custom_home_post_type__post_type_not_front_page() {
 
 		$test_cases = array(
+			// --- 正常系：文字列で投稿タイプを指定（ページの種類を問わず上書きされる） ---
+			array(
+				'test_condition_name' => 'トップページ以外（年別アーカイブ）で投稿タイプに文字列「client」を指定した場合 => post_type は client で上書きされ取引先のみ表示',
+				'conditions'          => array(
+					'year'      => 2024,
+					'post_type' => 'client',
+				),
+				'expected'            => array(
+					'post_type' => 'client',
+					'titles'    => array( '取引先テスト書類' ),
+				),
+			),
+			// --- 正常系：パラメーター自体が無い場合（アーカイブ本来の挙動のまま） ---
+			array(
+				// トップページと違い is_front_page() の既定値フォールバックも起きないため、
+				// post_type は空文字のまま WP_Query に渡り、WordPress の既定である
+				// post_type = 'post' 相当の挙動になる（見積書・取引先は含まれない）
+				'test_condition_name' => 'トップページ以外（年別アーカイブ）で投稿タイプを指定しない場合 => 既定値へのフォールバックは起きずアーカイブ本来の挙動（post のみ）になる',
+				'conditions'          => array(
+					'year' => 2024,
+				),
+				'expected'            => array(
+					'post_type' => '',
+					'titles'    => array( '請求書テスト書類' ),
+				),
+			),
+			// --- 境界値・異常系：配列で渡された場合 ---
 			array(
 				'test_condition_name' => 'トップページ以外（年別アーカイブ）で投稿タイプに配列 [client, post] を指定した場合 => 警告が出ず、配列がそのまま有効になり該当2件を表示',
 				'conditions'          => array(
@@ -234,37 +269,63 @@ class PostTypeFilterTest extends Bill_Document_List_TestCase {
 	}
 
 	/**
-	 * bill_custom_home_post_type() の post_type 以外のパラメーターに配列を渡した場合のテスト
+	 * bill_custom_home_post_type() の bill_client・start_date・end_date のテスト
 	 *
-	 * bill_client・start_date・end_date も post_type と同じく $_GET を型チェックせずに
-	 * 文字列処理（esc_attr()・文字列連結）へ渡していたため、配列で渡すと同種の
-	 * PHP 警告（Array to string conversion）が発生していた。pre_get_posts は
+	 * この3パラメーターは post_type と同じく $_GET を型チェックせずに文字列処理
+	 * （esc_attr()・文字列連結）へ渡していたため、配列で渡すと PHP 警告
+	 * （Array to string conversion）が発生していた。pre_get_posts は
 	 * bill_no_login_redirect() の認証ゲートより前に実行されるため、未認証の第三者でも
 	 * 到達できる警告経路であり、この3パラメーターも塞いだことを固定する。
 	 *
+	 * あわせて、受け取り条件に is_string() を挿入したことで文字列指定時の絞り込みが
+	 * 従来どおり効くことも固定する（正常系）。
+	 *
 	 * .phpunit.xml の convertWarningsToExceptions="true" により、警告が発生すると
-	 * go_to() の時点で例外になりテストが失敗するため、正常に完走すること自体が検証になる。
+	 * go_to() の時点で例外になりテストが失敗するため、配列指定のケースは正常に
+	 * 完走すること自体が「警告が出ない」ことの検証になる。
 	 *
 	 * @return void
 	 */
-	public function test_bill_custom_home_post_type__array_params_no_warning() {
-
-		// いずれのケースも post_type は未指定のため、トップページの既定値
-		// array( 'post', 'estimate' ) が使われ、client（取引先）は含まれない
-		$expected_titles = array( '見積書テスト書類', '請求書テスト書類' );
+	public function test_bill_custom_home_post_type__client_and_date_params() {
 
 		$test_cases = array(
+			// --- 正常系：取引先（bill_client）を文字列で指定 ---
+			array(
+				// set_up() で見積書テスト書類にだけ bill_client = 42 のメタを設定している
+				'test_condition_name' => '取引先（bill_client）に文字列「42」を指定した場合 => 該当する取引先のメタを持つ見積書のみ表示',
+				'conditions'          => array( 'bill_client' => '42' ),
+				'expected_titles'     => array( '見積書テスト書類' ),
+			),
+			// --- 正常系：発行日の期間を文字列で指定 ---
+			array(
+				// start_date のみ指定すると 2024-01-15 以降が対象になり、
+				// 2024-01-01 発行の請求書テスト書類は範囲外になる
+				'test_condition_name' => '発行日の開始日（start_date）に文字列「2024-01-15」を指定した場合 => それ以降に発行した見積書のみ表示',
+				'conditions'          => array( 'start_date' => '2024-01-15' ),
+				'expected_titles'     => array( '見積書テスト書類' ),
+			),
+			array(
+				// end_date のみ指定すると 2024-01-31 23:59:59 までが対象になり、
+				// 2024-02-01 発行の見積書テスト書類は範囲外になる
+				'test_condition_name' => '発行日の終了日（end_date）に文字列「2024-01-31」を指定した場合 => それ以前に発行した請求書のみ表示',
+				'conditions'          => array( 'end_date' => '2024-01-31' ),
+				'expected_titles'     => array( '請求書テスト書類' ),
+			),
+			// --- 境界値・異常系：配列で渡された場合 ---
 			array(
 				'test_condition_name' => '取引先（bill_client）が配列で渡された場合 => 警告が出ず絞り込みなし扱いで既定の書類を表示',
 				'conditions'          => array( 'bill_client' => array( '1', '2' ) ),
+				'expected_titles'     => array( '見積書テスト書類', '請求書テスト書類' ),
 			),
 			array(
 				'test_condition_name' => '発行日の開始日（start_date）が配列で渡された場合 => 警告が出ず絞り込みなし扱いで既定の書類を表示',
 				'conditions'          => array( 'start_date' => array( '2024-01-01' ) ),
+				'expected_titles'     => array( '見積書テスト書類', '請求書テスト書類' ),
 			),
 			array(
 				'test_condition_name' => '発行日の終了日（end_date）が配列で渡された場合 => 警告が出ず絞り込みなし扱いで既定の書類を表示',
 				'conditions'          => array( 'end_date' => array( '2024-12-31' ) ),
+				'expected_titles'     => array( '見積書テスト書類', '請求書テスト書類' ),
 			),
 		);
 
@@ -274,9 +335,9 @@ class PostTypeFilterTest extends Bill_Document_List_TestCase {
 
 			global $wp_query;
 
-			// 一覧に表示される書類の件名を検証（絞り込みが無視され既定表示になること）
+			// 一覧に表示される書類の件名を検証
 			$this->assertSame(
-				$expected_titles,
+				$case['expected_titles'],
 				wp_list_pluck( $wp_query->posts, 'post_title' ),
 				$case['test_condition_name']
 			);
