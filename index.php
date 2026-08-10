@@ -61,37 +61,11 @@
 <!-- [ 書類 ] -->
 <td class="text-nowrap">
 			<?php
-			$post_type         = bill_get_post_type();
-			$post_type_slug    = get_post_type();
-			$post_type_object  = get_post_type_object( $post_type_slug );
-			/*
-			 * 未登録の投稿タイプ（salary など）では $post_type_object が取得できず
-			 * labels->name にアクセスできないため、その場合はラベルを空文字にする。
-			 * href="" の空リンクだけでなく、リンク文字列が空になる事態も避けるため、
-			 * ラベルが空のときは何も出力しない（下の分岐で判定する）。
-			 */
-			$post_type_label   = $post_type_object ? $post_type_object->labels->name : '';
-
-			if ( '' === $post_type_label ) {
-				// ラベルが取得できない場合は空のリンクや空文字を出力しない
-			} elseif ( $single_list_post_type === $post_type_slug ) {
-				/*
-				 * 現在の一覧がこの行の投稿タイプ単体に絞り込まれている場合
-				 * （請求書一覧・見積書一覧・取引先一覧など）は、リンク先が
-				 * 現在表示中のページ自身になってしまうためリンクにしない。
-				 * 検索フォームの「書類種別」セレクトが既に現在地を示しているため、
-				 * ここでは aria-current 等の現在地マークアップも追加しない。
-				 */
-				echo esc_html( $post_type_label );
-			} else {
-				/*
-				 * フロントページなど複数の投稿タイプが混在する一覧では、
-				 * 行の投稿タイプの一覧に絞り込むリンクにする。
-				 * URL の形式は bill_get_post_type() の 'url' と同じ（?post_type=<slug>）にする。
-				 * 同一サイト内の一覧切り替えのため target="_blank" は付けない。
-				 */
-				echo '<a href="' . esc_url( home_url( '/?post_type=' . $post_type_slug ) ) . '">' . esc_html( $post_type_label ) . '</a>';
-			}
+			$post_type      = bill_get_post_type();
+			$post_type_slug = get_post_type();
+			// セル内容（テキストかリンクか、ラベル・URLの組み立て）は
+			// PHPUnit で検証できるよう inc/template-tags.php 側の関数に委譲する。
+			echo bill_get_document_type_column( $post_type_slug, $single_list_post_type );
 			?>
 </td>
 
