@@ -14,7 +14,8 @@ class Bill_Item_Custom_Fields {
 
 	public static function fields_form() {
 
-		wp_nonce_field( wp_create_nonce( __FILE__ ), 'noncename__bill_fields' );
+		// action には固定文字列を使う（__FILE__ は12時間ごとに切り替わるためactionに使ってはいけない）
+		wp_nonce_field( 'bill_vektor_bill_item_custom_fields', 'noncename__bill_fields' );
 
 		global $post;
 		$bill_items   = get_post_meta( $post->ID, 'bill_items', true );
@@ -164,7 +165,8 @@ class Bill_Item_Custom_Fields {
 		$noncename__bill_fields = isset( $_POST['noncename__bill_fields'] ) ? $_POST['noncename__bill_fields'] : null;
 
 		// nonce を確認し、値が書き換えられていれば、何もしない（CSRF対策）
-		if ( ! wp_verify_nonce( $noncename__bill_fields, wp_create_nonce( __FILE__ ) ) ) {
+		// action は固定文字列を使う（__FILE__ は12時間ごとに切り替わるためactionに使ってはいけない）
+		if ( ! wp_verify_nonce( $noncename__bill_fields, 'bill_vektor_bill_item_custom_fields' ) ) {
 			return $post_id;
 		}
 

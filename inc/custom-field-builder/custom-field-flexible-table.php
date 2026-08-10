@@ -25,7 +25,8 @@ class VK_Custom_Field_Builder_Flexible_Table {
 	public static function form_table_flexible( $custom_fields_array ) {
 
 		$nonce_name = 'noncename__' . $custom_fields_array['field_name'];
-		wp_nonce_field( wp_create_nonce( __FILE__ ), $nonce_name );
+		// action には固定文字列を使う（__FILE__ は12時間ごとに切り替わるためactionに使ってはいけない）
+		wp_nonce_field( 'bill_vektor_custom_field_flexible_table', $nonce_name );
 
 		global $post;
 		// 既に保存されている値を取得
@@ -131,7 +132,8 @@ class VK_Custom_Field_Builder_Flexible_Table {
 		$noncename__bill_fields = isset( $_POST[ $nonce_name ] ) ? $_POST[ $nonce_name ] : null;
 
 		// nonce を確認し、値が書き換えられていれば、何もしない（CSRF対策）
-		if ( ! wp_verify_nonce( $noncename__bill_fields, wp_create_nonce( __FILE__ ) ) ) {
+		// action は固定文字列を使う（__FILE__ は12時間ごとに切り替わるためactionに使ってはいけない）
+		if ( ! wp_verify_nonce( $noncename__bill_fields, 'bill_vektor_custom_field_flexible_table' ) ) {
 			return;
 		}
 
