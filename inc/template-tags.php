@@ -18,6 +18,9 @@
 	Chack post type info
 	bill_get_post_type()
 
+	現在の一覧が単一の投稿タイプに絞り込まれている場合、そのスラッグを返す
+	bill_get_single_post_type_slug()
+
 	bill_get_terms()
 /*-------------------------------------------*/
 
@@ -353,6 +356,54 @@ function bill_get_post_type() {
 	$post_type['url']  = home_url() . '/?post_type=' . $post_type['slug'];
 
 	return $post_type;
+}
+
+/**
+ * 現在表示中の一覧が単一の投稿タイプに絞り込まれている場合、そのスラッグを返す
+ *
+ * 書類一覧・取引先一覧（index.php）の「書類」列は、単一の投稿タイプに絞り込まれた
+ * 一覧（請求書一覧・見積書一覧・取引先一覧）ではリンク先が現在表示中のページ自身に
+ * なってしまうため、リンクにせずテキストで表示する必要がある。
+ * その判定を「取引先一覧かどうか」のような個別分岐にせず、単一種別に絞り込まれた
+ * 一覧すべてに共通で効くようにするため、この関数へロジックを集約する。
+ *
+ * inc/functions-pre-get-posts.php の bill_custom_home_post_type() により、
+ * 絞り込みパラメーターが無いフロントページのみ請求書（post）・見積書（estimate）の
+ * 混在表示（post_type クエリー変数が配列）になり、それ以外
+ * （`?post_type=xxx` 指定時、投稿タイプアーカイブ、カテゴリー／タクソノミーアーカイブ）は
+ * 単一の投稿タイプに絞り込まれる。
+ *
+ * bill_get_post_type() は不明な場合に 'post' へフォールバックするため、
+ * このフォールバック値とフロントページの混在表示（実際は 'post' 判定にはならない）が
+ * 区別できず、この判定には使えない。そのためここでは判定できない場合に
+ * フォールバックせず空文字を返す。
+ *
+ * @return string 絞り込み対象の投稿タイプスラッグ。混在表示など単一に絞り込まれていない場合、
+ *                または投稿タイプが特定できない場合は空文字。
+ */
+function bill_get_single_post_type_slug() {
+	global $wp_query;
+
+	$post_type_query_var = isset( $wp_query->query_vars['post_type'] ) ? $wp_query->query_vars['post_type'] : '';
+
+	if ( is_post_type_archive() || ( is_scalar( $post_type_query_var ) && '' !== (string) $post_type_query_var ) ) {
+		// 投稿タイプアーカイブ、または post_type クエリー変数が単一のスラッグ（文字列）の場合。
+		// フロントページの混在表示は post_type クエリー変数が配列になるため、ここには来ない。
+		$slug = $post_type_query_var;
+	} elseif ( is_tax() || is_category() ) {
+		// カテゴリー／タクソノミーアーカイブは、そのタクソノミーが紐づく投稿タイプに絞り込まれている。
+		$taxonomy = get_queried_object()->taxonomy;
+		$slug     = $taxonomy ? get_taxonomy( $taxonomy )->object_type[0] : '';
+	} else {
+		// フロントページの混在表示、またはそれ以外の判定できないケースは絞り込みなし扱い。
+		$slug = '';
+	}
+
+	if ( ! is_scalar( $slug ) || ! post_type_exists( $slug ) ) {
+		return '';
+	}
+
+	return (string) $slug;
 }
 
 /*

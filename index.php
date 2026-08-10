@@ -22,6 +22,14 @@
 </div>
 
 	<?php $post_type = bill_get_post_type(); ?>
+	<?php
+	/*
+	 * 「書類」列のリンク判定に使う、現在の一覧が単一の投稿タイプに絞り込まれているかどうか。
+	 * 請求書一覧・見積書一覧・取引先一覧などでは行ごとに毎回同じ結果になるため、
+	 * ループの外で1回だけ算出する。
+	 */
+	$single_list_post_type = bill_get_single_post_type_slug();
+	?>
 
 <div class="section">
 	<?php if ( have_posts() ) { ?>
@@ -53,10 +61,37 @@
 <!-- [ 書類 ] -->
 <td class="text-nowrap">
 			<?php
-			$post_type = bill_get_post_type();
-			$post_type_slug = get_post_type();
-			$post_type_object = get_post_type_object( $post_type_slug );
-			echo '<a href="' . esc_url( get_post_type_archive_link( 'url' ) ) . '">' . esc_html( $post_type_object->labels->name ) . '</a>';
+			$post_type         = bill_get_post_type();
+			$post_type_slug    = get_post_type();
+			$post_type_object  = get_post_type_object( $post_type_slug );
+			/*
+			 * 未登録の投稿タイプ（salary など）では $post_type_object が取得できず
+			 * labels->name にアクセスできないため、その場合はラベルを空文字にする。
+			 * href="" の空リンクだけでなく、リンク文字列が空になる事態も避けるため、
+			 * ラベルが空のときは何も出力しない（下の分岐で判定する）。
+			 */
+			$post_type_label   = $post_type_object ? $post_type_object->labels->name : '';
+
+			if ( '' === $post_type_label ) {
+				// ラベルが取得できない場合は空のリンクや空文字を出力しない
+			} elseif ( $single_list_post_type === $post_type_slug ) {
+				/*
+				 * 現在の一覧がこの行の投稿タイプ単体に絞り込まれている場合
+				 * （請求書一覧・見積書一覧・取引先一覧など）は、リンク先が
+				 * 現在表示中のページ自身になってしまうためリンクにしない。
+				 * 検索フォームの「書類種別」セレクトが既に現在地を示しているため、
+				 * ここでは aria-current 等の現在地マークアップも追加しない。
+				 */
+				echo esc_html( $post_type_label );
+			} else {
+				/*
+				 * フロントページなど複数の投稿タイプが混在する一覧では、
+				 * 行の投稿タイプの一覧に絞り込むリンクにする。
+				 * URL の形式は bill_get_post_type() の 'url' と同じ（?post_type=<slug>）にする。
+				 * 同一サイト内の一覧切り替えのため target="_blank" は付けない。
+				 */
+				echo '<a href="' . esc_url( home_url( '/?post_type=' . $post_type_slug ) ) . '">' . esc_html( $post_type_label ) . '</a>';
+			}
 			?>
 </td>
 

@@ -440,4 +440,114 @@ class TemplateTagsTest extends WP_UnitTestCase {
 
 		return 1;
 	}
+
+	/**
+	 * bill_get_single_post_type_slug() のテスト
+	 *
+	 * 単一の投稿タイプに絞り込まれた一覧（請求書一覧・見積書一覧・取引先一覧・
+	 * カテゴリーアーカイブなど）ではその投稿タイプのスラッグを返し、
+	 * フロントページの混在表示（絞り込みパラメーターなし）や未登録の投稿タイプが
+	 * 指定された場合は空文字を返すことを検証する（issue #316）。
+	 *
+	 * inc/functions-pre-get-posts.php の bill_custom_home_post_type() が
+	 * pre_get_posts で実際にメインクエリへ反映する post_type の値を再現するため、
+	 * $this->go_to() で実際のリクエストを再現して検証する。
+	 * bill_get_post_type() は判定できない場合に 'post' へフォールバックするため、
+	 * フロントページの混在表示と post_type=post（請求書一覧）の判定が
+	 * 見分けられなくなる問題がある。この関数はフォールバックせず空文字を返すことで
+	 * それを区別できることも、以下のテストケースで確認する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_get_single_post_type_slug() {
+		/*
+		 * go_to() は最後に 'wp' フックを実行するため、未ログイン状態だと
+		 * bill_no_login_redirect() が wp_safe_redirect() + exit を実行し、
+		 * テスト自体が終了してしまう。それを防ぐため一時的に外し、必ず戻す。
+		 */
+		remove_action( 'wp', 'bill_no_login_redirect' );
+
+		// カテゴリーアーカイブ（is_category() 分岐）の検証用に、専用のカテゴリーと投稿を用意する
+		$term          = wp_insert_term( 'テスト用カテゴリー_' . __METHOD__, 'category' );
+		$category_id   = is_wp_error( $term ) ? 0 : $term['term_id'];
+		$category_post = wp_insert_post(
+			array(
+				'post_title'  => 'カテゴリーアーカイブ確認用の投稿',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		wp_set_post_terms( $category_post, array( $category_id ), 'category' );
+
+		try {
+			// カテゴリーが作成できていないと以降のカテゴリーアーカイブの検証が意味を成さないため確認する
+			$this->assertGreaterThan( 0, $category_id, '検証用カテゴリーが作成できている' );
+
+			// テストの配列
+			$test_cases = array(
+				array(
+					'test_condition_name' => 'フロントページ（絞り込みパラメーターなし）=> 請求書・見積書が混在するため空文字',
+					'conditions'          => array(
+						'url' => home_url( '/' ),
+					),
+					'expected'            => '',
+				),
+				array(
+					'test_condition_name' => 'post_type=estimate を指定（見積書一覧）=> estimate',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => 'estimate' ) ),
+					),
+					'expected'            => 'estimate',
+				),
+				array(
+					'test_condition_name' => 'post_type=client を指定（取引先一覧）=> client',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => 'client' ) ),
+					),
+					'expected'            => 'client',
+				),
+				array(
+					'test_condition_name' => 'post_type=post を指定（請求書一覧）=> post（フロントページの混在表示とは区別される）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => 'post' ) ),
+					),
+					'expected'            => 'post',
+				),
+				array(
+					'test_condition_name' => '未登録の投稿タイプ（salary）を指定 => 空文字（存在しない投稿タイプにフォールバックしない）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => 'salary' ) ),
+					),
+					'expected'            => '',
+				),
+				array(
+					'test_condition_name' => 'カテゴリーアーカイブ（絞り込みパラメーターなし）=> カテゴリーが紐づく投稿タイプ（post）',
+					'conditions'          => array(
+						'url' => get_category_link( $category_id ),
+					),
+					'expected'            => 'post',
+				),
+			);
+
+			foreach ( $test_cases as $case ) {
+				// テスト対象のURLへ移動し、実際のメインクエリを再現する
+				$this->go_to( $case['conditions']['url'] );
+
+				// テスト関数実行
+				$actual = bill_get_single_post_type_slug();
+
+				// 期待値テスト
+				$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+			}
+		} finally {
+			// リダイレクト処理を元に戻す
+			add_action( 'wp', 'bill_no_login_redirect' );
+
+			// 検証用に作成したカテゴリー・投稿を削除する
+			wp_delete_post( $category_post, true );
+			if ( $category_id ) {
+				wp_delete_term( $category_id, 'category' );
+			}
+		}
+	}
 }
