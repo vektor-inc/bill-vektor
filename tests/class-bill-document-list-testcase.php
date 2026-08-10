@@ -87,16 +87,17 @@ abstract class Bill_Document_List_TestCase extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function tear_down() {
-		// $_GET をリセット
+		// $_GET をリセット。go_to() を呼ばないテストでも次のテストに値が
+		// 引き継がれないようにするため、parent::tear_down() のロールバックとは別に必要
 		$_GET = array();
 
-		// 作成した書類を削除
+		// 以下の書類・ユーザーの削除は、直後の parent::tear_down()（DBのロールバック）
+		// でも結果的に消えるが、意図が伝わるよう明示的な後片付けとして残している
 		foreach ( $this->post_ids as $post_id ) {
 			wp_delete_post( $post_id, true );
 		}
 		$this->post_ids = array();
 
-		// 作成したユーザーを削除
 		if ( $this->admin_user_id ) {
 			wp_delete_user( $this->admin_user_id );
 		}

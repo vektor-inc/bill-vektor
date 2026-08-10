@@ -131,6 +131,29 @@ class PostTypeFilterTest extends Bill_Document_List_TestCase {
 					'titles'    => array(),
 				),
 			),
+			// --- 境界値・異常系：sanitize_key() で空文字に丸められる値 ---
+			array(
+				// sanitize_key() は半角英数字・ハイフン・アンダースコア以外を除去するため、
+				// 日本語の「見積」は空文字に丸められる。ここで「指定なし」として扱わずに
+				// $query->set( 'post_type', '' ) をそのまま実行すると、WP_Query が
+				// post_type = 'post' 相当に解釈してしまい、意図せず見積書が消えて
+				// 請求書だけの一覧になる（一見もっともらしく見えるため気づかれにくい）
+				'test_condition_name' => '投稿タイプに sanitize_key() で空文字に丸められる「見積」を指定した場合 => 既定の post_type（post, estimate）にフォールバックして該当2件を表示',
+				'conditions'          => array( 'post_type' => '見積' ),
+				'expected'            => array(
+					'post_type' => array( 'post', 'estimate' ),
+					'titles'    => array( '見積書テスト書類', '請求書テスト書類' ),
+				),
+			),
+			// --- 境界値・異常系：post_type が空文字で渡された場合 ---
+			array(
+				'test_condition_name' => '投稿タイプが空文字「」で渡された場合 => 既定の post_type（post, estimate）にフォールバックして該当2件を表示',
+				'conditions'          => array( 'post_type' => '' ),
+				'expected'            => array(
+					'post_type' => array( 'post', 'estimate' ),
+					'titles'    => array( '見積書テスト書類', '請求書テスト書類' ),
+				),
+			),
 		);
 
 		foreach ( $test_cases as $case ) {
