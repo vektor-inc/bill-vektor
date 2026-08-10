@@ -4,13 +4,15 @@ function bill_custom_home_post_type( $query ) {
 		$client_id = ( isset( $_GET['bill_client'] ) && $_GET['bill_client'] ) ? esc_attr( $_GET['bill_client'] ) : '';
 
 		global $wp_query;
-		if ( isset( $_GET['post_type'] ) ){
+		// post_type[]=xxx のように配列で渡された場合、esc_attr() は文字列前提のため
+		// 配列を渡すと PHP の警告（Array to string conversion）が出る。
+		// 配列での投稿タイプ指定はサポートしないため、文字列の場合のみ受け付け、
+		// 配列で渡された場合は「指定なし」として扱う（else if の既定値にフォールバックする）
+		if ( isset( $_GET['post_type'] ) && is_string( $_GET['post_type'] ) ){
 			$query->set( 'post_type',  esc_attr( $_GET['post_type'] ) );
 		} else if ( is_front_page() ) {
 			$query->set( 'post_type',  array( 'post', 'estimate' ) );
 		}
-
-		$post_type = ( isset( $_GET['post_type'] ) && $_GET['post_type'] ) ? esc_attr( $_GET['post_type'] ) : array( 'post', 'estimate' );
 
 		if ( $client_id ) {
 			$meta_query[] = array(
