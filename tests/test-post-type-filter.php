@@ -252,11 +252,11 @@ class PostTypeFilterTest extends Bill_Document_List_TestCase {
 			$this->assertFalse( is_front_page(), $case['test_condition_name'] . '（トップページ扱いにならないこと）' );
 			$this->assertTrue( is_date(), $case['test_condition_name'] . '（年別アーカイブとして扱われること）' );
 
-			// post_type クエリー変数が上書きされず、配列のまま渡っていることを検証
+			// post_type クエリー変数を検証（文字列は上書きされ、配列・未指定は上書きされないこと）
 			$this->assertSame(
 				$case['expected']['post_type'],
 				$wp_query->get( 'post_type' ),
-				$case['test_condition_name'] . '（post_type クエリー変数、上書きされず配列のまま）'
+				$case['test_condition_name'] . '（post_type クエリー変数）'
 			);
 
 			// 一覧に表示される書類の件名を検証（発行日の新しい順）
