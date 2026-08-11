@@ -202,6 +202,51 @@ function bill_add_post_type_estimate() {
 
 /*
 -------------------------------------------
+  Flush Rewrite Rules On Version Change
+-------------------------------------------
+*/
+/**
+ * リライトルール（URLとページの対応表）をテーマのバージョン変更時のみ作り直す
+ *
+ * bill_add_post_type_client() / bill_add_post_type_estimate() でカスタム投稿タイプ
+ * （取引先・見積書）とタクソノミー（見積書カテゴリー）を登録しているが、登録するだけでは
+ * リライトルール（DBの rewrite_rules オプションにキャッシュされる対応表）は自動で
+ * 作り直されない。そのため対応表が古いままだと、見積書の個別ページなどが404になる
+ * 不具合が発生する（issue #35）。
+ *
+ * データベースに記録したバージョン（billvektor_rewrite_rules_version オプション）と
+ * 現在のテーマバージョン（BILLVEKTOR_THEME_VERSION）が食い違う場合にのみ
+ * flush_rewrite_rules() を実行することで、次の両方を自動的にカバーする。
+ *
+ * - テーマを新しく有効化したとき（オプション未記録）
+ * - すでに不具合が出ているサイトが修正版のテーマへ更新したとき（記録値が古い）
+ *
+ * flush_rewrite_rules() は全投稿タイプ・全タクソノミーの対応表を再構築する重い処理のため、
+ * バージョンが一致している間（毎リクエスト）は実行しない。
+ *
+ * この関数は優先度10（デフォルト）で init に登録する。bill_add_post_type_client() /
+ * bill_add_post_type_estimate()（優先度0）で投稿タイプ・タクソノミーの登録が
+ * 済んだ後に判定を行うことで、登録前に作り直してしまい意味がなくなることを防ぐ。
+ *
+ * @return void
+ */
+function bill_maybe_flush_rewrite_rules() {
+	$option_name       = 'billvektor_rewrite_rules_version';
+	$recorded_version  = get_option( $option_name );
+
+	// 記録済みのバージョンが現在のテーマバージョンと一致していれば何もしない
+	if ( BILLVEKTOR_THEME_VERSION === $recorded_version ) {
+		return;
+	}
+
+	// リライトルールを作り直し、作り直し済みのバージョンを記録する
+	flush_rewrite_rules();
+	update_option( $option_name, BILLVEKTOR_THEME_VERSION );
+}
+add_action( 'init', 'bill_maybe_flush_rewrite_rules' );
+
+/*
+-------------------------------------------
   Remove_post_editor_support
 -------------------------------------------
 */
