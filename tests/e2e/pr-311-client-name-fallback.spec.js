@@ -5,11 +5,17 @@ const { test, expect } = require('@playwright/test');
 /**
  * PR #311 取引先名フォールバック修正の UI / e2e テスト。
  *
- * 実行前:
- * npx wp-env run cli wp eval-file wp-content/themes/bill-vektor/tests/e2e/create-test-data-pr-311.php
+ * 実行前（テーマのディレクトリ＝このリポジトリのルートで実行する）:
+ * npx wp-env run cli wp eval-file wp-content/themes/$(basename "$PWD")/tests/e2e/create-test-data-pr-311.php
  *
  * 実行後:
- * npx wp-env run cli wp eval-file wp-content/themes/bill-vektor/tests/e2e/cleanup-test-data-pr-311.php
+ * npx wp-env run cli wp eval-file wp-content/themes/$(basename "$PWD")/tests/e2e/cleanup-test-data-pr-311.php
+ *
+ * テーマのディレクトリ名は git worktree などで bill-vektor 以外になることがあるため、
+ * $(basename "$PWD") でカレントディレクトリ名から求める。
+ * package.json の phpunit スクリプトはシェルのパラメータ展開で同じ値を求めているが、
+ * その記法はブロックコメントの終端と同じ文字並びを含みコメント内に書けないため、
+ * ここでは同じ結果になる basename を使う。
  */
 
 test.use({ storageState: 'tests/e2e/.auth-state.json' });

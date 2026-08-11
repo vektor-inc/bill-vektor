@@ -27,9 +27,11 @@ const REQUIRED_KEYS = [
 ];
 
 // マニフェストが無い・壊れている場合に案内する再作成コマンド
+// （$(basename "$PWD") はカレントディレクトリ名＝テーマのディレクトリ名。
+//   worktree ではディレクトリ名が bill-vektor 以外になるため決め打ちにしない）
 const SETUP_HINT =
 	'テストデータを作成してから実行してください:\n' +
-	"  npx wp-env run cli --env-cwd='wp-content/themes/bill-vektor' wp eval-file tests/e2e/create-test-data.php";
+	'  npx wp-env run cli --env-cwd="wp-content/themes/$(basename "$PWD")" wp eval-file tests/e2e/create-test-data.php';
 
 /**
  * テストデータのマニフェストを読み込み、各投稿の相対URLとタイトルを返す

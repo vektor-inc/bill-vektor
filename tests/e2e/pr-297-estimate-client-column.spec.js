@@ -1,6 +1,7 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+const { requireTestDataPresent } = require('./require-test-data');
 
 /**
  * PR #297 見積書一覧「取引先」列の UI / e2e テスト。
@@ -32,6 +33,30 @@ const { test, expect } = require('@playwright/test');
 test.use({ storageState: 'tests/e2e/.auth-state.json' });
 
 const LIST_PATH = '/wp-admin/edit.php?post_type=estimate';
+
+// データ作成スクリプト未実行の環境で、各テストが30秒タイムアウトを積み重ねて
+// 落ちるのを防ぐため、前提データ（見積書）が1件でも存在するかを先に確認する。
+const SETUP_HINT =
+	'PR #297 のテストデータを作成してから実行してください:\n' +
+	'  npx wp-env run cli --env-cwd="wp-content/themes/$(basename "$PWD")" wp eval-file tests/e2e/create-test-data-pr-297.php';
+
+test.beforeAll(async ({ browser }) => {
+	const context = await browser.newContext({
+		storageState: 'tests/e2e/.auth-state.json',
+	});
+	const page = await context.newPage();
+	try {
+		await requireTestDataPresent(
+			page,
+			LIST_PATH,
+			(p) => estimateRow(p, 'Webサイト制作見積（登録済取引先）'),
+			'PR #297 の見積書「Webサイト制作見積（登録済取引先）」',
+			SETUP_HINT
+		);
+	} finally {
+		await context.close();
+	}
+});
 
 /**
  * 後片付けの削除ループの反復上限。
