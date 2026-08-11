@@ -561,6 +561,40 @@ class TemplateTagsTest extends WP_UnitTestCase {
 					'expected'            => '',
 				),
 				array(
+					/*
+					 * issue #331 との相性確認: post_type[]=post のように配列で指定された場合、
+					 * bill_custom_home_post_type()（inc/functions-pre-get-posts.php）は
+					 * is_string() チェックにより配列を「指定なし」として扱い、フロントページでは
+					 * 既定の混在表示 array( 'post', 'estimate' ) にフォールバックする。
+					 * そのため post_type クエリー変数は配列になり、is_scalar() のガードにより
+					 * 警告なく空文字（絞り込みなし）と判定できることを確認する。
+					 */
+					'test_condition_name' => 'post_type を配列で指定（post_type[]=post）=> 空文字（警告を出さずに絞り込みなし扱い）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => array( 'post' ) ) ),
+					),
+					'expected'            => '',
+				),
+				array(
+					/*
+					 * issue #331 との相性確認: 日本語など sanitize_key() で空文字に丸められる値を
+					 * 指定した場合、bill_custom_home_post_type() は「指定なし」として扱い、
+					 * フロントページでは既定の混在表示にフォールバックする。
+					 */
+					'test_condition_name' => 'post_type に日本語（sanitize_key()で空文字に丸められる値）を指定 => 空文字（表示が壊れない）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => '見積' ) ),
+					),
+					'expected'            => '',
+				),
+				array(
+					'test_condition_name' => 'post_type に記号のみ（sanitize_key()で空文字に丸められる値）を指定 => 空文字（表示が壊れない）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => '!!!' ) ),
+					),
+					'expected'            => '',
+				),
+				array(
 					'test_condition_name' => 'カテゴリーアーカイブ（絞り込みパラメーターなし）=> カテゴリーが紐づく投稿タイプ（post）',
 					'conditions'          => array(
 						'url' => get_category_link( $category_id ),
