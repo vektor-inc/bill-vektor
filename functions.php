@@ -244,13 +244,13 @@ function bill_title_custom( $title ) {
 			$title = $post_type['name'] . '_';
 			// 取引先名
 			$title .= bill_get_client_name( $post );
-			// 敬称
-			$client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
-			if ( $client_honorific ) {
-				$title .= $client_honorific . '_';
-			} else {
-				$title .= '御中_';
-			}
+			/*
+			 * 敬称。取得・検証のロジックは bill_get_client_honorific() に集約している
+			 * （書類フレーム側と同じ判定をここでも重複して持たないようにするため）。
+			 * 取引先（イレギュラー）の場合は空文字が返るため、その場合は区切りの
+			 * アンダースコアのみが続く（敬称は付かない）。
+			 */
+			$title .= bill_get_client_honorific( $post ) . '_';
 			// 件名
 			$title     .= get_the_title() . '_';
 				$title .= get_the_date( 'Ymd' );
