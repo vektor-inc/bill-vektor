@@ -202,6 +202,86 @@ function bill_add_post_type_estimate() {
 
 /*
 -------------------------------------------
+  Flush Rewrite Rules On Version Change
+-------------------------------------------
+*/
+/**
+ * リライトルール（URLとページの対応表）をテーマのバージョン変更時のみ作り直す
+ *
+ * bill_add_post_type_client() / bill_add_post_type_estimate() でカスタム投稿タイプ
+ * （取引先・見積書）とタクソノミー（見積書カテゴリー）を登録しているが、登録するだけでは
+ * リライトルール（DBの rewrite_rules オプションにキャッシュされる対応表）は自動で
+ * 作り直されない。そのため対応表が古いままだと、見積書の個別ページなどが404になる
+ * 不具合が発生する（issue #35）。
+ *
+ * データベースに記録したバージョン（billvektor_rewrite_rules_version オプション）と
+ * 現在のテーマバージョン（BILLVEKTOR_THEME_VERSION）が食い違う場合にのみ
+ * flush_rewrite_rules() を実行することで、次の両方を自動的にカバーする。
+ *
+ * - テーマを新しく有効化したとき（オプション未記録）
+ * - すでに不具合が出ているサイトが修正版のテーマへ更新したとき（記録値が古い）
+ *
+ * flush_rewrite_rules() は全投稿タイプ・全タクソノミーの対応表を再構築する重い処理のため、
+ * バージョンが一致している間（毎リクエスト）は実行しない。
+ *
+ * @return void
+ */
+function bill_maybe_flush_rewrite_rules() {
+	// オプションはサイト全体で1つの名前空間なので、関数プレフィックス（bill_）より
+	// 衝突しにくい billvektor_ を使う
+	$option_name      = 'billvektor_rewrite_rules_version';
+	$recorded_version = get_option( $option_name );
+
+	if ( BILLVEKTOR_THEME_VERSION === $recorded_version ) {
+		return;
+	}
+
+	// 作り直しより先にバージョンを記録し、記録できたことを読み戻して確認する。
+	// 作り直しを先に行うと、DBへの書き込みが失敗し続ける環境で、重い作り直しが
+	// 未ログイン訪問者のリクエストも含めて毎回走り続けてしまう。
+	// また更新直後に同時アクセスが集中した場合も、先に記録することで
+	// 重複して作り直しが走る窓を最小にできる。
+	update_option( $option_name, BILLVEKTOR_THEME_VERSION );
+	if ( BILLVEKTOR_THEME_VERSION !== get_option( $option_name ) ) {
+		return;
+	}
+
+	// $hard = false（ソフトフラッシュ）。$hard = true（既定）は rewrite_rules オプションの
+	// 再構築に加えて .htaccess への書き込みも行うが、書き込まれる内容は
+	// パーマリンク構造から生成される定型のブロックのみで、個別のルール（add_rewrite_rule() 等）
+	// が使われているかどうかとは無関係（WP_Rewrite::mod_rewrite_rules()）。
+	// ソフトフラッシュにすることで、この不要なファイル書き込みを避けつつ、
+	// 管理画面から実行された場合とフロントから実行された場合とで挙動を揃えられる
+	flush_rewrite_rules( false );
+}
+// wp_loaded で実行する。init の時点では、WP_Rewrite::flush_rules() が
+// ! did_action( 'wp_loaded' ) のとき自分自身を wp_loaded に登録し直して即 return するため、
+// 「バージョンの記録だけ済んで作り直しは wp_loaded まで持ち越し」の状態になる。
+// この間に exit するプラグイン（メンテナンスモード系など）が挟まると、作り直されないまま
+// 記録だけが残り、次のバージョンアップまで直らない。wp_loaded に登録すれば同期的に実行される。
+// bill_add_post_type_client() / bill_add_post_type_estimate()（init・優先度0）による
+// 投稿タイプ・タクソノミーの登録は wp_loaded の時点で確実に完了しているため、
+// 判定・作り直しのタイミングとしても問題ない。
+add_action( 'wp_loaded', 'bill_maybe_flush_rewrite_rules' );
+
+/**
+ * テーマを切り替えたときにバージョンの記録を削除する
+ *
+ * 他テーマ有効中にパーマリンクを保存されると、対応表（rewrite_rules オプション）から
+ * 見積書・取引先のルールが消える。その状態でこのテーマへ戻した場合、バージョンの記録は
+ * 変わっていないため bill_maybe_flush_rewrite_rules() の判定が「一致」のままとなり、
+ * 作り直しが走らず同じ404が再発してしまう。テーマ切り替え時に記録を削除しておくことで、
+ * 次の wp_loaded で必ず作り直しが走るようにする。
+ *
+ * @return void
+ */
+function bill_reset_rewrite_rules_version() {
+	delete_option( 'billvektor_rewrite_rules_version' );
+}
+add_action( 'after_switch_theme', 'bill_reset_rewrite_rules_version' );
+
+/*
+-------------------------------------------
   Remove_post_editor_support
 -------------------------------------------
 */
