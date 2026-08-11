@@ -38,11 +38,20 @@
 		 * issue #310 レビュー対応: 件名列の予告アイコン（.glyphicon-new-window）が原因で
 		 * 375px 幅にてページ全体の scrollWidth が溢れる回帰が起きたため、テーブルを
 		 * Bootstrap 3 純正の .table-responsive（overflow-x: auto 等）で囲み、
-		 * ページ全体ではなくテーブル内だけがスクロールするようにする。新規CSSは不要
-		 * （.table-responsive のスタイル一式は assets/css/bootstrap.min.css に同梱済み）。
+		 * ページ全体ではなくテーブル内だけがスクロールするようにする。
+		 * 767px以下で全セルに強制される white-space: nowrap は「件名」「カテゴリー」列の
+		 * 折り返しを潰してしまうため、text-nowrap の付いていないセルだけ normal に戻す
+		 * 指定を assets/_scss/style.scss に追加している（そちらにも詳細コメントあり）。
+		 *
+		 * tabindex="0" + role="region" + aria-label はキーボード操作者がこのスクロール領域に
+		 * 直接フォーカスして到達できるようにするため付与する。行内の書類・取引先・件名リンクへの
+		 * Tab 移動だけでは、ブラウザはフォーカスした要素が見える最小限までしかスクロールしないため、
+		 * リンクを持たない「カテゴリー」列（5列目）が表示される保証がない。増えるタブストップは
+		 * ページ内で1つだけであり、読めない列が残るリスクの方が重いという判断（植草さんの方針）。
+		 * このコメントは、次にこの tabindex を「不要なもの」として消さないための記録も兼ねる。
 		 */
 		?>
-<div class="table-responsive">
+<div class="table-responsive" tabindex="0" role="region" aria-label="<?php echo esc_attr( $page_post_type['name'] . '一覧の表' ); ?>">
 <table class="table table-striped table-borderd">
 <tr>
 <th scope="col">書類</th>

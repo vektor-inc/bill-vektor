@@ -164,18 +164,24 @@ class IndexTemplateTest extends WP_UnitTestCase {
 	/**
 	 * お知らせセクションの pre_http_request フィルターコールバック
 	 *
-	 * billvektor.com/feed 宛のリクエストのみ固定のRSS 2.0フィードを返して横取りする。
-	 * それ以外のURLへの外部リクエストは、CI から本番サイト等へ実際に飛ばさないよう
-	 * WP_Error を返して常に失敗させる（テスト実行のたびに外部通信が発生する問題への対処）。
+	 * index.php が実際に取得する 'https://billvektor.com/feed/' 宛のリクエストのみ
+	 * 固定のRSS 2.0フィードを返して横取りする。それ以外のURLへの外部リクエストは、
+	 * CI から本番サイト等へ実際に飛ばさないよう WP_Error を返して常に失敗させる
+	 * （テスト実行のたびに外部通信が発生する問題への対処）。
+	 *
+	 * URL判定は部分一致（strpos）ではなく完全一致にしている。部分一致だと、将来
+	 * index.php 側のフィードURLが変わったときにモックが静かに素通り（WP_Error側の
+	 * 分岐）してしまい、原因が分かりにくい形でテストが失敗する。完全一致にしておけば
+	 * URLの食い違いに気付きやすい。
 	 *
 	 * @param false|array|WP_Error $preempt     短絡させる場合の戻り値（このコールバックでは未使用）。
 	 * @param array                $parsed_args リクエスト引数（このモックでは未使用）。
 	 * @param string               $url         リクエスト先URL。
-	 * @return array|WP_Error billvektor.com/feed 宛は固定のフィードレスポンス配列、
+	 * @return array|WP_Error 'https://billvektor.com/feed/' 宛は固定のフィードレスポンス配列、
 	 *                         それ以外は常に WP_Error（リクエストを失敗させる）。
 	 */
 	public function mock_rss_feed_response( $preempt, $parsed_args, $url ) {
-		if ( false === strpos( $url, 'billvektor.com/feed' ) ) {
+		if ( 'https://billvektor.com/feed/' !== $url ) {
 			return new WP_Error( 'http_request_blocked', 'テストでは外部リクエストを行わない' );
 		}
 
@@ -233,21 +239,35 @@ class IndexTemplateTest extends WP_UnitTestCase {
 			)
 		);
 		$query->is_archive = true;
-		$wp_query          = $query;
-		$wp_the_query      = $query;
 
-		// index.php をレンダリングして出力を取得する
-		ob_start();
-		include get_theme_file_path( 'index.php' );
-		$html = ob_get_clean();
+		// include 前後で ob_get_level() の増減を見るための基準値
+		// （tests/test-index-template-document-list.php の IndexTemplateDocumentListTest と同じパターン）
+		$ob_level_before = ob_get_level();
 
-		// メインクエリを元に戻す
-		$wp_query     = $original_wp_query;
-		$wp_the_query = $original_wp_the_query;
-		wp_reset_postdata();
+		$html = '';
 
-		// 現在のユーザーを元に戻す（このテストのためだけに設定した編集者権限を残さない）
-		wp_set_current_user( $original_user_id );
+		try {
+			$wp_query     = $query;
+			$wp_the_query = $query;
+
+			// index.php をレンダリングして出力を取得する
+			ob_start();
+			include get_theme_file_path( 'index.php' );
+			$html = ob_get_clean();
+		} finally {
+			// include 中の例外でバッファが開いたままにならないよう、開始前のレベルまで閉じる
+			while ( ob_get_level() > $ob_level_before ) {
+				ob_end_clean();
+			}
+
+			// メインクエリを元に戻す
+			$wp_query     = $original_wp_query;
+			$wp_the_query = $original_wp_the_query;
+			wp_reset_postdata();
+
+			// 現在のユーザーを元に戻す（このテストのためだけに設定した編集者権限を残さない）
+			wp_set_current_user( $original_user_id );
+		}
 
 		// 各行の取引先カラムのセルを取り出す
 		preg_match_all( '#<!-- \[ 取引先 \] -->\s*<td[^>]*>(.*?)</td>#s', $html, $matches );
@@ -468,6 +488,15 @@ class IndexTemplateTest extends WP_UnitTestCase {
 
 		// お知らせが1件も含まれていないと以降の検証が意味を成さないため確認する
 		$this->assertNotSame( '', $news_html, 'お知らせセクション（モックフィード）がレンダリングされている' );
+
+		/*
+		 * 上の assertNotSame() だけでは、モックが効かず取得に失敗した場合の
+		 * 「<p>お知らせの取得に失敗しました。</p>」（この文字列も <ul> の中に出力される）でも
+		 * 通ってしまい、「モックフィードがレンダリングされている」ことの証明になっていない。
+		 * id="csv-export" の件と同じ「ガードがメッセージの主張を証明していない」パターンのため、
+		 * 失敗メッセージが出ていないことも明示的に確認する。
+		 */
+		$this->assertStringNotContainsString( 'お知らせの取得に失敗しました', $news_html, 'お知らせの取得が失敗扱いになっていない（モックが正しく効いている）' );
 
 		// お知らせリンクのテストの配列
 		$news_test_cases = array(

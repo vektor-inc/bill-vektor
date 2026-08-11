@@ -82,6 +82,26 @@ table.table {
 	th { font-weight: lighter; }
 }
 
+/*
+ * issue #310: index.php の書類一覧テーブルを .table-responsive（Bootstrap 3）で囲んだことで、
+ * 767px 以下では bootstrap.min.css の
+ * `.table-responsive>.table>tbody>tr>td { white-space: nowrap; }` が全セルに強制される。
+ * このテーマでは折り返さない指定（text-nowrap）は「書類」「取引先」列だけの意図的な設計で、
+ * 「件名」「カテゴリー」列は長い文字列を折り返して読めるようにしたい。そのため
+ * text-nowrap の付いていないセルだけ white-space を normal に戻す（植草さんの方針）。
+ *
+ * :where(:not(...)) は詳細度に加算されないため、この指定は打ち消したい Bootstrap 側の
+ * ルールと同じ詳細度（0,2,3）になる。同詳細度はソース順の後勝ちで決まり、bill-css（このファイル）は
+ * bill-css-bootstrap（bootstrap.min.css）に依存指定されて後から読み込まれる
+ * （functions.php の bill_theme_scripts() 参照）。ビルド後の assets/css/style.css に
+ * `.table-responsive>.table>tbody>tr>td:where(:not(.text-nowrap)){white-space:normal}` が
+ * そのまま出力され、bootstrap.min.css 側のルールと詳細度が同じであることを確認済み。
+ * ブラウザでの実際の描画確認は別途 e2e テストで行う。
+ */
+.table-responsive > .table > tbody > tr > td:where(:not(.text-nowrap)) {
+	white-space: normal;
+}
+
 
 /*-------------------------------------------*/
 /* .header
