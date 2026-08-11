@@ -18,6 +18,12 @@
 	Chack post type info
 	bill_get_post_type()
 
+	現在の一覧が単一の投稿タイプに絞り込まれている場合、そのスラッグを返す
+	bill_get_single_post_type_slug()
+
+	「書類」列のセル内容（HTML）を組み立てる
+	bill_get_document_type_column()
+
 	bill_get_terms()
 /*-------------------------------------------*/
 
@@ -353,6 +359,150 @@ function bill_get_post_type() {
 	$post_type['url']  = home_url() . '/?post_type=' . $post_type['slug'];
 
 	return $post_type;
+}
+
+/**
+ * 現在表示中の一覧が単一の投稿タイプに絞り込まれている場合、そのスラッグを返す
+ *
+ * 書類一覧・取引先一覧（index.php）の「書類」列は、単一の投稿タイプに絞り込まれた
+ * 一覧（請求書一覧・見積書一覧・取引先一覧）ではリンク先が現在表示中のページ自身に
+ * なってしまうため、リンクにせずテキストで表示する必要がある。
+ * その判定を「取引先一覧かどうか」のような個別分岐にせず、単一種別に絞り込まれた
+ * 一覧すべてに共通で効くようにするため、この関数へロジックを集約する。
+ *
+ * inc/functions-pre-get-posts.php の bill_custom_home_post_type()（issue #318 / #331 で
+ * post_type のサニタイズ方法が変更されている）により、post_type クエリー変数の状態は
+ * ページの種類によって次のように変わる。
+ * - フロントページ: post_type が文字列かつ sanitize_key() で空文字にならない場合のみ
+ *   その投稿タイプ（スラッグの文字列）に絞り込まれる。未指定・配列指定（`post_type[]=xxx`）・
+ *   sanitize_key() で空文字に丸められる値（日本語や記号だけの入力など）は、いずれも
+ *   既定の混在表示 array( 'post', 'estimate' )（post_type クエリー変数が配列）に
+ *   フォールバックする。
+ * - フロントページ以外（投稿タイプアーカイブ、カテゴリー／タクソノミーアーカイブ、
+ *   年別アーカイブ等）: 文字列指定はページの種類を問わず上書きされる一方、配列指定
+ *   （`post_type[]=a&post_type[]=b` 等）はこの関数が上書きしないため WordPress 標準の
+ *   挙動がそのまま有効になり、post_type クエリー変数が配列のまま複数の投稿タイプに
+ *   絞り込まれることがある。そのため「フロントページ以外は必ず単一の投稿タイプに
+ *   絞り込まれる」とは言えない。
+ * 本関数は post_type クエリー変数が配列の場合（フロントページの混在表示、フロントページ
+ * 以外での複数指定のいずれであっても）を一律「単一に絞り込まれていない」として扱う
+ * （下記 is_scalar() のガード）。
+ *
+ * bill_get_post_type() は不明な場合に 'post' へフォールバックするため、
+ * このフォールバック値とフロントページの混在表示（実際は 'post' 判定にはならない）が
+ * 区別できず、この判定には使えない。そのためここでは判定できない場合に
+ * フォールバックせず空文字を返す。
+ *
+ * カテゴリー／タクソノミーアーカイブは、そのタクソノミーに紐づく投稿タイプが
+ * ちょうど1つの場合のみ「単一の投稿タイプに絞り込まれている」と判定する。
+ * 紐づく投稿タイプが複数（または0個）の場合は、どの投稿タイプに絞り込まれているかを
+ * 一意に決められないため、絞り込みなし扱い（空文字）にする。
+ *
+ * @return string 絞り込み対象の投稿タイプスラッグ。混在表示など単一に絞り込まれていない場合、
+ *                または投稿タイプが特定できない場合は空文字。
+ */
+function bill_get_single_post_type_slug() {
+	global $wp_query;
+
+	$post_type_query_var = isset( $wp_query->query_vars['post_type'] ) ? $wp_query->query_vars['post_type'] : '';
+
+	if ( is_post_type_archive() || ( is_scalar( $post_type_query_var ) && '' !== (string) $post_type_query_var ) ) {
+		// 投稿タイプアーカイブ、または post_type クエリー変数が単一のスラッグ（文字列）の場合。
+		// post_type クエリー変数が配列の場合（フロントページの混在表示、フロントページ以外
+		// での post_type[]=a&post_type[]=b のような複数指定のいずれも）はここには来ない。
+		$slug = $post_type_query_var;
+	} elseif ( is_tax() || is_category() ) {
+		// カテゴリー／タクソノミーアーカイブは、そのタクソノミーが紐づく投稿タイプに絞り込まれている。
+		$queried_object = get_queried_object();
+
+		// get_queried_object() は WP_Term を返すのが通常だが、想定外の状態では
+		// それ以外（false 等）を返すことがあるため、taxonomy プロパティへの
+		// アクセス前に型を確認して警告を出さないようにする。
+		$taxonomy = ( $queried_object instanceof WP_Term ) ? $queried_object->taxonomy : '';
+
+		// get_taxonomy() は未登録のタクソノミー名を渡されると false を返す。
+		$taxonomy_object = $taxonomy ? get_taxonomy( $taxonomy ) : false;
+
+		// object_type が空、またはプロパティ自体が無い場合に備えて配列へフォールバックする。
+		$object_types = ( $taxonomy_object && ! empty( $taxonomy_object->object_type ) ) ? $taxonomy_object->object_type : array();
+
+		/*
+		 * 紐づく投稿タイプがちょうど1つのときだけ、その投稿タイプに絞り込まれていると判定する。
+		 * 要素が1つでも、配列のキーが 0 である保証は無い（プラグインが投稿タイプの登録を
+		 * 解除すると array( 1 => 'estimate' ) のようにキーが詰まらないまま残ることがある）ため、
+		 * $object_types[0] ではなく reset() で先頭要素を取得する。
+		 */
+		$slug = ( 1 === count( $object_types ) ) ? reset( $object_types ) : '';
+	} else {
+		// フロントページの混在表示、またはそれ以外の判定できないケースは絞り込みなし扱い。
+		$slug = '';
+	}
+
+	if ( ! is_scalar( $slug ) || ! post_type_exists( $slug ) ) {
+		return '';
+	}
+
+	return (string) $slug;
+}
+
+/**
+ * 書類一覧・取引先一覧（index.php）の「書類」列のセル内容（HTML）を組み立てる
+ *
+ * 単一の投稿タイプに絞り込まれた一覧（請求書一覧・見積書一覧・取引先一覧など）では、
+ * この列のリンク先が現在表示中のページ自身になってしまうため、リンクにせずラベルを
+ * テキストとして返す。それ以外（フロントページの請求書・見積書の混在一覧）では、
+ * 行の投稿タイプの一覧に絞り込むリンクを返す。
+ *
+ * index.php に分岐を直接書くと、リンクになる側（今回の issue #316 で直したURL組み立て）を
+ * PHPUnit で検証できない（index.php はテンプレートパーツの都合で1プロセス中に1回しか
+ * レンダリングできない）ため、ロジックをこの関数へ切り出している。URL の組み立てもこの
+ * 関数1箇所に集約し、書き間違いが起きても直す場所が1箇所になるようにする。
+ *
+ * @param string $post_type_slug        行（投稿）の投稿タイプスラッグ（get_post_type() の戻り値）。
+ * @param string $single_list_post_type 現在の一覧が絞り込まれている投稿タイプスラッグ
+ *                                       （bill_get_single_post_type_slug() の戻り値。単一に
+ *                                       絞り込まれていない場合は空文字）。
+ * @return string 「書類」列に出力する HTML（エスケープ済み）。投稿タイプのラベルが
+ *                取得できない場合（未登録の投稿タイプ等）は空文字。
+ */
+function bill_get_document_type_column( $post_type_slug, $single_list_post_type ) {
+	$post_type_object = get_post_type_object( $post_type_slug );
+
+	// 未登録の投稿タイプ（salary など）では $post_type_object が取得できない。
+	// href="" の空リンクだけでなく、リンク文字列が空になる事態も避けるため、
+	// ラベルが取得できない場合は何も出力しない。
+	if ( ! $post_type_object ) {
+		return '';
+	}
+
+	$post_type_label = $post_type_object->labels->name;
+
+	if ( '' === $post_type_label ) {
+		return '';
+	}
+
+	if ( $single_list_post_type === $post_type_slug ) {
+		/*
+		 * 現在の一覧がこの行の投稿タイプ単体に絞り込まれている場合
+		 * （請求書一覧・見積書一覧・取引先一覧など）は、リンク先が
+		 * 現在表示中のページ自身になってしまうためリンクにしない。
+		 *
+		 * なお、検索フォームの「書類種別」セレクト（template-parts/search-box.php）は
+		 * 請求書・見積書の2択のみで取引先の選択肢が無く、取引先一覧では現在地を
+		 * 示せていない（選択肢に無いため既定表示の「請求書」が選択された状態になる）。
+		 * この改善は本不具合修正のスコープ外のため、ここでは aria-current 等の
+		 * 現在地マークアップの追加は行わない。
+		 */
+		return esc_html( $post_type_label );
+	}
+
+	/*
+	 * フロントページなど複数の投稿タイプが混在する一覧では、
+	 * 行の投稿タイプの一覧に絞り込むリンクにする。
+	 * URL の形式は bill_get_post_type() の 'url' と同じ（?post_type=<slug>）にする。
+	 * 同一サイト内の一覧切り替えのため target="_blank" は付けない。
+	 */
+	return '<a href="' . esc_url( home_url( '/?post_type=' . $post_type_slug ) ) . '">' . esc_html( $post_type_label ) . '</a>';
 }
 
 /*

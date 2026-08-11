@@ -440,4 +440,334 @@ class TemplateTagsTest extends WP_UnitTestCase {
 
 		return 1;
 	}
+
+	/**
+	 * bill_get_single_post_type_slug() のテスト
+	 *
+	 * 単一の投稿タイプに絞り込まれた一覧（請求書一覧・見積書一覧・取引先一覧・
+	 * カテゴリーアーカイブなど）ではその投稿タイプのスラッグを返し、
+	 * フロントページの混在表示（絞り込みパラメーターなし）や未登録の投稿タイプが
+	 * 指定された場合は空文字を返すことを検証する（issue #316）。
+	 *
+	 * inc/functions-pre-get-posts.php の bill_custom_home_post_type() が
+	 * pre_get_posts で実際にメインクエリへ反映する post_type の値を再現するため、
+	 * $this->go_to() で実際のリクエストを再現して検証する。
+	 * bill_get_post_type() は判定できない場合に 'post' へフォールバックするため、
+	 * フロントページの混在表示と post_type=post（請求書一覧）の判定が
+	 * 見分けられなくなる問題がある。この関数はフォールバックせず空文字を返すことで
+	 * それを区別できることも、以下のテストケースで確認する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_get_single_post_type_slug() {
+		/*
+		 * go_to() は最後に 'wp' フックを実行するため、未ログイン状態だと
+		 * bill_no_login_redirect() が wp_safe_redirect() + exit を実行し、
+		 * テスト自体が終了してしまう。それを防ぐため一時的に外し、必ず戻す。
+		 */
+		remove_action( 'wp', 'bill_no_login_redirect' );
+
+		/*
+		 * finally で後片付けする対象の変数を、try に入る前に初期化しておく。
+		 * remove_action() の直後から try に入れることで、以降の準備（タームや
+		 * タクソノミーの作成）中に例外が起きても finally が必ず実行され、
+		 * リダイレクト処理を外したまま・検証用タクソノミーを登録したままの状態を
+		 * 後続のテストへ持ち越さないようにする。
+		 */
+		$category_id        = 0;
+		$category_post      = 0;
+		$multi_type_term_id = 0;
+		$no_type_term_id    = 0;
+
+		try {
+			// カテゴリーアーカイブ（is_category() 分岐）の検証用に、専用のカテゴリーと投稿を用意する
+			$term          = wp_insert_term( 'テスト用カテゴリー_' . __METHOD__, 'category' );
+			$category_id   = is_wp_error( $term ) ? 0 : $term['term_id'];
+			$category_post = wp_insert_post(
+				array(
+					'post_title'  => 'カテゴリーアーカイブ確認用の投稿',
+					'post_status' => 'publish',
+					'post_type'   => 'post',
+				)
+			);
+			wp_set_post_terms( $category_post, array( $category_id ), 'category' );
+
+			/*
+			 * タクソノミー判定のガード確認用（レビュー指摘: 紐づく投稿タイプが複数／0個の場合の誤判定防止）に、
+			 * 複数の投稿タイプに紐づくタクソノミーと、どの投稿タイプにも紐づかないタクソノミーを用意する。
+			 */
+			register_taxonomy(
+				'bill_test_multi_type_tax',
+				array( 'post', 'estimate' ),
+				array(
+					'public'    => true,
+					'query_var' => 'bill_multi_type_tax',
+				)
+			);
+			$multi_type_term    = wp_insert_term( 'マルチタイプ確認用_' . __METHOD__, 'bill_test_multi_type_tax' );
+			$multi_type_term_id = is_wp_error( $multi_type_term ) ? 0 : $multi_type_term['term_id'];
+
+			register_taxonomy(
+				'bill_test_no_type_tax',
+				array(),
+				array(
+					'public'    => true,
+					'query_var' => 'bill_no_type_tax',
+				)
+			);
+			$no_type_term    = wp_insert_term( '投稿タイプなし確認用_' . __METHOD__, 'bill_test_no_type_tax' );
+			$no_type_term_id = is_wp_error( $no_type_term ) ? 0 : $no_type_term['term_id'];
+
+			// カテゴリー・検証用タクソノミーが作成できていないと以降の検証が意味を成さないため確認する
+			$this->assertGreaterThan( 0, $category_id, '検証用カテゴリーが作成できている' );
+			$this->assertGreaterThan( 0, $multi_type_term_id, '複数の投稿タイプに紐づく検証用タームが作成できている' );
+			$this->assertGreaterThan( 0, $no_type_term_id, '投稿タイプに紐づかない検証用タームが作成できている' );
+
+			// テストの配列
+			$test_cases = array(
+				array(
+					'test_condition_name' => 'フロントページ（絞り込みパラメーターなし）=> 請求書・見積書が混在するため空文字',
+					'conditions'          => array(
+						'url' => home_url( '/' ),
+					),
+					'expected'            => '',
+				),
+				array(
+					'test_condition_name' => 'post_type=estimate を指定（見積書一覧）=> estimate',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => 'estimate' ) ),
+					),
+					'expected'            => 'estimate',
+				),
+				array(
+					'test_condition_name' => 'post_type=client を指定（取引先一覧）=> client',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => 'client' ) ),
+					),
+					'expected'            => 'client',
+				),
+				array(
+					'test_condition_name' => 'post_type=post を指定（請求書一覧）=> post（フロントページの混在表示とは区別される）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => 'post' ) ),
+					),
+					'expected'            => 'post',
+				),
+				array(
+					'test_condition_name' => '未登録の投稿タイプ（salary）を指定 => 空文字（存在しない投稿タイプにフォールバックしない）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => 'salary' ) ),
+					),
+					'expected'            => '',
+				),
+				array(
+					/*
+					 * issue #331 との相性確認: post_type[]=post のように配列で指定された場合、
+					 * bill_custom_home_post_type()（inc/functions-pre-get-posts.php）は
+					 * is_string() チェックにより配列を「指定なし」として扱い、フロントページでは
+					 * 既定の混在表示 array( 'post', 'estimate' ) にフォールバックする。
+					 * そのため post_type クエリー変数は配列になり、is_scalar() のガードにより
+					 * 警告なく空文字（絞り込みなし）と判定できることを確認する。
+					 *
+					 * この下の「日本語」「記号のみ」の2ケースも、bill_custom_home_post_type() が
+					 * 「指定なし」と判定して同じ既定の混在表示へフォールバックするため、この関数
+					 * （bill_get_single_post_type_slug()）から見るといずれも post_type クエリー変数が
+					 * 配列になる同じ経路を通る。異なる経路の網羅ではなく、#331 側の入力パターン
+					 * （配列指定・日本語・記号のみ）に対する回帰確認として3ケース残している。
+					 */
+					'test_condition_name' => 'post_type を配列で指定（post_type[]=post）=> 空文字（警告を出さずに絞り込みなし扱い）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => array( 'post' ) ) ),
+					),
+					'expected'            => '',
+				),
+				array(
+					/*
+					 * issue #331 との相性確認: 日本語など sanitize_key() で空文字に丸められる値を
+					 * 指定した場合、bill_custom_home_post_type() は「指定なし」として扱い、
+					 * フロントページでは既定の混在表示にフォールバックする。
+					 */
+					'test_condition_name' => 'post_type に日本語（sanitize_key()で空文字に丸められる値）を指定 => 空文字（表示が壊れない）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => '見積' ) ),
+					),
+					'expected'            => '',
+				),
+				array(
+					'test_condition_name' => 'post_type に記号のみ（sanitize_key()で空文字に丸められる値）を指定 => 空文字（表示が壊れない）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => '!!!' ) ),
+					),
+					'expected'            => '',
+				),
+				array(
+					/*
+					 * issue #331 との相性確認（未カバーだった経路）: フロントページ以外では、
+					 * bill_custom_home_post_type() は post_type が配列の場合に上書きしないため、
+					 * post_type[]=a&post_type[]=b のような複数指定が配列のまま WP_Query に渡る
+					 * （フロントページの混在表示へのフォールバックとは異なる経路で、post_type
+					 * クエリー変数が配列になるケース）。この場合も単一の投稿タイプに絞り込まれて
+					 * いるとは言えないため、is_scalar() のガードにより空文字を返す。
+					 * 書き方は tests/test-post-type-filter.php の年別アーカイブのケースに揃えている。
+					 */
+					'test_condition_name' => 'トップページ以外（年別アーカイブ）で post_type を配列で指定した場合 => 空文字（単一の投稿タイプに絞り込まれていない）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query(
+							array(
+								'year'      => 2024,
+								'post_type' => array( 'post', 'estimate' ),
+							)
+						),
+					),
+					'expected'            => '',
+				),
+				array(
+					'test_condition_name' => 'カテゴリーアーカイブ（絞り込みパラメーターなし）=> カテゴリーが紐づく投稿タイプ（post）',
+					'conditions'          => array(
+						'url' => get_category_link( $category_id ),
+					),
+					'expected'            => 'post',
+				),
+				array(
+					/*
+					 * タクソノミーが複数の投稿タイプ（post, estimate）に紐づく場合、
+					 * どちらに絞り込まれているか一意に決められないため空文字を返す。
+					 * object_type[0] だけを見ていると誤って 'post' 等を返してしまう。
+					 */
+					'test_condition_name' => 'タクソノミーが複数の投稿タイプに紐づくアーカイブ => 空文字（単一に絞り込まれているとは言えない）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query(
+							array( 'bill_multi_type_tax' => get_term( $multi_type_term_id )->slug )
+						),
+					),
+					'expected'            => '',
+				),
+				array(
+					/*
+					 * タクソノミーがどの投稿タイプにも紐づかない場合（object_type が空配列）。
+					 * count( array() ) は 0 のため、そのまま object_type[0] へアクセスすると
+					 * 警告が出る（.phpunit.xml は警告を例外に変換するため即テスト失敗になる）。
+					 */
+					'test_condition_name' => 'タクソノミーがどの投稿タイプにも紐づかないアーカイブ => 空文字（警告を出さずに判定できる）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query(
+							array( 'bill_no_type_tax' => get_term( $no_type_term_id )->slug )
+						),
+					),
+					'expected'            => '',
+				),
+			);
+
+			foreach ( $test_cases as $case ) {
+				// テスト対象のURLへ移動し、実際のメインクエリを再現する
+				$this->go_to( $case['conditions']['url'] );
+
+				// テスト関数実行
+				$actual = bill_get_single_post_type_slug();
+
+				// 期待値テスト
+				$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+			}
+		} finally {
+			/*
+			 * try 内の go_to() で移動したままの状態（絞り込みクエリー等）を残さないよう、
+			 * フロントページへ戻す。bill_no_login_redirect() をまだ戻す前に実行することで、
+			 * 未ログイン状態でもリダイレクトの影響を受けずに実行できる。
+			 */
+			$this->go_to( home_url( '/' ) );
+
+			// リダイレクト処理を元に戻す
+			add_action( 'wp', 'bill_no_login_redirect' );
+
+			// 検証用に作成したカテゴリー・投稿を削除する
+			if ( $category_post ) {
+				wp_delete_post( $category_post, true );
+			}
+			if ( $category_id ) {
+				wp_delete_term( $category_id, 'category' );
+			}
+
+			// 検証用に作成したタームとタクソノミーを削除する
+			if ( $multi_type_term_id ) {
+				wp_delete_term( $multi_type_term_id, 'bill_test_multi_type_tax' );
+			}
+			if ( $no_type_term_id ) {
+				wp_delete_term( $no_type_term_id, 'bill_test_no_type_tax' );
+			}
+			unregister_taxonomy( 'bill_test_multi_type_tax' );
+			unregister_taxonomy( 'bill_test_no_type_tax' );
+		}
+	}
+
+	/**
+	 * bill_get_document_type_column() のテスト
+	 *
+	 * 書類一覧・取引先一覧（index.php）の「書類」列に出力する HTML を検証する（issue #316）。
+	 * 単一の投稿タイプに絞り込まれた一覧ではリンクにせずラベルをテキストで返すこと、
+	 * それ以外（フロントページの混在一覧）では `?post_type=<スラッグ>` 形式のリンクを
+	 * 返し、`target="_blank"` を付けないことを検証する。
+	 *
+	 * index.php はテンプレートパーツの都合で1プロセス中に1回しかレンダリングできず、
+	 * リンクになる側（今回の不具合修正の本体）をそこで直接検証できないため、
+	 * ロジックを切り出したこの関数を直接呼び出して検証する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_get_document_type_column() {
+		// テストの配列
+		$test_cases = array(
+			array(
+				'test_condition_name' => 'フロントページの混在一覧（絞り込みなし）で請求書の行 => 請求書一覧へのリンク',
+				'conditions'          => array(
+					'post_type_slug'        => 'post',
+					'single_list_post_type' => '',
+				),
+				'expected'            => '<a href="' . home_url( '/?post_type=post' ) . '">請求書</a>',
+			),
+			array(
+				/*
+				 * 判定が「single_list_post_type が空文字かどうか」ではなく、行の投稿タイプと
+				 * 一致するかどうかであることを確認する（値が入っていても不一致ならリンクになる）。
+				 */
+				'test_condition_name' => '絞り込み種別（estimate）と行の投稿タイプ（post）が異なる場合 => リンク',
+				'conditions'          => array(
+					'post_type_slug'        => 'post',
+					'single_list_post_type' => 'estimate',
+				),
+				'expected'            => '<a href="' . home_url( '/?post_type=post' ) . '">請求書</a>',
+			),
+			array(
+				'test_condition_name' => '取引先一覧（単一種別に絞り込まれている）の取引先の行 => リンクにせずラベルをテキスト表示',
+				'conditions'          => array(
+					'post_type_slug'        => 'client',
+					'single_list_post_type' => 'client',
+				),
+				'expected'            => '取引先・送付状',
+			),
+			array(
+				'test_condition_name' => '未登録の投稿タイプ（salary）の行 => 空文字（href="" の空リンクを出力しない）',
+				'conditions'          => array(
+					'post_type_slug'        => 'salary',
+					'single_list_post_type' => '',
+				),
+				'expected'            => '',
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			// テスト関数実行
+			$actual = bill_get_document_type_column(
+				$case['conditions']['post_type_slug'],
+				$case['conditions']['single_list_post_type']
+			);
+
+			// 期待値テスト（HTML全体が期待どおりであること）
+			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+		}
+
+		// リンクになるケースでは target="_blank" を付けないことを確認する
+		// （同一サイト内の一覧切り替えのため。他のカラムの target="_blank" と混同しないよう明示的に確認する）
+		$link_html = bill_get_document_type_column( 'post', '' );
+		$this->assertStringNotContainsString( 'target="_blank"', $link_html, '書類カラムのリンクに target="_blank" が付いていない' );
+	}
 }

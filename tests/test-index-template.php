@@ -2,18 +2,28 @@
 /**
  * Class IndexTemplateTest
  *
- * index.php（書類・取引先の一覧テンプレート）の取引先カラムのテスト
+ * index.php（書類・取引先の一覧テンプレート）の取引先カラム・書類カラムのテスト
  *
  * @package BillVektor
  */
 
 /**
- * 取引先一覧の取引先カラムのテスト
+ * 取引先一覧の取引先カラム・書類カラムのテスト
  *
  * 取引先一覧（?post_type=client）は書類一覧と同じ取引先カラムを共有しており、
  * 行そのものが取引先であるため自身の名前を表示する必要がある。
  * 書類側の不具合修正でこの表示が消える回帰が起きたため、テンプレートを
  * 実際にレンダリングして表示内容を検証する。
+ *
+ * 書類カラムについては、取引先一覧のように単一の投稿タイプに絞り込まれた一覧では
+ * `get_post_type_archive_link( 'url' )` の呼び間違いにより常に `href=""` の空リンクに
+ * なっていた不具合（issue #316）を検証する。取引先一覧はこの不具合が
+ * 「必ず空リンクになる」形で現れる（client は has_archive => false のため常に false が
+ * 返る）ため、単一種別に絞り込まれた一覧の代表としてここで検証する。
+ * 単一種別絞り込みの判定ロジック自体（bill_get_single_post_type_slug()）は
+ * inc/template-tags.php の単体テスト（tests/test-template-tags.php）で
+ * フロントページの混在表示・請求書一覧・見積書一覧・カテゴリーアーカイブなど
+ * 他のパターンも網羅している。
  *
  * 注意: template-parts/breadcrumb.php は bill_bread_crumb() を
  * function_exists() で保護せずに定義しているため、1つのPHPプロセスの中で
@@ -152,6 +162,12 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		 */
 		$this->assertCount( 2, $client_cells, '取引先一覧の2行分の取引先カラムがレンダリングされている' );
 
+		// 各行の書類カラムのセルを取り出す（issue #316 のバグ検証用）
+		preg_match_all( '#<!-- \[ 書類 \] -->\s*<td[^>]*>(.*?)</td>#s', $html, $doc_matches );
+		$doc_cells = array_map( 'trim', $doc_matches[1] );
+
+		$this->assertCount( 2, $doc_cells, '取引先一覧の2行分の書類カラムがレンダリングされている' );
+
 		// テストの配列
 		$test_cases = array(
 			array(
@@ -210,13 +226,67 @@ class IndexTemplateTest extends WP_UnitTestCase {
 				),
 				'expected'            => false,
 			),
+			array(
+				/*
+				 * issue #316: get_post_type_archive_link( 'url' ) の呼び間違いにより、
+				 * 単一種別に絞り込まれた一覧（取引先一覧はその代表例）の書類カラムが
+				 * 常に href="" の空リンクになっていた。
+				 */
+				'test_condition_name' => '取引先一覧の書類カラム => href="" の空リンクを出力しない（issue #316）',
+				'conditions'          => array(
+					'column' => 'doc',
+					'row'    => 0,
+					'needle' => 'href=""',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '取引先一覧の書類カラム => 単一種別に絞り込まれた一覧のためリンクにせずラベルをテキスト表示する',
+				'conditions'          => array(
+					'column' => 'doc',
+					'row'    => 0,
+					'needle' => '<a',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '取引先一覧の書類カラム => 投稿タイプのラベル「取引先・送付状」が表示される',
+				'conditions'          => array(
+					'column' => 'doc',
+					'row'    => 0,
+					'needle' => '取引先・送付状',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '無題の取引先の行の書類カラム => 行のタイトルに関わらずリンクにせずラベルをテキスト表示する',
+				'conditions'          => array(
+					'column' => 'doc',
+					'row'    => 1,
+					'needle' => '<a',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '無題の取引先の行の書類カラム => 投稿タイプのラベル「取引先・送付状」が表示される',
+				'conditions'          => array(
+					'column' => 'doc',
+					'row'    => 1,
+					'needle' => '取引先・送付状',
+				),
+				'expected'            => true,
+			),
 		);
 
 		foreach ( $test_cases as $case ) {
-			// 対象の行のセルを取得
-			$cell = $client_cells[ $case['conditions']['row'] ];
+			// 対象カラムのセル配列を選択（column 省略時は取引先カラム）
+			$column = isset( $case['conditions']['column'] ) ? $case['conditions']['column'] : 'client';
+			$cells  = ( 'doc' === $column ) ? $doc_cells : $client_cells;
 
-			// テスト対象の文字列が取引先セルに含まれるかを判定
+			// 対象の行のセルを取得
+			$cell = $cells[ $case['conditions']['row'] ];
+
+			// テスト対象の文字列が対象セルに含まれるかを判定
 			$actual = false !== strpos( $cell, $case['conditions']['needle'] );
 
 			// 期待値テスト
