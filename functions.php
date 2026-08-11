@@ -224,26 +224,64 @@ function bill_add_post_type_estimate() {
  * flush_rewrite_rules() は全投稿タイプ・全タクソノミーの対応表を再構築する重い処理のため、
  * バージョンが一致している間（毎リクエスト）は実行しない。
  *
- * この関数は優先度10（デフォルト）で init に登録する。bill_add_post_type_client() /
- * bill_add_post_type_estimate()（優先度0）で投稿タイプ・タクソノミーの登録が
- * 済んだ後に判定を行うことで、登録前に作り直してしまい意味がなくなることを防ぐ。
+ * このテーマはテスト環境でしか検証できていない前提が1つある。テスト環境では
+ * did_action( 'wp_loaded' ) が既に真のため flush_rewrite_rules() は同期的に実行されるが、
+ * 本番の通常リクエストでは wp_loaded フックの実行タイミングで初めて真になるため、
+ * 「記録は済んだが作り直しは wp_loaded 到達まで未実行」という遅延経路を通る
+ * （このタイミングの違いは指摘2のコメントを参照）。PHPUnit のテストはこの本番の
+ * 遅延実行パスまでは再現・検証できていない。
  *
  * @return void
  */
 function bill_maybe_flush_rewrite_rules() {
-	$option_name       = 'billvektor_rewrite_rules_version';
-	$recorded_version  = get_option( $option_name );
+	// オプションはサイト全体で1つの名前空間なので、関数プレフィックス（bill_）より
+	// 衝突しにくい billvektor_ を使う
+	$option_name      = 'billvektor_rewrite_rules_version';
+	$recorded_version = get_option( $option_name );
 
-	// 記録済みのバージョンが現在のテーマバージョンと一致していれば何もしない
 	if ( BILLVEKTOR_THEME_VERSION === $recorded_version ) {
 		return;
 	}
 
-	// リライトルールを作り直し、作り直し済みのバージョンを記録する
-	flush_rewrite_rules();
+	// 作り直しより先にバージョンを記録し、記録できたことを読み戻して確認する。
+	// 作り直しを先に行うと、DBへの書き込みが失敗し続ける環境で、重い作り直しが
+	// 未ログイン訪問者のリクエストも含めて毎回走り続けてしまう。
+	// また更新直後に同時アクセスが集中した場合も、先に記録することで
+	// 重複して作り直しが走る窓を最小にできる。
 	update_option( $option_name, BILLVEKTOR_THEME_VERSION );
+	if ( BILLVEKTOR_THEME_VERSION !== get_option( $option_name ) ) {
+		return;
+	}
+
+	// $hard = false（ソフトフラッシュ）。このテーマは add_rewrite_rule() を使っておらず
+	// .htaccess に書き足す内容が無いため、ファイル書き込みは行わない
+	flush_rewrite_rules( false );
 }
-add_action( 'init', 'bill_maybe_flush_rewrite_rules' );
+// wp_loaded で実行する。init の時点では、WP_Rewrite::flush_rules() が
+// ! did_action( 'wp_loaded' ) のとき自分自身を wp_loaded に登録し直して即 return するため、
+// 「バージョンの記録だけ済んで作り直しは wp_loaded まで持ち越し」の状態になる。
+// この間に exit するプラグイン（メンテナンスモード系など）が挟まると、作り直されないまま
+// 記録だけが残り、次のバージョンアップまで直らない。wp_loaded に登録すれば同期的に実行される。
+// bill_add_post_type_client() / bill_add_post_type_estimate()（init・優先度0）による
+// 投稿タイプ・タクソノミーの登録は wp_loaded の時点で確実に完了しているため、
+// 判定・作り直しのタイミングとしても問題ない。
+add_action( 'wp_loaded', 'bill_maybe_flush_rewrite_rules' );
+
+/**
+ * テーマを切り替えたときにバージョンの記録を削除する
+ *
+ * 他テーマ有効中にパーマリンクを保存されると、対応表（rewrite_rules オプション）から
+ * 見積書・取引先のルールが消える。その状態でこのテーマへ戻した場合、バージョンの記録は
+ * 変わっていないため bill_maybe_flush_rewrite_rules() の判定が「一致」のままとなり、
+ * 作り直しが走らず同じ404が再発してしまう。テーマ切り替え時に記録を削除しておくことで、
+ * 次の wp_loaded で必ず作り直しが走るようにする。
+ *
+ * @return void
+ */
+function bill_reset_rewrite_rules_version() {
+	delete_option( 'billvektor_rewrite_rules_version' );
+}
+add_action( 'after_switch_theme', 'bill_reset_rewrite_rules_version' );
 
 /*
 -------------------------------------------

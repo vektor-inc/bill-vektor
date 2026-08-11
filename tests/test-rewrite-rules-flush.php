@@ -16,7 +16,7 @@
  * そのため対応表が古いままだと、見積書の個別ページが404になる不具合（issue #35）が発生する。
  *
  * この不具合を再現するため、対応表を「見積書のルールを含まない古い状態」に
- * 強制的に置き換えたうえで init を再実行し、テーマのバージョンと記録値が
+ * 強制的に置き換えたうえで対象関数を直接呼び出し、テーマのバージョンと記録値が
  * 食い違う場合にのみ対応表が作り直されることを検証する。
  */
 class RewriteRulesFlushTest extends WP_UnitTestCase {
@@ -29,6 +29,13 @@ class RewriteRulesFlushTest extends WP_UnitTestCase {
 	private $option_name = 'billvektor_rewrite_rules_version';
 
 	/**
+	 * set_up() で変更する前のパーマリンク構造（tear_down() での復元用）
+	 *
+	 * @var string
+	 */
+	private $original_permalink_structure;
+
+	/**
 	 * テスト前のセットアップ
 	 *
 	 * リライトルールはパーマリンク構造が「基本（プレーン）」だと生成されないため、
@@ -39,17 +46,39 @@ class RewriteRulesFlushTest extends WP_UnitTestCase {
 	 */
 	public function set_up() {
 		parent::set_up();
+
+		global $wp_rewrite;
+		$this->original_permalink_structure = $wp_rewrite->permalink_structure;
 		$this->set_permalink_structure( '/%postname%/' );
+
+		// WP_Post_Type::add_rewrite_rules()（register_post_type() の内部処理）は、
+		// is_admin() が偽で permalink_structure オプションが空（プレーンパーマリンク）
+		// の場合、リライト構造（$wp_rewrite->extra_permastructs）を一切登録しない
+		// （wp-includes/class-wp-post-type.php の
+		// `if ( false !== $this->rewrite && ( is_admin() || get_option( 'permalink_structure' ) ) )`）。
+		// このテーマの estimate・client 投稿タイプは、プロセス起動時（bootstrap の
+		// 一度きりの init。permalink_structure がまだ空のタイミング）に登録されているため、
+		// 投稿タイプ自体は $wp_post_types に存在するが、リライト構造は最初から
+		// 一度も登録されていない。上の set_permalink_structure() で permalink_structure を
+		// 非空にした後にもう一度登録し直すことで、リライト構造を実際に作らせる
+		bill_add_post_type_client();
+		bill_add_post_type_estimate();
 	}
 
 	/**
 	 * テスト後のクリーンアップ
 	 *
-	 * バージョン記録用オプションが他のテストへ持ち越されないよう削除する。
+	 * このテーマの wp-phpunit（WP_RUN_CORE_TESTS 未定義）は $wp_rewrite を
+	 * 自動リセットしないため、set_up() で変更したパーマリンク構造を明示的に
+	 * 元へ戻す。DBはトランザクションで巻き戻るが、$wp_rewrite はプロセス内で
+	 * 使い回されるメモリ上のオブジェクトのため、戻さないと同一プロセスで後に走る
+	 * 他のテスト（go_to() を使う test-search-keyword.php 等）に影響してしまう。
+	 * 先頭で戻してから、バージョン記録用オプションを削除する。
 	 *
 	 * @return void
 	 */
 	public function tear_down() {
+		$this->set_permalink_structure( $this->original_permalink_structure );
 		delete_option( $this->option_name );
 		parent::tear_down();
 	}
@@ -58,12 +87,20 @@ class RewriteRulesFlushTest extends WP_UnitTestCase {
 	 * bill_maybe_flush_rewrite_rules() のテスト
 	 *
 	 * バージョン記録の状態（未記録・記録が古い・記録が最新）ごとに、
-	 * init 実行後の対応表（rewrite_rules オプション）とバージョン記録が
+	 * 対象関数の実行後の対応表（rewrite_rules オプション）とバージョン記録が
 	 * 期待どおりになることを検証する。
 	 *
 	 * @return void
 	 */
 	public function test_bill_maybe_flush_rewrite_rules() {
+
+		// bill_maybe_flush_rewrite_rules() が wp_loaded フックに登録されていることを確認する。
+		// init ではなく wp_loaded を使う理由は functions.php 側のコメントを参照
+		// （init だと flush_rewrite_rules() の内部で wp_loaded まで実行が遅延するため）。
+		$this->assertNotFalse(
+			has_action( 'wp_loaded', 'bill_maybe_flush_rewrite_rules' ),
+			'bill_maybe_flush_rewrite_rules() が wp_loaded フックに登録されていること'
+		);
 
 		// 見積書（estimate）のルールを一切含まない「古い対応表」を模した固定値。
 		// 実際のバグは、estimate 投稿タイプ追加前に生成された対応表が
@@ -115,9 +152,11 @@ class RewriteRulesFlushTest extends WP_UnitTestCase {
 				update_option( 'rewrite_rules', $stale_rules );
 				$wp_rewrite->rules = $stale_rules;
 
-				// カスタム投稿タイプ登録（優先度0）を含む init を再実行し、
-				// 登録後にバージョン差分の判定が走る経路を通す
-				do_action( 'init' );
+				// init 全体（他のコールバックも含む）を再実行するのではなく、対象関数を
+				// 直接呼び出す。投稿タイプ・タクソノミーのリライト構造は set_up() で
+				// 登録し直し済みのため、ここでの再登録は不要。
+				// フックの登録先が wp_loaded であることは上のアサーションで別途検証済み
+				bill_maybe_flush_rewrite_rules();
 
 				$rules_after = get_option( 'rewrite_rules' );
 
