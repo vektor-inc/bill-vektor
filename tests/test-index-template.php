@@ -209,6 +209,40 @@ class IndexTemplateTest extends WP_UnitTestCase {
 				'expected'            => true,
 			),
 			array(
+
+				/*
+				 * issue #310: target="_blank" のリンクは window.opener 経由で元タブを
+				 * 操作されるのを防ぐため rel="noopener" を必ず伴う。
+				 */
+				'test_condition_name' => '取引先一覧の取引先カラム => rel="noopener" が付与されている（issue #310）',
+				'conditions'          => array(
+					'row'    => 0,
+					'needle' => 'rel="noopener"',
+				),
+				'expected'            => true,
+			),
+			array(
+
+				/*
+				 * issue #310: 別タブで開くことをアイコン（aria-hidden）と
+				 * screen-reader-text の併用で予告する。
+				 */
+				'test_condition_name' => '取引先一覧の取引先カラム => 外部リンクアイコンが付与されている（issue #310）',
+				'conditions'          => array(
+					'row'    => 0,
+					'needle' => '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '取引先一覧の取引先カラム => 別タブで開くことを予告するscreen-reader-textが付与されている（issue #310）',
+				'conditions'          => array(
+					'row'    => 0,
+					'needle' => '<span class="screen-reader-text">（新しいタブで開きます）</span>',
+				),
+				'expected'            => true,
+			),
+			array(
 				'test_condition_name' => '取引先一覧の取引先カラム => 名前のある取引先ではダッシュを表示しない',
 				'conditions'          => array(
 					'row'    => 0,
@@ -217,10 +251,23 @@ class IndexTemplateTest extends WP_UnitTestCase {
 				'expected'            => false,
 			),
 			array(
-				'test_condition_name' => '無題の取引先の取引先カラム => ダッシュと代替テキスト「名称未設定の取引先」を表示する',
+
+				/*
+				 * issue #310 対応後は screen-reader-text に「新しいタブで開きます」を合成しているため、
+				 * span を増やさず旧文言「名称未設定の取引先」のみでは終わらないことも合わせて確認する。
+				 */
+				'test_condition_name' => '無題の取引先の取引先カラム => ダッシュと代替テキスト「名称未設定の取引先（新しいタブで開きます）」を表示する（issue #310）',
 				'conditions'          => array(
 					'row'    => 1,
-					'needle' => '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">名称未設定の取引先</span>',
+					'needle' => '<span aria-hidden="true">&#8212;</span><span class="glyphicon glyphicon-new-window" aria-hidden="true"></span><span class="screen-reader-text">名称未設定の取引先（新しいタブで開きます）</span>',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '無題の取引先の取引先カラム => rel="noopener" が付与されている（issue #310）',
+				'conditions'          => array(
+					'row'    => 1,
+					'needle' => 'rel="noopener"',
 				),
 				'expected'            => true,
 			),
@@ -228,7 +275,7 @@ class IndexTemplateTest extends WP_UnitTestCase {
 				'test_condition_name' => '無題の取引先の取引先カラム => 名前を直しに行けるようリンクは維持する',
 				'conditions'          => array(
 					'row'    => 1,
-					'needle' => '<a href="' . esc_url( get_permalink( $this->untitled_client_id ) ) . '" target="_blank">',
+					'needle' => '<a href="' . esc_url( get_permalink( $this->untitled_client_id ) ) . '" target="_blank" rel="noopener">',
 				),
 				'expected'            => true,
 			),

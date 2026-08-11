@@ -91,7 +91,14 @@
 					$client_name = (string) get_the_title();
 
 					if ( '' !== $client_name ) {
-						echo '<a href="' . esc_url( get_the_permalink() ) . '" target="_blank">' . esc_html( $client_name ) . '</a>';
+						/*
+						 * target="_blank" で別タブに遷移することを予告する。
+						 * アイコンは aria-hidden で読み上げに乗せず、screen-reader-text は
+						 * 画面拡大利用者には届かないため、両方を併用する（issue #310）。
+						 * rel="noopener" は別タブ側から window.opener 経由で元のタブを
+						 * 操作されるのを防ぐために付与する。
+						 */
+						echo '<a href="' . esc_url( get_the_permalink() ) . '" target="_blank" rel="noopener">' . esc_html( $client_name ) . '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span><span class="screen-reader-text">' . esc_html__( '（新しいタブで開きます）', 'bill-vektor' ) . '</span></a>';
 					} else {
 						/*
 						 * 無題で保存された取引先はリンクの文字列が無く、
@@ -100,8 +107,12 @@
 						 * ダッシュと代替テキストでリンク先を説明する。
 						 * 代替テキストはリンク先の説明になるため、書類側の「取引先なし」
 						 * （値が無いという状態の説明）とは異なる文言にしている。
+						 * アイコンはダッシュの直後に置き、可視のダッシュ用spanとは別に aria-hidden で
+						 * 読み上げから除外する。screen-reader-text の文言には「新しいタブで開きます」を
+						 * 合成し、span を増やさない（リンクの読み上げ名は中の文字列を全て連結するため、
+						 * span を分けると区切りのない2文になり意味の切れ目が分からなくなるのを避ける）。
 						 */
-						echo '<a href="' . esc_url( get_the_permalink() ) . '" target="_blank"><span aria-hidden="true">&#8212;</span><span class="screen-reader-text">' . esc_html__( '名称未設定の取引先', 'bill-vektor' ) . '</span></a>';
+						echo '<a href="' . esc_url( get_the_permalink() ) . '" target="_blank" rel="noopener"><span aria-hidden="true">&#8212;</span><span class="glyphicon glyphicon-new-window" aria-hidden="true"></span><span class="screen-reader-text">' . esc_html__( '名称未設定の取引先（新しいタブで開きます）', 'bill-vektor' ) . '</span></a>';
 					}
 				} elseif ( '' !== $client_name_manual ) {
 					echo esc_html( $client_name_manual );
@@ -115,8 +126,11 @@
 					$client_name = bill_get_client_short_name( $post );
 
 					if ( $client_id && '' !== $client_name ) {
-						// 取引先（登録済）が特定できている場合のみ取引先ページへのリンクにする
-						echo '<a href="' . esc_url( get_the_permalink( $client_id ) ) . '" target="_blank">' . esc_html( $client_name ) . '</a>';
+						/*
+						 * 取引先（登録済）が特定できている場合のみ取引先ページへのリンクにする。
+						 * target="_blank" の予告・rel="noopener" の考え方は上の $client_name と同じ（issue #310）。
+						 */
+						echo '<a href="' . esc_url( get_the_permalink( $client_id ) ) . '" target="_blank" rel="noopener">' . esc_html( $client_name ) . '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span><span class="screen-reader-text">' . esc_html__( '（新しいタブで開きます）', 'bill-vektor' ) . '</span></a>';
 					} else {
 						/*
 						 * 取引先が未設定の場合はダッシュを表示する。
@@ -136,7 +150,7 @@
 			<?php if ( $page_post_type['slug'] != 'client' ) { ?>
 
 <!-- [ 件名 ] -->
-<td><a href="<?php the_permalink(); ?>" target="_blank"><?php the_title(); ?></a></td>
+<td><a href="<?php the_permalink(); ?>" target="_blank" rel="noopener"><?php the_title(); ?><span class="glyphicon glyphicon-new-window" aria-hidden="true"></span><span class="screen-reader-text"><?php esc_html_e( '（新しいタブで開きます）', 'bill-vektor' ); ?></span></a></td>
 <!-- [ カテゴリー ] -->
 <td><?php echo bill_get_terms(); ?></td>
 
@@ -172,7 +186,14 @@
 			echo '<li>';
 			echo '<span class="post-date">' . date( 'Y.m.d', $post_date ) . '</span>';
 			echo '<span class="post-cate">' . esc_html( $entry->category ) . '</span>';
-			echo '<span class="post-title"><a href="' . esc_url( $entry->link ) . '?rel=rss" target="_blank">' . esc_html( $entry->title ) . '</a></span>';
+
+			/*
+			 * RSS由来の $entry->title は外部入力のため esc_html() で個別にエスケープし、
+			 * 追加するアイコン・screen-reader-text のマークアップは esc_html() の外側（連結する側）に
+			 * 置いて外部文字列に混ぜ込まない。お知らせは billvektor.com という外部サイトへのリンクなので、
+			 * 内部リンク（取引先・件名）とは異なる文言で「外部サイトが新しいタブで開く」ことを予告する（issue #310）。
+			 */
+			echo '<span class="post-title"><a href="' . esc_url( $entry->link ) . '?rel=rss" target="_blank" rel="noopener">' . esc_html( $entry->title ) . '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span><span class="screen-reader-text">' . esc_html__( '（外部サイトが新しいタブで開きます）', 'bill-vektor' ) . '</span></a></span>';
 			echo '</li>';
 			$count++;
 			if ( $count > 4 ) {

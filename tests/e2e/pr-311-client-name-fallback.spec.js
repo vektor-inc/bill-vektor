@@ -74,6 +74,10 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		await expect(registeredCell.locator('a')).toHaveCount(1);
 		await expect(registeredCell.locator('a')).toHaveAttribute('href', /[?&]client=\d+|\/client\//);
 		await expect(registeredCell.locator('a')).toHaveAttribute('target', '_blank');
+		// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること
+		await expect(registeredCell.locator('a')).toHaveAttribute('rel', 'noopener');
+		// issue #310: 別タブで開くことを読み上げ用テキストで予告していること
+		await expect(registeredCell.locator('.screen-reader-text')).toHaveText('（新しいタブで開きます）');
 
 		// 手入力の取引先は文字列だけを表示し、リンクは張らない。
 		const manualCell = frontClientCell(page, 'PR311 手入力取引先の見積');
@@ -86,16 +90,31 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		await page.waitForLoadState('networkidle');
 
 		// 名前ありの取引先は自身のページへの別タブリンクを維持する。
-		const namedLink = page.getByRole('link', { name: 'PR311 株式会社テスト取引先', exact: true });
+		// issue #310: 別タブで開くことを screen-reader-text で予告するため、
+		// アクセシブルネームにも予告文言が連結される。
+		const namedLink = page.getByRole('link', {
+			name: 'PR311 株式会社テスト取引先（新しいタブで開きます）',
+			exact: true,
+		});
 		await expect(namedLink).toHaveCount(1);
 		await expect(namedLink).toHaveAttribute('target', '_blank');
+		// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること
+		await expect(namedLink).toHaveAttribute('rel', 'noopener');
 
 		// 無題の取引先は空アンカーにせず、ダッシュと読み上げ用テキストをリンク内に置く。
-		const untitledLink = page.getByRole('link', { name: '名称未設定の取引先', exact: true });
+		// issue #310: 既存の screen-reader-text に「新しいタブで開きます」を合成しているため、
+		// アクセシブルネームもその合成後の文言になる。
+		const untitledLink = page.getByRole('link', {
+			name: '名称未設定の取引先（新しいタブで開きます）',
+			exact: true,
+		});
 		await expect(untitledLink).toHaveCount(1);
 		await expect(untitledLink).toHaveAttribute('target', '_blank');
-		await expect(untitledLink.locator('[aria-hidden="true"]')).toHaveText('—');
-		await expect(untitledLink.locator('.screen-reader-text')).toHaveText('名称未設定の取引先');
+		await expect(untitledLink).toHaveAttribute('rel', 'noopener');
+		// issue #310: ダッシュ用のaria-hiddenと新しいタブアイコン用のaria-hiddenの2つが並ぶため、
+		// ダッシュ側（1つ目）だけを対象にする。
+		await expect(untitledLink.locator('[aria-hidden="true"]').first()).toHaveText('—');
+		await expect(untitledLink.locator('.screen-reader-text')).toHaveText('名称未設定の取引先（新しいタブで開きます）');
 		expect((await untitledLink.innerHTML()).trim()).not.toBe('');
 	});
 
