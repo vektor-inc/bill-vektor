@@ -2,6 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
 const { TEST_DATA, verifyDocumentVisible } = require('./test-data-319.js');
+const { withAuthenticatedPage } = require('./require-test-data');
 
 /**
  * PR #319 フロント側の書類閲覧権限に関する e2e テスト。
@@ -59,6 +60,21 @@ const DOCUMENT_LEAK_TEXTS = [
 test.use({ storageState: { cookies: [], origins: [] } });
 
 /**
+ * 正規表現の特殊文字をエスケープする。
+ *
+ * マニフェスト由来の値（ログイン名など）を new RegExp() に埋め込む際に使う。
+ * このスクリプトが作成するログイン名は英数字のみだが、その保証はマニフェストの
+ * 生成側（create-test-data-pr-319.php）にあり spec 側では検証していないため、
+ * 埋め込み側でも無条件にエスケープしておく。
+ *
+ * @param {string} value エスケープ対象の文字列。
+ * @return {string} 正規表現の特殊文字をエスケープした文字列。
+ */
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * 指定ユーザーでログインする。
  *
  * @param {import('@playwright/test').Page} page
@@ -96,9 +112,12 @@ async function expectForbiddenPage(page, response) {
 		})
 	).toBeVisible();
 	// WordPress の言語パック有無により標準ロール名は日本語／英語のどちらにもなる。
-	// ログイン名はマニフェストから読んだ購読者アカウントを使う（正規表現の特殊文字を含まない英数字のため、そのまま埋め込む）。
+	// ログイン名はマニフェストから読んだ購読者アカウントを使う。正規表現にする必要があるのは
+	// ロール名部分の (?:購読者|Subscriber) だけなので、ログイン名側はエスケープしてから埋め込む。
 	await expect(page.locator('body')).toContainText(
-		new RegExp(`現在 ${USERS.subscriber.login}（(?:購読者|Subscriber)）としてログインしています。`)
+		new RegExp(
+			`現在 ${escapeRegExp(USERS.subscriber.login)}（(?:購読者|Subscriber)）としてログインしています。`
+		)
 	);
 	await expect(
 		page.getByRole('link', { name: 'ログアウトしてログインし直す' })
@@ -154,15 +173,7 @@ test.describe.serial('PR #319 書類の閲覧権限', () => {
 	// PASS してしまう（空振り PASS）。すべてのテストの前に、権限を持つ管理者アカウントで
 	// 書類が意図した内容（タイトル・合計金額）で表示できることを確認しておく。
 	test.beforeAll(async ({ browser }) => {
-		const context = await browser.newContext({
-			storageState: 'tests/e2e/.auth-state.json',
-		});
-		const page = await context.newPage();
-		try {
-			await verifyDocumentVisible(page);
-		} finally {
-			await context.close();
-		}
+		await withAuthenticatedPage(browser, verifyDocumentVisible);
 	});
 
 	test('購読者は全フロント経路で 403 になり、書類情報が漏れない', async ({

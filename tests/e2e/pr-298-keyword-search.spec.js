@@ -3,7 +3,7 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
-const { requireTestDataPresent } = require('./require-test-data');
+const { requireTestDataPresent, withAuthenticatedPage } = require('./require-test-data');
 
 /**
  * PR #298 e2e テスト
@@ -84,21 +84,21 @@ const PR298_SETUP_HINT =
 	'  npx wp-env run cli --env-cwd="wp-content/themes/$(basename "$PWD")" wp eval-file tests/e2e/create-test-data-298.php';
 
 test.beforeAll(async ({ browser }) => {
-	const context = await browser.newContext({
-		storageState: 'tests/e2e/.auth-state.json',
-	});
-	const page = await context.newPage();
-	try {
-		await requireTestDataPresent(
+	await withAuthenticatedPage(browser, (page) =>
+		requireTestDataPresent(
 			page,
-			'/',
-			(p) => p.locator('table.table tr td', { hasText: 'ロゴ制作費' }),
+			// フロントのトップページ「/」は新着10件までしか表示されないため、
+			// 他のテストデータ作成スクリプト（例: create-test-data-pr-314.php が
+			// 実行時刻を発行日にした投稿を11件作る）が積み重なると対象がページ外へ
+			// 押し出され、存在するのに「見つからない」と誤判定してしまう。
+			// 件数に依存しない管理画面の検索結果で確認する。
+			'/wp-admin/edit.php?post_type=post&s=' +
+				encodeURIComponent('ロゴ制作費'),
+			(p) => p.locator('.row-title', { hasText: 'ロゴ制作費' }),
 			'PR #298 の請求書「ロゴ制作費」',
 			PR298_SETUP_HINT
-		);
-	} finally {
-		await context.close();
-	}
+		)
+	);
 });
 
 test.describe('PR #298: キーワード検索と既存条件の併用', () => {

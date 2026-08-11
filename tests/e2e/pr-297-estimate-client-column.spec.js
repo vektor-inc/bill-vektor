@@ -1,7 +1,7 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
-const { requireTestDataPresent } = require('./require-test-data');
+const { requireTestDataPresent, withAuthenticatedPage } = require('./require-test-data');
 
 /**
  * PR #297 見積書一覧「取引先」列の UI / e2e テスト。
@@ -41,21 +41,19 @@ const SETUP_HINT =
 	'  npx wp-env run cli --env-cwd="wp-content/themes/$(basename "$PWD")" wp eval-file tests/e2e/create-test-data-pr-297.php';
 
 test.beforeAll(async ({ browser }) => {
-	const context = await browser.newContext({
-		storageState: 'tests/e2e/.auth-state.json',
-	});
-	const page = await context.newPage();
-	try {
-		await requireTestDataPresent(
+	await withAuthenticatedPage(browser, (page) =>
+		requireTestDataPresent(
 			page,
-			LIST_PATH,
-			(p) => estimateRow(p, 'Webサイト制作見積（登録済取引先）'),
+			// LIST_PATH（絞り込み無しの一覧）は既定20件/ページのため、他のテスト
+			// データ作成スクリプトが積み重なると対象がページ外へ押し出され、
+			// 存在するのに「見つからない」と誤判定するおそれがある（PR #298 と同種の問題）。
+			// 件数に依存しない管理画面の検索結果で確認する。
+			`${LIST_PATH}&s=${encodeURIComponent('Webサイト制作見積（登録済取引先）')}`,
+			(p) => p.locator('.row-title', { hasText: 'Webサイト制作見積（登録済取引先）' }),
 			'PR #297 の見積書「Webサイト制作見積（登録済取引先）」',
 			SETUP_HINT
-		);
-	} finally {
-		await context.close();
-	}
+		)
+	);
 });
 
 /**

@@ -6,10 +6,10 @@ const { test, expect } = require('@playwright/test');
  * PR #311 取引先名フォールバック修正の UI / e2e テスト。
  *
  * 実行前（テーマのディレクトリ＝このリポジトリのルートで実行する）:
- * npx wp-env run cli wp eval-file wp-content/themes/$(basename "$PWD")/tests/e2e/create-test-data-pr-311.php
+ * npx wp-env run cli wp eval-file "wp-content/themes/$(basename "$PWD")/tests/e2e/create-test-data-pr-311.php"
  *
  * 実行後:
- * npx wp-env run cli wp eval-file wp-content/themes/$(basename "$PWD")/tests/e2e/cleanup-test-data-pr-311.php
+ * npx wp-env run cli wp eval-file "wp-content/themes/$(basename "$PWD")/tests/e2e/cleanup-test-data-pr-311.php"
  *
  * テーマのディレクトリ名は git worktree などで bill-vektor 以外になることがあるため、
  * $(basename "$PWD") でカレントディレクトリ名から求める。

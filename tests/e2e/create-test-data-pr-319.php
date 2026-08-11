@@ -55,7 +55,25 @@
  * 否定形の検証は素通りしてしまいます（空振り PASS）。
  * テスト側で「意図した書類が表示されているか」をタイトルと合計金額で
  * 確認できるようにしています。
+ *
+ * 安全対策:
+ * このスクリプトは確認用アカウントのパスワードを固定値で上書きするため、
+ * ローカル／開発環境専用に限定している（下記の環境チェック）。
+ * また、既に同じログイン名のユーザーがいる場合は、このスクリプトが過去に作成した
+ * メールアドレスと一致するかを確認してから上書きする（所有権チェック）。
+ * git から丸ごとデプロイした本番環境などで誤ってこのスクリプトを実行しても、
+ * 既存アカウントの乗っ取りが起きないようにするため。
  */
+
+// このスクリプトは確認用アカウントのパスワードを固定値へ上書きするため、
+// ローカル／開発環境以外では実行できないようにする。
+// 本番環境へ git から丸ごとデプロイした後、案内コマンドを誤って実行してしまう
+// ケースを塞ぐための保険（配布 zip には tests/ が含まれないため、想定する事故は
+// 「gitで直接デプロイした環境で手動実行してしまう」場合に限られる）。
+$bill_e2e_319_env = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production';
+if ( ! in_array( $bill_e2e_319_env, array( 'local', 'development' ), true ) ) {
+	WP_CLI::error( 'このスクリプトはローカル／開発環境専用です（現在: ' . $bill_e2e_319_env . '）。' );
+}
 
 // 投稿IDの書き出し先。spec 側と同じ tests/e2e/ 配下に置く
 // （wp-env コンテナ内でもテーマごとマウントされるためホスト側にも反映される）
@@ -110,7 +128,19 @@ function bill_e2e_319_upsert_document() {
 	$post_id = bill_e2e_319_find_post_by_title( $title );
 
 	if ( $post_id ) {
-		// 既存投稿を再利用する。下書き・ゴミ箱のままだとテストが閲覧できないため公開状態に揃える
+		// 既存投稿を再利用する。ゴミ箱に入っている場合は wp_update_post() で
+		// post_status を直接書き換えず、正規の復元経路である wp_untrash_post() を使う。
+		// wp_update_post() で直接 publish にすると、ゴミ箱に入る前の状態を記録した
+		// メタ（_wp_trash_meta_status 等）やスラッグの __trashed サフィックスが
+		// 残ったままになるため。
+		if ( 'trash' === get_post_status( $post_id ) ) {
+			$untrashed = wp_untrash_post( $post_id );
+			if ( ! $untrashed ) {
+				WP_CLI::error( '投稿をゴミ箱から復元できませんでした: ' . $post_id );
+			}
+		}
+
+		// 下書きのままだったり、復元後の状態が公開でない場合は公開状態に揃える
 		if ( 'publish' !== get_post_status( $post_id ) ) {
 			$updated = wp_update_post(
 				array(
@@ -123,6 +153,24 @@ function bill_e2e_319_upsert_document() {
 			if ( is_wp_error( $updated ) ) {
 				WP_CLI::error( '投稿の公開状態への変更に失敗しました: ' . $updated->get_error_message() );
 			}
+		}
+
+		// 発行日を現在時刻へ更新する。
+		// 再利用のたびに最初の作成日時のまま据え置くと、フロントの新着順一覧では
+		// 他のテストデータ作成が積み重なるほど1ページ目から押し出されてしまい、
+		// 「寄稿者と管理者は一覧・明細を閲覧でき…」の一覧確認がページ件数に依存して
+		// 誤って失敗するようになる。このスクリプトを実行した直後に spec を走らせる
+		// 運用を前提に、実行のたびに最新化することで新着順の1ページ目に留める。
+		$touched = wp_update_post(
+			array(
+				'ID'            => $post_id,
+				'post_date'     => current_time( 'mysql' ),
+				'post_date_gmt' => current_time( 'mysql', true ),
+			),
+			true
+		);
+		if ( is_wp_error( $touched ) ) {
+			WP_CLI::error( '投稿の発行日更新に失敗しました: ' . $touched->get_error_message() );
 		}
 
 		echo 'Reused post ID: ' . $post_id . "\n";
@@ -165,16 +213,33 @@ function bill_e2e_319_upsert_document() {
  * 期待値へ上書きする。手動で作成されていたユーザーと役割・パスワードが食い違ったまま
  * だと、テストがログインできず原因の分かりにくい失敗になるため。
  *
+ * ただし上書き前に、そのユーザーが本当にこのスクリプトが管理しているアカウントかを
+ * メールアドレスで確認する（所有権チェック）。ログイン名が偶然一致した実在アカウント
+ * （例えば本番相当の環境の管理者が同じログイン名を使っていた場合）に対して、
+ * パスワード上書きと役割の全置換を行ってしまうと、パスワードの奪取と権限の剥奪が
+ * 同時に起きるため。
+ *
  * @param string $login    ログイン名。
  * @param string $role     権限グループ（例: 'subscriber', 'contributor'）。
  * @param string $password パスワード。
- * @param string $email    メールアドレス（新規作成時のみ使用）。
+ * @param string $email    メールアドレス（新規作成時に設定し、以後は所有権の確認に使う）。
  * @return int 作成または再利用したユーザーID。
  */
 function bill_e2e_319_upsert_user( $login, $role, $password, $email ) {
 	$user = get_user_by( 'login', $login );
 
 	if ( $user ) {
+		// このスクリプトが作成したアカウントかどうかを、登録時に設定したメールアドレスで確認する。
+		// 一致しない場合は無関係の既存アカウントの可能性があるため、上書きせずに中断する。
+		if ( $email !== $user->user_email ) {
+			WP_CLI::error(
+				sprintf(
+					'ログイン名 %s は確認用アカウント以外で使われている可能性があるため中断しました。',
+					$login
+				)
+			);
+		}
+
 		$updated = wp_update_user(
 			array(
 				'ID'        => $user->ID,
@@ -223,9 +288,9 @@ $bill_e2e_319_total_formatted = number_format( $bill_e2e_319_total );
 
 echo 'Total (tax included): ' . $bill_e2e_319_total_formatted . "\n";
 
-// 権限確認用ユーザーを作成・再利用する
-$bill_e2e_319_subscriber_id  = bill_e2e_319_upsert_user( 'billsub', 'subscriber', 'password', 'billsub@example.com' );
-$bill_e2e_319_contributor_id = bill_e2e_319_upsert_user( 'billcon', 'contributor', 'password', 'billcon@example.com' );
+// 権限確認用ユーザーを作成・再利用する（戻り値のユーザーIDはマニフェストに含めないため使い捨てる）
+bill_e2e_319_upsert_user( 'billsub', 'subscriber', 'password', 'billsub@example.com' );
+bill_e2e_319_upsert_user( 'billcon', 'contributor', 'password', 'billcon@example.com' );
 
 // テスト側が読み取れるよう、書類の投稿ID・タイトル・合計金額とユーザーの認証情報を JSON で書き出す
 $bill_e2e_319_manifest = array(

@@ -23,8 +23,15 @@
  * 見つからない場合は、通常のアサーションタイムアウトを待たせず、
  * 短時間（5秒）で「前提データが無い」と判断して案内コマンド付きのエラーを投げる。
  *
+ * 確認先の URL は、表示件数の上限（ページング）で見切れない場所を選ぶこと。
+ * フロントのトップページ「/」は新着10件までしか表示されず、他のテストデータ
+ * 作成スクリプトが積み重なると対象が1ページ目から押し出されて「存在しない」と
+ * 誤判定してしまう（実際に PR #298 のスペックで発生した）。
+ * 管理画面の検索結果（例: /wp-admin/edit.php?post_type=post&s=...）のように
+ * 件数に依存せず対象1件だけに絞り込める URL を渡すこと。
+ *
  * @param {import('@playwright/test').Page} page       確認に使う Page（権限を持つアカウントでログイン済みのものを渡すこと）。
- * @param {string} url                                  確認対象の一覧・検索結果 URL。
+ * @param {string} url                                  確認対象の一覧・検索結果 URL（件数の上限に依存しないものを渡すこと）。
  * @param {(page: import('@playwright/test').Page) => import('@playwright/test').Locator} locatorFn 存在を確認したい要素のロケーターを返す関数。
  * @param {string} label                                エラーメッセージに出す前提データの説明（例: 'PR #297 の見積書「Webサイト制作見積（登録済取引先）」'）。
  * @param {string} setupHint                             見つからなかった場合に案内する作成コマンド。
@@ -50,4 +57,30 @@ async function requireTestDataPresent(page, url, locatorFn, label, setupHint) {
 	}
 }
 
-module.exports = { requireTestDataPresent };
+// global-setup.js が保存するログイン済み storageState のパス。
+// beforeAll から前提データ確認用の Page を用意するスペックが複数あり、
+// パスのリテラルが各ファイルに散らばっていたため、ここへ集約する。
+const AUTH_STATE_PATH = 'tests/e2e/.auth-state.json';
+
+/**
+ * ログイン済み storageState で新しい BrowserContext / Page を作り、渡された関数を実行してから
+ * 必ず context を閉じる。
+ *
+ * `browser.newContext({ storageState: ... })` → `newPage()` → `try` / `finally` で `close()` という
+ * 同じ定型処理が pr-297・pr-298・pr-319 の beforeAll に重複していたため、ここに集約した。
+ *
+ * @param {import('@playwright/test').Browser} browser
+ * @param {(page: import('@playwright/test').Page) => Promise<void>} fn ログイン済み Page を使って行う処理。
+ * @return {Promise<void>}
+ */
+async function withAuthenticatedPage(browser, fn) {
+	const context = await browser.newContext({ storageState: AUTH_STATE_PATH });
+	const page = await context.newPage();
+	try {
+		await fn(page);
+	} finally {
+		await context.close();
+	}
+}
+
+module.exports = { requireTestDataPresent, withAuthenticatedPage, AUTH_STATE_PATH };

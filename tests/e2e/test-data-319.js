@@ -136,16 +136,15 @@ function loadTestData() {
 			// ベースURLは playwright.config.js の baseURL に任せるため相対パスで組み立てる
 			url: `/?p=${document.id}`,
 		},
-		users: {
-			subscriber: {
-				login: users.subscriber.login,
-				password: users.subscriber.password,
-			},
-			contributor: {
-				login: users.contributor.login,
-				password: users.contributor.password,
-			},
-		},
+		// REQUIRED_USER_ROLES から組み立てる。ロール名を個別にハードコードすると、
+		// 検証対象（invalidRoles）には含まれるのに返り値には反映されない、という
+		// 片手落ちの状態になりやすいため。
+		users: Object.fromEntries(
+			REQUIRED_USER_ROLES.map((role) => [
+				role,
+				{ login: users[role].login, password: users[role].password },
+			])
+		),
 	};
 }
 
