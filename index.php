@@ -35,21 +35,21 @@
 	<?php if ( have_posts() ) { ?>
 <table class="table table-striped table-borderd">
 <tr>
-<th>書類</th>
+<th scope="col">書類</th>
 		<?php if ( $page_post_type['slug'] != 'client' ) { ?>
-<th>発行日</th>
+<th scope="col">発行日</th>
 <?php } ?>
 
 		<?php if ( $post_type['slug'] != 'salary' ) { ?>
-<th>取引先</th>
+<th scope="col">取引先</th>
 <?php } ?>
 
 		<?php if ( $page_post_type['slug'] != 'client' ) { ?>
-	<th>件名</th>
+	<th scope="col">件名</th>
 			<?php if ( $post_type['slug'] != 'salary' ) { ?>
-		<th>カテゴリー</th>
+		<th scope="col">カテゴリー</th>
 	<?php } elseif ( $post_type['slug'] == 'salary' ) { ?>
-		<th>支給分</th>
+		<th scope="col">支給分</th>
 	<?php } ?>
 <?php } ?>
 </tr>
