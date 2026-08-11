@@ -1,8 +1,16 @@
 <?php
-function bill_bread_crumb() {
-	/*
-		BreadCrumb
-	/*-------------------------------------------*/
+/*
+ * get_template_part() は locate_template() の第3引数（$load_once）に false を渡すため
+ * require_once ではなく require で読み込む。そのため index.php のように1つのPHPプロセスの
+ * 中で本ファイルを複数回読み込む場面（PHPUnit で複数の一覧テンプレートをレンダリングする等）が
+ * あると、このガードが無いと2回目の読み込みで「Cannot redeclare bill_bread_crumb()」の
+ * Fatal error になる。
+ */
+if ( ! function_exists( 'bill_bread_crumb' ) ) :
+	function bill_bread_crumb() {
+		/*
+			BreadCrumb
+		/*-------------------------------------------*/
 
 	global $wp_query;
 
@@ -233,8 +241,12 @@ function bill_bread_crumb() {
 	$panListHtml .= '</ol>
 </div>
 <!-- [ /.breadSection ] -->';
-	return $panListHtml;
-}
+		return $panListHtml;
+	}
+endif;
+
+// 実行部分はガードの外に置く。ガードの中に入れると2回目以降の読み込みで
+// パンくずが出力されなくなってしまうため。
 $panListHtml = bill_bread_crumb();
 $panListHtml = apply_filters( 'bill_panListHtml', $panListHtml );
 echo $panListHtml;
