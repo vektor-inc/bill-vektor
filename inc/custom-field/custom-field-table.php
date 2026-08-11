@@ -14,7 +14,8 @@ class Bill_Item_Custom_Fields {
 
 	public static function fields_form() {
 
-		wp_nonce_field( wp_create_nonce( __FILE__ ), 'noncename__bill_fields' );
+		// action には固定文字列を使う（__FILE__ は12時間ごとに切り替わるためactionに使ってはいけない）
+		wp_nonce_field( 'bill_vektor_bill_item_custom_fields', 'noncename__bill_fields' );
 
 		global $post;
 		$bill_items   = get_post_meta( $post->ID, 'bill_items', true );
@@ -164,7 +165,25 @@ class Bill_Item_Custom_Fields {
 		$noncename__bill_fields = isset( $_POST['noncename__bill_fields'] ) ? $_POST['noncename__bill_fields'] : null;
 
 		// nonce を確認し、値が書き換えられていれば、何もしない（CSRF対策）
-		if ( ! wp_verify_nonce( $noncename__bill_fields, wp_create_nonce( __FILE__ ) ) ) {
+		// action は固定文字列を使う（__FILE__ は12時間ごとに切り替わるためactionに使ってはいけない）
+		if ( ! wp_verify_nonce( $noncename__bill_fields, 'bill_vektor_bill_item_custom_fields' ) ) {
+			return $post_id;
+		}
+
+		/*
+		 * 変更履歴（リビジョン）に対しては書き込まない。
+		 * 投稿の更新時、WordPress が変更履歴を作る過程でも save_post が発火し、
+		 * その際は引数の $post_id が変更履歴側の投稿IDになる。
+		 * この関数は下の保存処理で $post_id（引数）を書き込み先に使っているため、
+		 * 判定にも同じ $post_id を使う（global $post は常に元の投稿を指しており、
+		 * ここで判定に使うと書き込み先とズレてしまう）。
+		 */
+		if ( wp_is_post_revision( $post_id ) ) {
+			return $post_id;
+		}
+
+		// nonce だけでなく、この投稿を編集してよい利用者かも確認する（多層防御。判定対象は書き込み先と同じ $post_id）
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return $post_id;
 		}
 

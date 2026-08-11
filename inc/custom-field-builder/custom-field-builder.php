@@ -66,7 +66,8 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 		*/
 		public static function form_table( $custom_fields_array, $befor_items = '', $echo = true ) {
 
-			wp_nonce_field( wp_create_nonce( __FILE__ ), 'noncename__fields' );
+			// action には固定文字列を使う（__FILE__ は12時間ごとに切り替わるためactionに使ってはいけない）
+			wp_nonce_field( 'bill_vektor_custom_field_builder', 'noncename__fields' );
 
 			global $post;
 			global $custom_field_builder_url;
@@ -211,13 +212,31 @@ if ( ! class_exists( 'VK_Custom_Field_Builder' ) ) {
 			$noncename__fields = isset( $_POST['noncename__fields'] ) ? $_POST['noncename__fields'] : null;
 
 			// nonce を確認し、値が書き換えられていれば、何もしない（CSRF対策）
-			if ( ! wp_verify_nonce( $noncename__fields, wp_create_nonce( __FILE__ ) ) ) {
+			// action は固定文字列を使う（__FILE__ は12時間ごとに切り替わるためactionに使ってはいけない）
+			if ( ! wp_verify_nonce( $noncename__fields, 'bill_vektor_custom_field_builder' ) ) {
+				return;
+			}
+
+			/*
+			 * 変更履歴（リビジョン）に対しては書き込まない。
+			 * この関数は save_post フックの引数（$post_id）を使わず global $post だけを
+			 * 読み書きに使っており、global $post はリクエスト全体で元の投稿を指したまま
+			 * 変わらない（リビジョン作成の入れ子処理からは影響を受けない）。
+			 * そのため実経路ではこの判定は常に false になる。global $post がリビジョンを
+			 * 指した状態で呼ばれる将来の呼び出し方に対する保険として残している。
+			 */
+			if ( wp_is_post_revision( $post->ID ) ) {
+				return;
+			}
+
+			// nonce だけでなく、この投稿を編集してよい利用者かも確認する（多層防御）
+			if ( ! current_user_can( 'edit_post', $post->ID ) ) {
 				return;
 			}
 
 			// 自動保存ルーチンかどうかチェック。そうだった場合は何もしない（記事の自動保存処理として呼び出された場合の対策）
 			if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-				return $post_id; }
+				return; }
 
 			foreach ( $custom_fields_array as $key => $value ) {
 
