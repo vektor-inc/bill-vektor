@@ -79,10 +79,15 @@ async function submitFilters(page) {
 }
 
 /**
- * 取引先「株式会社テスト商事」の `#bill_client` select option の value を取得する。
+ * 副作用: `#bill_client` で取引先「株式会社テスト商事」を選択する。
  *
+ * その上で選択した option の value（取引先の投稿 ID）を返す。
  * URL 直打ちでページ送りを確認するテストで取引先を併用するために使う。
- * option value（取引先の投稿 ID）は環境ごとに変わるため、ハードコードせずページから読む。
+ * option value は環境ごとに変わるため、ハードコードせずページから読む。
+ *
+ * 呼び出し側は、この関数が取引先の選択そのものを行うことを前提にしてよい
+ * （読み取り専用ではない）。フォーム送信の前に呼ぶ場合、この関数が既に
+ * 取引先を選択済みであることに注意する（別途 selectOption を重ねる必要はない）。
  *
  * option の `hasText` は部分一致・大文字小文字無視のため、将来「株式会社テスト商事 東京支店」
  * のような取引先が増えると複数ヒットして strict mode violation で落ちる。ファイル内の他の
@@ -93,7 +98,7 @@ async function submitFilters(page) {
  * @param {import('@playwright/test').Page} page
  * @returns {Promise<string>}
  */
-async function getTestClientOptionValue(page) {
+async function selectTestClientAndGetOptionValue(page) {
 	const select = page.locator('#bill_client');
 	await select.selectOption({ label: TEST_CLIENT_LABEL });
 	return select.inputValue();
@@ -278,7 +283,7 @@ test.describe('PR #298: キーワード検索と既存条件の併用', () => {
 			// 崩れないよう、取引先も併用する。option value（取引先の投稿 ID）は
 			// 環境ごとに変わるため、beforeEach で開いた「/」のフォームから読み、
 			// ハードコードしない。
-			const clientOptionValue = await getTestClientOptionValue(page);
+			const clientOptionValue = await selectTestClientAndGetOptionValue(page);
 
 			// 基本のフォーム送信は別テストで確認済み。ここではページ送り自体へ
 			// 焦点を絞り、同じ GET 条件の相対 URL から1ページ目を開く。
