@@ -25,12 +25,22 @@ const { AUTH_STATE_PATH, withAuthenticatedPage } = require('./auth-helpers');
  *
  * スクリプトは繰り返し実行しても同じ結果になる（同じ件名の書類があれば再利用する）。
  * DB の import / reset / export は行わない。
+ *
+ * 件名の完全一致（toEqual）で結果を確認しているテストは、環境に他のテストデータや
+ * 実データが同居していても結果が変わらないよう、pr-298 専用の取引先
+ * 「株式会社テスト商事」（create-test-data-298.php だけが作る取引先）で絞り込んだ
+ * 上で照合する（issue #304）。空欄化による解除の確認や CSV エクスポートの確認など、
+ * toContain / not.toContain ベースの確認はこの限りではない。
  */
 
 // global-setup.js で保存したログイン済み Cookie を使用する。
 test.use({ storageState: AUTH_STATE_PATH });
 
 const SCREENSHOT_DIR = path.resolve('tests/e2e/screenshots');
+
+// create-test-data-298.php だけが使う取引先名。この取引先で絞り込むことで、
+// 環境に他のテストデータや実データが同居していても件名の完全一致確認が崩れない。
+const TEST_CLIENT_LABEL = '株式会社テスト商事';
 
 /**
  * 一覧テーブルに表示されている件名を上から順に取得する。
@@ -66,6 +76,32 @@ async function submitFilters(page) {
 	// click() がフォーム送信後の画面遷移まで待つため、別の navigation 待機は重ねない。
 	await page.getByRole('button', { name: /絞り込み/ }).click();
 	expect(new URL(page.url()).searchParams.get('action')).toBe('send');
+}
+
+/**
+ * 副作用: `#bill_client` で取引先「株式会社テスト商事」を選択する。
+ *
+ * その上で選択した option の value（取引先の投稿 ID）を返す。
+ * URL 直打ちでページ送りを確認するテストで取引先を併用するために使う。
+ * option value は環境ごとに変わるため、ハードコードせずページから読む。
+ *
+ * 呼び出し側は、この関数が取引先の選択そのものを行うことを前提にしてよい
+ * （読み取り専用ではない）。フォーム送信の前に呼ぶ場合、この関数が既に
+ * 取引先を選択済みであることに注意する（別途 selectOption を重ねる必要はない）。
+ *
+ * option の `hasText` は部分一致・大文字小文字無視のため、将来「株式会社テスト商事 東京支店」
+ * のような取引先が増えると複数ヒットして strict mode violation で落ちる。ファイル内の他の
+ * 箇所と同じ selectOption({ label }) の完全一致に照合規則を揃え、選択結果を inputValue() で
+ * 読み出す（getAttribute() は string|null を返すため、null のまま URL に埋め込むと
+ * bill_client=null という分かりにくい失敗になる。selectOption が失敗すればここで例外になる）。
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<string>}
+ */
+async function selectTestClientAndGetOptionValue(page) {
+	const select = page.locator('#bill_client');
+	await select.selectOption({ label: TEST_CLIENT_LABEL });
+	return select.inputValue();
 }
 
 /**
@@ -135,12 +171,17 @@ test.describe('PR #298: キーワード検索と既存条件の併用', () => {
 		expect(Math.abs(submitButton.width - searchBox.width)).toBeLessThanOrEqual(1);
 
 		// 「サイト」で請求書を絞り込み、件名と入力値を確認する。
+		// 環境に他のテストデータや実データが同居していても件名の完全一致確認が
+		// 崩れないよう、pr-298 専用の取引先を併用する。
+		await page.locator('#bill_client').selectOption({ label: TEST_CLIENT_LABEL });
 		await page.locator('#bill_keyword').fill('サイト');
 		await submitFilters(page);
 		expect(await getDocumentTitles(page)).toEqual(['サイト制作費']);
 		await expect(page.locator('#bill_keyword')).toHaveValue('サイト');
 
 		// キーワードを空にして再送信すると、キーワード絞り込みが解除される。
+		// 取引先の絞り込みは維持されたままなので、toContain による確認は
+		// 他データが混ざっていても成立する。
 		await page.locator('#bill_keyword').fill('');
 		await submitFilters(page);
 		const titlesAfterClear = await getDocumentTitles(page);
@@ -153,25 +194,40 @@ test.describe('PR #298: キーワード検索と既存条件の併用', () => {
 	test('書類種別・取引先・発行日とキーワードを併用できる', async ({ page }) => {
 		// 見積書 + 取引先 + キーワードの3条件を同時に指定する。
 		await page.locator('#post_type').selectOption('estimate');
-		await page.locator('#bill_client').selectOption({ label: '株式会社テスト商事' });
+		await page.locator('#bill_client').selectOption({ label: TEST_CLIENT_LABEL });
 		await page.locator('#bill_keyword').fill('サイト');
 		await submitFilters(page);
 		expect(await getDocumentTitles(page)).toEqual(['サイトリニューアル見積']);
 
-		// 発行日 + キーワードの併用で、2023年の2書類だけに絞り込む。
+		// 発行日 + キーワードの併用。取引先は選択したままにする（環境に他の
+		// テストデータや実データが同居していても、件名の完全一致確認が
+		// 崩れないようにするため）。
+		//
+		// 範囲は「発行日・キーワードのどちらか片方だけが効いていない場合」に
+		// 期待値と食い違うよう選んでいる（安藤さんのコードレビュー指摘対応）。
+		// - キーワード「年度 更新」に該当するのは 年度 更新プラン（2023-01-01）と
+		//   更新プランの年度切替（2023-08-01）の2件だけ。
+		// - 発行日の範囲を 2023-04-01〜2024-01-31 にすると、年度 更新プラン
+		//   （2023-01-01）は範囲外になり、代わりにキーワードに該当しない
+		//   ロゴ制作費（2024-01-15）が範囲内に入る。
+		// そのため、キーワードだけ効いて発行日が効かない場合は
+		// 年度 更新プラン が混ざって2件、発行日だけ効いてキーワードが効かない
+		// 場合は ロゴ制作費 が混ざって2件になり、どちらも1件だけを期待する
+		// 下記の toEqual と食い違う。両方効いた場合だけ更新プランの年度切替の
+		// 1件に絞り込める。
 		await page.locator('#post_type').selectOption('post');
-		await page.locator('#bill_client').selectOption('');
-		await page.locator('#start_date').fill('20230101');
-		await page.locator('#end_date').fill('20231231');
+		await page.locator('#bill_client').selectOption({ label: TEST_CLIENT_LABEL });
+		await page.locator('#start_date').fill('20230401');
+		await page.locator('#end_date').fill('20240131');
 		await page.locator('#bill_keyword').fill('年度 更新');
 		await submitFilters(page);
-		expect(await getDocumentTitles(page)).toEqual([
-			'更新プランの年度切替',
-			'年度 更新プラン',
-		]);
+		expect(await getDocumentTitles(page)).toEqual(['更新プランの年度切替']);
 	});
 
 	test('本文だけの語句はヒットせず、検索対象が件名に限定される', async ({ page }) => {
+		// 本文限定キーワードは他のテストデータと衝突しにくいが、件名が
+		// 1件もヒットしないことを確認する検証のため取引先も併用しておく。
+		await page.locator('#bill_client').selectOption({ label: TEST_CLIENT_LABEL });
 		await page.locator('#bill_keyword').fill('本文限定キーワード');
 		await submitFilters(page);
 
@@ -181,6 +237,9 @@ test.describe('PR #298: キーワード検索と既存条件の併用', () => {
 	});
 
 	test('複数語でも発行日の新しい順を維持する', async ({ page }) => {
+		// 環境に他のテストデータや実データが同居していても件名の完全一致確認が
+		// 崩れないよう、pr-298 専用の取引先を併用する。
+		await page.locator('#bill_client').selectOption({ label: TEST_CLIENT_LABEL });
 		await page.locator('#bill_keyword').fill('年度 更新');
 		await submitFilters(page);
 
@@ -196,6 +255,10 @@ test.describe('PR #298: キーワード検索と既存条件の併用', () => {
 	});
 
 	test('キーワード「0」の1文字でも絞り込める', async ({ page }) => {
+		// キーワード「0」は数字を含む件名なら何でもヒットしうるため、環境に
+		// 他のテストデータや実データが同居していると件名の完全一致確認が崩れる
+		// （issue #304）。pr-298 専用の取引先で絞り込んだ上で照合する。
+		await page.locator('#bill_client').selectOption({ label: TEST_CLIENT_LABEL });
 		await page.locator('#bill_keyword').fill('0');
 		await submitFilters(page);
 
@@ -216,13 +279,26 @@ test.describe('PR #298: キーワード検索と既存条件の併用', () => {
 		await settingsPage.close();
 
 		try {
+			// 環境に他のテストデータや実データが同居していても件名の完全一致確認が
+			// 崩れないよう、取引先も併用する。option value（取引先の投稿 ID）は
+			// 環境ごとに変わるため、beforeEach で開いた「/」のフォームから読み、
+			// ハードコードしない。
+			const clientOptionValue = await selectTestClientAndGetOptionValue(page);
+
 			// 基本のフォーム送信は別テストで確認済み。ここではページ送り自体へ
 			// 焦点を絞り、同じ GET 条件の相対 URL から1ページ目を開く。
-			await page.goto('/?post_type=post&bill_keyword=%E5%88%B6%E4%BD%9C%E8%B2%BB&action=send');
+			await page.goto(
+				`/?post_type=post&bill_client=${encodeURIComponent(clientOptionValue)}` +
+					'&bill_keyword=%E5%88%B6%E4%BD%9C%E8%B2%BB&action=send'
+			);
 
 			expect(await getDocumentTitles(page)).toEqual(['サイト制作費']);
 			const secondPageLink = page.locator('a.page-numbers').filter({ hasText: /^2$/ });
 			await expect(secondPageLink).toHaveAttribute('href', /bill_keyword=/);
+			// bill_client がページ送りのリンクへ引き継がれる前提に依存しているため、
+			// 前提が壊れた場合にここで検知できるよう明示的に確認する
+			// （壊れた場合、件名比較の失敗としてしか現れず原因が分かりにくいため）。
+			await expect(secondPageLink).toHaveAttribute('href', /bill_client=/);
 			// トップページ内の外部 RSS 読み込みに影響されないよう、クリック開始後は
 			// DOMContentLoaded とページ番号 URL を明示的な完了条件にする。
 			await secondPageLink.evaluate((element) => element.click());
@@ -283,14 +359,15 @@ test.describe('PR #298: キーワード検索と既存条件の併用', () => {
 	test('キーワード空欄でも従来の書類種別・取引先・発行日絞り込みが効く', async ({ page }) => {
 		// 書類種別 + 取引先の回帰確認。
 		await page.locator('#post_type').selectOption('estimate');
-		await page.locator('#bill_client').selectOption({ label: '株式会社テスト商事' });
+		await page.locator('#bill_client').selectOption({ label: TEST_CLIENT_LABEL });
 		await expect(page.locator('#bill_keyword')).toHaveValue('');
 		await submitFilters(page);
 		expect(await getDocumentTitles(page)).toEqual(['サイトリニューアル見積']);
 
-		// 発行日だけの回帰確認。
+		// 発行日の回帰確認。取引先は選択したままにする（環境に他のテストデータや
+		// 実データが同居していても件名の完全一致確認が崩れないようにするため）。
 		await page.locator('#post_type').selectOption('post');
-		await page.locator('#bill_client').selectOption('');
+		await page.locator('#bill_client').selectOption({ label: TEST_CLIENT_LABEL });
 		await page.locator('#start_date').fill('20230801');
 		await page.locator('#end_date').fill('20230801');
 		await submitFilters(page);

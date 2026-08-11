@@ -324,19 +324,24 @@ function bill_title_custom( $title ) {
 			$title = $post_type['name'] . '_';
 			// 取引先名
 			$title .= bill_get_client_name( $post );
-			// 敬称
-			$client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
-			if ( $client_honorific ) {
-				$title .= $client_honorific . '_';
-			} else {
-				$title .= '御中_';
-			}
+			/*
+			 * 敬称。取得・検証のロジックは bill_get_client_honorific() に集約している
+			 * （書類フレーム側と同じ判定をここでも重複して持たないようにするため）。
+			 * 取引先（イレギュラー）の場合は空文字が返るため敬称が付かない
+			 * （書類本体の表示と揃う）。
+			 */
+			$title .= bill_get_client_honorific( $post ) . '_';
 			// 件名
-			$title     .= get_the_title() . '_';
-				$title .= get_the_date( 'Ymd' );
+			$title .= get_the_title() . '_';
+			$title .= get_the_date( 'Ymd' );
 		}
 	}
-	return strip_tags( $title );
+	/*
+	 * <title> は WordPress 本体（_wp_render_title_tag()）が一切エスケープせず出力するため、
+	 * ここでエスケープする。取引先名・件名も含めタグを除去した上でエスケープすることで、
+	 * HTML 出力文脈での破壊やタグ混入を防ぐ。
+	 */
+	return esc_html( strip_tags( $title ) );
 }
 add_filter( 'wp_title', 'bill_title_custom', 11 );
 add_filter( 'pre_get_document_title', 'bill_title_custom', 11 );

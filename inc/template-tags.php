@@ -739,11 +739,7 @@ function bill_get_client_short_name( $post ) {
 		return '';
 	}
 
-	/*
-	 * 投稿IDでも投稿オブジェクトでも受け取れるように WP_Post に正規化する。
-	 * この正規化は、後述する検証済みIDの差し替え（clone）が効くための前提でもあるため、
-	 * WP_Post を受け取る場合でも省略しないこと。
-	 */
+	// 投稿IDでも投稿オブジェクトでも受け取れるように WP_Post に正規化する
 	$post = get_post( $post );
 
 	// 投稿が存在しない場合は空文字を返す
@@ -768,29 +764,83 @@ function bill_get_client_short_name( $post ) {
 
 	/*
 	 * 省略名が無い場合の取引先名は bill_get_client_name_by_post() に委譲する。
-	 * 委譲先も bill_get_client_id() で同じ検証を行うため差し替えなしでも結果は同じだが、
-	 * この関数が「検証済みのIDだけを渡す」ことをコード上で明示するために差し替える。
-	 * 取引先（イレギュラー）の値はそのまま渡すので、優先順位の判定は委譲先のままになる。
-	 *
-	 * 差し替えは、冒頭の get_post() による正規化で $post の filter が raw に
-	 * なっていることが前提（filter が raw 以外だと委譲先で WP_Post が作り直され、
-	 * 代入した bill_client が失われる）。
+	 * 委譲先も bill_get_client_id() で同じ検証を行うため、$post をそのまま渡してよい
+	 * （検証済みIDへの差し替えは不要。取引先（イレギュラー）の値もそのまま渡すので、
+	 * 優先順位の判定は委譲先のままになる）。
 	 */
-	$validated_post              = clone $post;
-	$validated_post->bill_client = $client_id;
-
-	return (string) bill_get_client_name_by_post( $validated_post );
+	return (string) bill_get_client_name_by_post( $post );
 }
 
+/**
+ * 書類の敬称（御中など）を取得する
+ *
+ * 取引先（登録済）に敬称（client_honorific）が登録されていればその敬称を返し、
+ * 登録されていない・取引先が未設定/不正値の場合は既定の敬称「御中」を返す。
+ * 取引先（イレギュラー）が入力されている場合は敬称を出さないため空文字を返す。
+ *
+ * 書類フレーム（template-parts/doc/frame-bill.php・frame-estimate.php）と
+ * PDF・ブラウザのタイトル（functions.php の bill_title_custom()）で同じ判定を
+ * 使うため、この関数に集約している（同じ業務ルールが複数箇所に散っていると、
+ * 仕様変更時に片方だけ直して取り残される事故が起きるため）。
+ *
+ * 値は画面へ直接出力せず戻り値として返す。エスケープは呼び出し側で行うこと
+ * （この関数はエスケープ前の生値を返す）。
+ *
+ * @param int|WP_Post $post 書類の投稿IDまたは投稿オブジェクト。
+ * @return string 敬称。取引先（イレギュラー）が入力されている場合や
+ *                投稿が存在しない場合は空文字。
+ */
 function bill_get_client_honorific( $post ) {
-	if ( empty( $post->bill_client_name_manual ) ) {
-		$client_honorific = esc_html( get_post_meta( $post->bill_client, 'client_honorific', true ) );
-		if ( $client_honorific ) {
-			echo $client_honorific;
-		} else {
-			echo '御中';
-		}
+	/*
+	 * 空の値を get_post() に渡すとグローバルの $post が返るため、
+	 * 意図しない書類の敬称を返さないよう先に判定する。
+	 */
+	if ( empty( $post ) ) {
+		return '';
 	}
+
+	// 投稿IDでも投稿オブジェクトでも受け取れるように WP_Post に正規化する
+	$post = get_post( $post );
+
+	// 投稿が存在しない場合は空文字を返す（bill_get_client_short_name() と揃える）
+	if ( ! $post instanceof WP_Post ) {
+		return '';
+	}
+
+	/*
+	 * 取引先（イレギュラー）が入力されている場合は敬称を出さない。
+	 * この値も保存時にサニタイズされておらず配列などが入り得るため、
+	 * bill_get_client_name() と同じ判定式を使う（同じ「イレギュラー入力あり」の
+	 * 判定を関数ごとに別の書き方で持たせないため。以前は empty() だけで判定しており、
+	 * '0' が入力されている場合や配列が入力されている場合に bill_get_client_name() と
+	 * 判定結果がずれていた）。
+	 */
+	if ( is_scalar( $post->bill_client_name_manual ) && '' !== (string) $post->bill_client_name_manual ) {
+		return '';
+	}
+
+	/*
+	 * 取引先（登録済）のIDの検証は bill_get_client_id() に集約する。
+	 * $post->bill_client を直接 get_post_meta() に渡すと内部で absint() されるため、
+	 * -123 のような値が投稿ID 123（＝別の取引先）の敬称として読まれてしまう。
+	 * 削除済み・取引先（client）以外の投稿を指している場合も同様に、
+	 * 無関係な投稿のメタ値を敬称として読んでしまう。
+	 */
+	$client_id = bill_get_client_id( $post );
+
+	// 取引先が未設定・不正値の場合は既定の敬称を返す
+	if ( ! $client_id ) {
+		return '御中';
+	}
+
+	$client_honorific = get_post_meta( $client_id, 'client_honorific', true );
+
+	// 敬称が未登録の場合も既定の敬称を返す。保存時にサニタイズされていないため配列などが入り得る
+	if ( ! is_scalar( $client_honorific ) || '' === (string) $client_honorific ) {
+		return '御中';
+	}
+
+	return (string) $client_honorific;
 }
 
 /**
