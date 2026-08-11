@@ -3,7 +3,8 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
-const { requireTestDataPresent, withAuthenticatedPage } = require('./require-test-data');
+const { requireTestDataPresent } = require('./require-test-data');
+const { AUTH_STATE_PATH, withAuthenticatedPage } = require('./auth-helpers');
 
 /**
  * PR #298 e2e テスト
@@ -27,7 +28,7 @@ const { requireTestDataPresent, withAuthenticatedPage } = require('./require-tes
  */
 
 // global-setup.js で保存したログイン済み Cookie を使用する。
-test.use({ storageState: 'tests/e2e/.auth-state.json' });
+test.use({ storageState: AUTH_STATE_PATH });
 
 const SCREENSHOT_DIR = path.resolve('tests/e2e/screenshots');
 

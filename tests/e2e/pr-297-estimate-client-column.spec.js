@@ -1,7 +1,8 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
-const { requireTestDataPresent, withAuthenticatedPage } = require('./require-test-data');
+const { requireTestDataPresent } = require('./require-test-data');
+const { AUTH_STATE_PATH, withAuthenticatedPage } = require('./auth-helpers');
 
 /**
  * PR #297 見積書一覧「取引先」列の UI / e2e テスト。
@@ -30,7 +31,7 @@ const { requireTestDataPresent, withAuthenticatedPage } = require('./require-tes
  * global-setup.js で取得したログイン済み storageState を使い回す。
  */
 
-test.use({ storageState: 'tests/e2e/.auth-state.json' });
+test.use({ storageState: AUTH_STATE_PATH });
 
 const LIST_PATH = '/wp-admin/edit.php?post_type=estimate';
 

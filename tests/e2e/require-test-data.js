@@ -15,6 +15,9 @@
  *
  * このヘルパーは、スペック全体の実行前に軽量な存在確認を1回だけ行い、
  * 前提データが無ければ作成コマンドを添えた明示的なエラーで即座に落とす。
+ *
+ * ログイン済み storageState まわりの共通処理（AUTH_STATE_PATH・withAuthenticatedPage）は
+ * このファイルの役割ではないため auth-helpers.js に分けている。
  */
 
 /**
@@ -57,30 +60,4 @@ async function requireTestDataPresent(page, url, locatorFn, label, setupHint) {
 	}
 }
 
-// global-setup.js が保存するログイン済み storageState のパス。
-// beforeAll から前提データ確認用の Page を用意するスペックが複数あり、
-// パスのリテラルが各ファイルに散らばっていたため、ここへ集約する。
-const AUTH_STATE_PATH = 'tests/e2e/.auth-state.json';
-
-/**
- * ログイン済み storageState で新しい BrowserContext / Page を作り、渡された関数を実行してから
- * 必ず context を閉じる。
- *
- * `browser.newContext({ storageState: ... })` → `newPage()` → `try` / `finally` で `close()` という
- * 同じ定型処理が pr-297・pr-298・pr-319 の beforeAll に重複していたため、ここに集約した。
- *
- * @param {import('@playwright/test').Browser} browser
- * @param {(page: import('@playwright/test').Page) => Promise<void>} fn ログイン済み Page を使って行う処理。
- * @return {Promise<void>}
- */
-async function withAuthenticatedPage(browser, fn) {
-	const context = await browser.newContext({ storageState: AUTH_STATE_PATH });
-	const page = await context.newPage();
-	try {
-		await fn(page);
-	} finally {
-		await context.close();
-	}
-}
-
-module.exports = { requireTestDataPresent, withAuthenticatedPage, AUTH_STATE_PATH };
+module.exports = { requireTestDataPresent };
