@@ -544,9 +544,10 @@ function bill_get_new_window_notice_text( $is_external = false ) {
 /**
  * 別タブで開くことを予告するマークアップ（アイコン＋screen-reader-text）を返す
  *
- * target="_blank" のリンクのテキストの直後に連結して使う。取引先一覧の取引先名リンク・
+ * target="_blank" のリンクのテキストの直後に連結して使う。集約前は取引先一覧の取引先名リンク・
  * 書類一覧の取引先（登録済）リンク・件名リンク・お知らせ（RSS）リンクの4箇所で同じ
- * マークアップが重複していたため、この関数に集約した（issue #310 レビュー対応）。
+ * マークアップが重複しており、この関数に集約した（issue #310 レビュー対応）。現在は
+ * footer.php・template-parts/export-box.php の外部リンク3箇所も加わり、合計7箇所で使用している。
  *
  * @param bool $is_external 遷移先が外部サイトかどうか。bill_get_new_window_notice_text() に委譲する。
  * @return string エスケープ済みのHTML（アイコン span ＋ screen-reader-text span）。

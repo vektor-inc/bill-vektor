@@ -291,7 +291,19 @@ class IndexTemplateDocumentListTest extends WP_UnitTestCase {
 		// 各行の件名カラム（投稿タイトル）と取引先カラムのセルを、行の出現順を保ったまま取り出す
 		preg_match_all( '#<!-- \[ 件名 \] -->\s*<td><a[^>]*>(.*?)</a></td>#s', $html, $title_matches );
 		preg_match_all( '#<!-- \[ 取引先 \] -->\s*<td[^>]*>(.*?)</td>#s', $html, $client_matches );
-		$title_cells  = array_map( 'trim', $title_matches[1] );
+		$title_cells  = array_map(
+			static function ( $cell ) {
+				/*
+				 * issue #310 対応で件名リンクの直後に予告マークアップ（アイコン span +
+				 * screen-reader-text span）が付くようになったため、$this->doc_titles の
+				 * 素の件名（可視テキストのみ）をキーに引けるよう span を取り除く。
+				 * 件名は esc_html() 済みで '<' を含み得ないため、span を取り除いた残りは
+				 * 常に件名の可視テキストになる。
+				 */
+				return trim( preg_replace( '#<span[^>]*>.*?</span>#s', '', $cell ) );
+			},
+			$title_matches[1]
+		);
 		$client_cells = array_map( 'trim', $client_matches[1] );
 
 		// 件名カラムと取引先カラムは同じ <tr> から1個ずつ取れるはずなので、件数の対応が崩れていないか確認する

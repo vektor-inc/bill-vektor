@@ -777,6 +777,13 @@ class TemplateTagsTest extends WP_UnitTestCase {
 	 * 別タブで開くことを予告する装飾用アイコンが、常に aria-hidden="true" 付きの
 	 * 固定マークアップを返すことを検証する（issue #310）。
 	 *
+	 * この関数は引数を取らず、条件分岐も持たない固定値返却の関数のため、
+	 * 同ファイルの他2つの新設テスト（test_bill_get_new_window_notice_text() /
+	 * test_bill_get_new_window_notice()）のような配列ループ形式にしていない。
+	 * 入力が無い以上、複数ケースに分けても同じ呼び出し・同じ期待値の繰り返しにしかならず、
+	 * 「意味のある正常系2パターン以上」を作れないと判断したため、1ケースのまま
+	 * assertSame() による完全一致で検証する。
+	 *
 	 * @return void
 	 */
 	public function test_bill_get_new_window_icon() {
@@ -832,7 +839,8 @@ class TemplateTagsTest extends WP_UnitTestCase {
 	 * アイコン（bill_get_new_window_icon()）と screen-reader-text（予告文言）を
 	 * 組み合わせたマークアップを、$is_external の値に応じて返すことを検証する（issue #310）。
 	 * 取引先一覧の取引先名リンク・書類一覧の取引先(登録済)リンク・件名リンク・
-	 * お知らせ（RSS）リンクの4箇所で共通して使う関数のため、この組み合わせ自体を検証する。
+	 * お知らせ（RSS）リンク・footer.php や template-parts/export-box.php の外部リンクなど、
+	 * 合計7箇所で共通して使う関数のため、この組み合わせ自体を検証する。
 	 *
 	 * @return void
 	 */

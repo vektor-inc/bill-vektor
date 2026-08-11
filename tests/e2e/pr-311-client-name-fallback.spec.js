@@ -112,8 +112,11 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		// 名前ありの取引先は自身のページへの別タブリンクを維持する。
 		// issue #310: 別タブで開くことを screen-reader-text で予告するため、
 		// アクセシブルネームにも予告文言が連結される。
+		// マークアップ上はテキストノード・aria-hiddenのアイコンspan・screen-reader-textのspanと
+		// 複数の子要素が並んでおり、ブラウザのアクセシブルネーム算出は各要素の寄与をスペースで
+		// 連結するため、社名と括弧の間に半角スペースが1つ入る（実測値に合わせる）。
 		const namedLink = page.getByRole('link', {
-			name: 'PR311 株式会社テスト取引先（新しいタブで開きます）',
+			name: 'PR311 株式会社テスト取引先 （新しいタブで開きます）',
 			exact: true,
 		});
 		await expect(namedLink).toHaveCount(1);

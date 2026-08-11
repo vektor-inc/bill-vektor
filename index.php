@@ -32,7 +32,17 @@
 	?>
 
 <div class="section">
-	<?php if ( have_posts() ) { ?>
+	<?php
+	if ( have_posts() ) {
+		/*
+		 * issue #310 レビュー対応: 件名列の予告アイコン（.glyphicon-new-window）が原因で
+		 * 375px 幅にてページ全体の scrollWidth が溢れる回帰が起きたため、テーブルを
+		 * Bootstrap 3 純正の .table-responsive（overflow-x: auto 等）で囲み、
+		 * ページ全体ではなくテーブル内だけがスクロールするようにする。新規CSSは不要
+		 * （.table-responsive のスタイル一式は assets/css/bootstrap.min.css に同梱済み）。
+		 */
+		?>
+<div class="table-responsive">
 <table class="table table-striped table-borderd">
 <tr>
 <th scope="col">書類</th>
@@ -171,6 +181,7 @@
 </tr>
 <?php endwhile; ?>
 </table>
+</div>
 		<?php the_posts_pagination(); ?>
 		<?php
 	} else {

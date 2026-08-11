@@ -33,6 +33,12 @@ const SCREENSHOT_DIR = path.resolve('tests/e2e/screenshots');
 /**
  * 一覧テーブルに表示されている件名を上から順に取得する。
  *
+ * issue #310 対応で件名セルに別タブで開くことを予告する screen-reader-text
+ * （「（新しいタブで開きます）」）が付くようになり、textContent ベースでは
+ * 予告文言込みの文字列になってしまう。可視の件名だけを比較したいので、
+ * セルを複製してから screen-reader-text 要素を取り除いた上でテキストを取得する
+ * （allTextContents() を使わないのは、この除去処理をブラウザ側で行うため）。
+ *
  * @param {import('@playwright/test').Page} page
  * @returns {Promise<string[]>}
  */
@@ -40,7 +46,13 @@ async function getDocumentTitles(page) {
 	return page.locator('table.table tr')
 		.filter({ has: page.locator('td') })
 		.locator('td:nth-child(4)')
-		.allTextContents();
+		.evaluateAll((cells) =>
+			cells.map((cell) => {
+				const clone = cell.cloneNode(true);
+				clone.querySelectorAll('.screen-reader-text').forEach((node) => node.remove());
+				return clone.textContent.trim();
+			})
+		);
 }
 
 /**
