@@ -36,9 +36,18 @@ class TitleCustomTest extends WP_UnitTestCase {
 	private $client_honorific = '様';
 
 	/**
+	 * 敬称が登録されていない取引先（client 投稿）の投稿IDを保持する
+	 *
+	 * 取引先は登録済でも敬称欄を空のまま運用しているケースを再現するために使う。
+	 *
+	 * @var int
+	 */
+	private $no_honorific_client_id;
+
+	/**
 	 * テスト前の共通セットアップ
 	 *
-	 * 敬称「様」が登録されている取引先を作成する。
+	 * 敬称「様」が登録されている取引先と、敬称が未登録の取引先を作成する。
 	 *
 	 * @return void
 	 */
@@ -53,6 +62,15 @@ class TitleCustomTest extends WP_UnitTestCase {
 			)
 		);
 		update_post_meta( $this->client_id, 'client_honorific', $this->client_honorific );
+
+		// 敬称が登録されていない取引先を作成（登録はしたが敬称欄は空のまま、という通常の運用を再現する）
+		$this->no_honorific_client_id = wp_insert_post(
+			array(
+				'post_title'  => '有限会社敬称なし',
+				'post_status' => 'publish',
+				'post_type'   => 'client',
+			)
+		);
 
 		/*
 		 * go_to() は wp アクションを実行するため、フロント側の閲覧制限
@@ -73,6 +91,7 @@ class TitleCustomTest extends WP_UnitTestCase {
 	 */
 	public function tear_down() {
 		wp_delete_post( $this->client_id, true );
+		wp_delete_post( $this->no_honorific_client_id, true );
 
 		/*
 		 * go_to() で移動したままだと、後続のテストが is_single() などこの
@@ -118,6 +137,21 @@ class TitleCustomTest extends WP_UnitTestCase {
 					'bill_client'              => 'client_id',
 				),
 				'expected'            => '請求書_株式会社テスト取引先様_サイト制作費_20240101',
+			),
+			array(
+				/*
+				 * 取引先は登録済だが敬称欄を空のまま運用しているケース
+				 * （異常値ではなく、通常あり得る運用）。
+				 * bill_get_client_honorific() の「敬称が未登録なら既定の
+				 * 「御中」を返す」経路が、タイトル生成側から見ても
+				 * 正しく効いていることを固定する。
+				 */
+				'test_condition_name' => '取引先（登録済）だが敬称が未登録の書類の場合 => 書類種別_取引先名+既定の敬称「御中」_件名_発行日',
+				'conditions'          => array(
+					'bill_client_name_manual' => '',
+					'bill_client'              => 'no_honorific_client_id',
+				),
+				'expected'            => '請求書_有限会社敬称なし御中_サイト制作費_20240101',
 			),
 			array(
 				/*
@@ -169,10 +203,13 @@ class TitleCustomTest extends WP_UnitTestCase {
 				)
 			);
 
-			// bill_client の 'client_id' は set_up で作成した取引先IDに差し替える
+			// bill_client の 'client_id' 等の文字列は set_up で作成した取引先IDに差し替える
 			$bill_client = $case['conditions']['bill_client'];
 			if ( 'client_id' === $bill_client ) {
 				$bill_client = $this->client_id;
+			}
+			if ( 'no_honorific_client_id' === $bill_client ) {
+				$bill_client = $this->no_honorific_client_id;
 			}
 
 			update_post_meta( $bill_id, 'bill_client_name_manual', $case['conditions']['bill_client_name_manual'] );
