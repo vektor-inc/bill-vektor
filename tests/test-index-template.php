@@ -25,19 +25,17 @@
  * フロントページの混在表示・請求書一覧・見積書一覧・カテゴリーアーカイブなど
  * 他のパターンも網羅している。
  *
- * 注意: template-parts/breadcrumb.php は bill_bread_crumb() を
- * function_exists() で保護せずに定義しているため、1つのPHPプロセスの中で
- * index.php を2回以上読み込むと Fatal error になる。
- * そのため index.php をレンダリングするテストはこの1件のみとし、
- * 検証したい条件は1回のレンダリングに行として並べて確認する。
+ * かつては template-parts/breadcrumb.php が bill_bread_crumb() を
+ * function_exists() で保護せずに定義していたため、1つのPHPプロセスの中で
+ * index.php を2回以上読み込むと Fatal error になり、index.php をレンダリングする
+ * テストはスイート全体で1件しか書けなかった（issue #315）。ガードが入ったことで
+ * この制約は解消しており、このテストクラス内でも1回のレンダリングに複数の
+ * 検証したい条件を行として並べて確認するスタイルを踏襲している。
  *
- * 未カバー: 書類一覧側（?post_type=estimate 等）の index.php のレンダリングは、
- * 上記の制約により現状カバーされていない。省略名の参照・リンクとダッシュの出し分け・
- * 取引先（イレギュラー）の型ガードといった index.php 固有のロジックは、
- * bill_get_client_name() のユニットテストでは通らない（あれは共通関数の戻り値のみを見ている）。
- * 管理画面のカラムのe2e（pr-297-estimate-client-column.spec.js）も対象外。
- * bill_bread_crumb() に function_exists() ガードが入り次第、書類一覧側の
- * レンダリングテストを追加すること。
+ * 書類一覧側（?post_type=estimate 等）の index.php のレンダリングは
+ * tests/test-index-template-document-list.php の IndexTemplateDocumentListTest で
+ * 別途カバーしている（省略名の参照・リンクとダッシュの出し分け・取引先（イレギュラー）の
+ * 型ガードなど、bill_get_client_name() のユニットテストでは通らない index.php 固有のロジック）。
  */
 class IndexTemplateTest extends WP_UnitTestCase {
 
@@ -71,6 +69,22 @@ class IndexTemplateTest extends WP_UnitTestCase {
 	 */
 	public function set_up() {
 		parent::set_up();
+
+		/*
+		 * index.php（156〜183行目）はレンダリングのたびに billvektor.com へ実際に
+		 * 外部リクエストを送る「お知らせ」欄を含む。テストで外部通信が発生すると
+		 * CI が本番サイトへ都度リクエストしてしまい、かつネットワークの成否で
+		 * date_default_timezone_set() の実行有無が変わってテストが flaky になるため、
+		 * pre_http_request をスタブして常に失敗させる。
+		 * WP_UnitTestCase::tear_down() の _restore_hooks() で自動的に外れるため、
+		 * このテストクラス側での後片付けは不要。
+		 */
+		add_filter(
+			'pre_http_request',
+			function () {
+				return new WP_Error( 'http_request_blocked', 'テストでは外部リクエストを行わない' );
+			}
+		);
 
 		// テスト用の登録済取引先（client 投稿）を作成
 		$this->client_id = wp_insert_post(
