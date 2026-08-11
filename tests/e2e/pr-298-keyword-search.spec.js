@@ -84,11 +84,19 @@ async function submitFilters(page) {
  * URL 直打ちでページ送りを確認するテストで取引先を併用するために使う。
  * option value（取引先の投稿 ID）は環境ごとに変わるため、ハードコードせずページから読む。
  *
+ * option の `hasText` は部分一致・大文字小文字無視のため、将来「株式会社テスト商事 東京支店」
+ * のような取引先が増えると複数ヒットして strict mode violation で落ちる。ファイル内の他の
+ * 箇所と同じ selectOption({ label }) の完全一致に照合規則を揃え、選択結果を inputValue() で
+ * 読み出す（getAttribute() は string|null を返すため、null のまま URL に埋め込むと
+ * bill_client=null という分かりにくい失敗になる。selectOption が失敗すればここで例外になる）。
+ *
  * @param {import('@playwright/test').Page} page
  * @returns {Promise<string>}
  */
 async function getTestClientOptionValue(page) {
-	return page.locator('#bill_client option', { hasText: TEST_CLIENT_LABEL }).getAttribute('value');
+	const select = page.locator('#bill_client');
+	await select.selectOption({ label: TEST_CLIENT_LABEL });
+	return select.inputValue();
 }
 
 /**
@@ -186,19 +194,29 @@ test.describe('PR #298: キーワード検索と既存条件の併用', () => {
 		await submitFilters(page);
 		expect(await getDocumentTitles(page)).toEqual(['サイトリニューアル見積']);
 
-		// 発行日 + キーワードの併用で、2023年の2書類だけに絞り込む。
-		// 取引先は選択したままにする（環境に他のテストデータや実データが
-		// 同居していても、件名の完全一致確認が崩れないようにするため）。
+		// 発行日 + キーワードの併用。取引先は選択したままにする（環境に他の
+		// テストデータや実データが同居していても、件名の完全一致確認が
+		// 崩れないようにするため）。
+		//
+		// 範囲は「発行日・キーワードのどちらか片方だけが効いていない場合」に
+		// 期待値と食い違うよう選んでいる（安藤さんのコードレビュー指摘対応）。
+		// - キーワード「年度 更新」に該当するのは 年度 更新プラン（2023-01-01）と
+		//   更新プランの年度切替（2023-08-01）の2件だけ。
+		// - 発行日の範囲を 2023-04-01〜2024-01-31 にすると、年度 更新プラン
+		//   （2023-01-01）は範囲外になり、代わりにキーワードに該当しない
+		//   ロゴ制作費（2024-01-15）が範囲内に入る。
+		// そのため、キーワードだけ効いて発行日が効かない場合は
+		// 年度 更新プラン が混ざって2件、発行日だけ効いてキーワードが効かない
+		// 場合は ロゴ制作費 が混ざって2件になり、どちらも1件だけを期待する
+		// 下記の toEqual と食い違う。両方効いた場合だけ更新プランの年度切替の
+		// 1件に絞り込める。
 		await page.locator('#post_type').selectOption('post');
 		await page.locator('#bill_client').selectOption({ label: TEST_CLIENT_LABEL });
-		await page.locator('#start_date').fill('20230101');
-		await page.locator('#end_date').fill('20231231');
+		await page.locator('#start_date').fill('20230401');
+		await page.locator('#end_date').fill('20240131');
 		await page.locator('#bill_keyword').fill('年度 更新');
 		await submitFilters(page);
-		expect(await getDocumentTitles(page)).toEqual([
-			'更新プランの年度切替',
-			'年度 更新プラン',
-		]);
+		expect(await getDocumentTitles(page)).toEqual(['更新プランの年度切替']);
 	});
 
 	test('本文だけの語句はヒットせず、検索対象が件名に限定される', async ({ page }) => {
@@ -272,6 +290,10 @@ test.describe('PR #298: キーワード検索と既存条件の併用', () => {
 			expect(await getDocumentTitles(page)).toEqual(['サイト制作費']);
 			const secondPageLink = page.locator('a.page-numbers').filter({ hasText: /^2$/ });
 			await expect(secondPageLink).toHaveAttribute('href', /bill_keyword=/);
+			// bill_client がページ送りのリンクへ引き継がれる前提に依存しているため、
+			// 前提が壊れた場合にここで検知できるよう明示的に確認する
+			// （壊れた場合、件名比較の失敗としてしか現れず原因が分かりにくいため）。
+			await expect(secondPageLink).toHaveAttribute('href', /bill_client=/);
 			// トップページ内の外部 RSS 読み込みに影響されないよう、クリック開始後は
 			// DOMContentLoaded とページ番号 URL を明示的な完了条件にする。
 			await secondPageLink.evaluate((element) => element.click());

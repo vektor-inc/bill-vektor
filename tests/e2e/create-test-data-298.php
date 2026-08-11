@@ -242,10 +242,13 @@ $created_titles    = array(
 	'サイトリニューアル見積',
 );
 $conflicts         = array();
+// e2e はログイン済み（管理者）でフロント一覧を確認するため、'private' の書類も一覧に
+// 表示される。'publish' だけを対象にすると、'private' の書類に衝突する件名があっても
+// 検知できないため、実際に一覧へ出てくるステータスに揃える。
 $client_bills      = get_posts(
 	array(
 		'post_type'      => array( 'post', 'estimate' ),
-		'post_status'    => 'publish',
+		'post_status'    => array( 'publish', 'private' ),
 		'posts_per_page' => -1,
 		'meta_query'     => array(
 			array(
