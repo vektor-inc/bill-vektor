@@ -13,10 +13,11 @@
  *
  * 取引先（登録済・敬称あり）の書類で「書類種別_取引先名敬称_件名_発行日」
  * （取引先名と敬称の間にアンダースコアは挟まない）の形式になること、
- * 取引先（イレギュラー）の書類で敬称が付かず区切りのアンダースコアが
- * 二重にならないこと、返り値が <title> タグへそのまま出力される想定
- * （_wp_render_title_tag() はエスケープしない）のため、"&" などの
- * 特殊文字がエスケープ（&amp;）されて返ることを検証する。
+ * 取引先（イレギュラー）の書類で敬称が付かない（書類本体の表示と揃う）こと、
+ * 返り値が <title> タグへそのまま出力される想定（_wp_render_title_tag() は
+ * エスケープしない）のため、"&" などの特殊文字がエスケープ（&amp;）されて
+ * 返ること、件名が wptexturize() を通った後の文字参照（&#8217; 等）に
+ * esc_html() を掛けても二重エンコードされないことを検証する。
  */
 class TitleCustomTest extends WP_UnitTestCase {
 
@@ -73,6 +74,19 @@ class TitleCustomTest extends WP_UnitTestCase {
 	public function tear_down() {
 		wp_delete_post( $this->client_id, true );
 
+		/*
+		 * go_to() で移動したままだと、後続のテストが is_single() などこの
+		 * テストで作ったクエリの状態を引き継いでしまう（実行順に依存する
+		 * 脆いテストになる）。tests/test-front-view-auth.php と同じく
+		 * トップページへ戻してからテストを終える。
+		 *
+		 * 必ずガードを戻す前に呼ぶこと。このテストではログイン状態にして
+		 * いないため、先にガードを戻すと go_to() 自体がログインページへの
+		 * リダイレクトを引き起こし、ヘッダー送信済みエラーで tear_down が
+		 * 失敗する。
+		 */
+		$this->go_to( home_url( '/' ) );
+
 		// 外したガードを戻す（外れたままだと後続のテストの前提が変わる）
 		if ( ! has_action( 'wp', 'bill_no_login_redirect' ) ) {
 			add_action( 'wp', 'bill_no_login_redirect' );
@@ -108,26 +122,47 @@ class TitleCustomTest extends WP_UnitTestCase {
 			array(
 				/*
 				 * 取引先（イレギュラー）の場合、bill_get_client_honorific() が
-				 * 空文字を返すため、区切りのアンダースコアが二重（__）にならず
-				 * 1つだけになることを確認する。取引先名に "&" を含めることで、
-				 * bill_client_name_manual（無加工の $_POST が保存される値）に
-				 * 特殊文字が入っていても、返り値の時点でエスケープ（&amp;）
-				 * されていることも合わせて確認する。
+				 * 空文字を返すため敬称が付かない（書類本体の表示と揃う）ことを
+				 * 確認する。取引先名に "&" を含めることで、bill_client_name_manual
+				 * （無加工の $_POST が保存される値）に特殊文字が入っていても、
+				 * 返り値の時点でエスケープ（&amp;）されていることも合わせて確認する。
 				 */
-				'test_condition_name' => '取引先（イレギュラー、"&" を含む）の書類の場合 => 敬称なし・区切りが二重にならない・エスケープされる',
+				'test_condition_name' => '取引先（イレギュラー、"&" を含む）の書類の場合 => 敬称なし・エスケープされる',
 				'conditions'          => array(
 					'bill_client_name_manual' => '山田&商店',
 					'bill_client'              => '',
 				),
 				'expected'            => '請求書_山田&amp;商店_サイト制作費_20240101',
 			),
+			array(
+				/*
+				 * 件名は get_the_title() で取得しており、これは the_title フィルター
+				 * 経由で wptexturize() を通る。wptexturize() は素の引用符・ハイフン・
+				 * 三点リーダーを「’」「“”」「—」「–」「…」的な文字参照
+				 * （&#8217; 等）へ変換するため、その結果に esc_html() を掛けても
+				 * 二重エンコード（&amp;#8217; のようになる）にならないことを固定する。
+				 * esc_html() は内部で _wp_specialchars() に $double_encode = false を
+				 * 渡しており、既存の文字参照は素通りするため二重エンコードは起きない
+				 * （安藤さんが稼働中の wp-env で実測して確認済み）。
+				 */
+				'test_condition_name' => '件名に wptexturize() で文字参照化される記号を含む場合 => 二重エンコードされない',
+				'conditions'          => array(
+					'bill_client_name_manual' => '',
+					'bill_client'              => 'client_id',
+					'post_title'               => 'Bob\'s "Cafe" -- 10--20 ...',
+				),
+				'expected'            => '請求書_株式会社テスト取引先様_Bob&#8217;s &#8220;Cafe&#8221; &#8212; 10&#8211;20 &#8230;_20240101',
+			),
 		);
 
 		foreach ( $test_cases as $case ) {
+			// 件名（post_title）。指定が無いケースは既定の件名を使う
+			$post_title = isset( $case['conditions']['post_title'] ) ? $case['conditions']['post_title'] : 'サイト制作費';
+
 			// 発行日（post_date）を固定した書類を作成
 			$bill_id = wp_insert_post(
 				array(
-					'post_title'  => 'サイト制作費',
+					'post_title'  => $post_title,
 					'post_status' => 'publish',
 					'post_type'   => 'post',
 					'post_date'   => '2024-01-01 10:00:00',

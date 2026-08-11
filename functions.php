@@ -247,15 +247,10 @@ function bill_title_custom( $title ) {
 			/*
 			 * 敬称。取得・検証のロジックは bill_get_client_honorific() に集約している
 			 * （書類フレーム側と同じ判定をここでも重複して持たないようにするため）。
-			 * 取引先（イレギュラー）の場合は空文字が返る。書類本体に敬称が
-			 * 表示されないのと見た目を揃えるため、その場合は敬称を付けず、
-			 * 区切りのアンダースコアが二重にならないようにする。
+			 * 取引先（イレギュラー）の場合は空文字が返るため敬称が付かない
+			 * （書類本体の表示と揃う）。
 			 */
-			$client_honorific = bill_get_client_honorific( $post );
-			if ( '' !== $client_honorific ) {
-				$title .= $client_honorific;
-			}
-			$title .= '_';
+			$title .= bill_get_client_honorific( $post ) . '_';
 			// 件名
 			$title .= get_the_title() . '_';
 			$title .= get_the_date( 'Ymd' );
