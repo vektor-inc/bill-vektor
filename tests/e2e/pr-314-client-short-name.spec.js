@@ -119,7 +119,7 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 		expect(href).toBeTruthy();
 		await expect(withClientLink).toHaveAttribute('target', '_blank');
 		// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること
-		await expect(withClientLink).toHaveAttribute('rel', 'noopener');
+		await expect(withClientLink).toHaveAttribute('rel', /\bnoopener\b/);
 
 		// 実際に開いて取引先ページに着地することを確認する
 		await expectClientPage(page, href, '株式会社テスト取引先', '請求書A取引先あり');
@@ -185,7 +185,7 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 			const link = cell.locator('a');
 			await expect(link).toHaveCount(1);
 			// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること
-			await expect(link).toHaveAttribute('rel', 'noopener');
+			await expect(link).toHaveAttribute('rel', /\bnoopener\b/);
 
 			if (shortName) {
 				// 省略名だけの表示になっていないことを明示的に確認する
@@ -213,7 +213,7 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 		await expect(untitledLink).toHaveCount(1);
 
 		// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること
-		await expect(untitledLink).toHaveAttribute('rel', 'noopener');
+		await expect(untitledLink).toHaveAttribute('rel', /\bnoopener\b/);
 
 		// リンクにアクセシブルネーム（読み上げられる文字列）があること
 		const accessibleName = await untitledLink.evaluate((element) => element.innerText.trim());

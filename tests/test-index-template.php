@@ -61,9 +61,27 @@ class IndexTemplateTest extends WP_UnitTestCase {
 	private $untitled_client_id;
 
 	/**
+	 * モック用のお知らせ（RSS）タイトル
+	 *
+	 * @var string
+	 */
+	private $rss_entry_title = 'PR310 テスト用お知らせ';
+
+	/**
+	 * モック用のお知らせ（RSS）リンク先。add_query_arg() での rel=rss 連結（issue #310）を
+	 * 検証するため、あらかじめクエリー文字列を含めている。
+	 *
+	 * @var string
+	 */
+	private $rss_entry_link = 'https://billvektor.com/test-news/?utm_source=feed';
+
+	/**
 	 * テスト前の共通セットアップ
 	 *
 	 * 取引先一覧に表示するための取引先（通常・無題）を作成する。
+	 * あわせて、お知らせセクションが実際に billvektor.com へ HTTP リクエストを
+	 * 送らないよう、固定のフィードを返す pre_http_request フィルターを登録する
+	 * （issue #310 レビュー対応: テスト実行のたびに外部通信が発生する問題の解消も兼ねる）。
 	 *
 	 * @return void
 	 */
@@ -106,6 +124,9 @@ class IndexTemplateTest extends WP_UnitTestCase {
 
 		// 無題の取引先が作成できていないと空アンカーの検証ができないため確認する
 		$this->assertGreaterThan( 0, $this->untitled_client_id, '無題の登録済取引先が作成できている' );
+
+		// お知らせセクションのRSS取得を固定フィードで横取りする
+		add_filter( 'pre_http_request', array( $this, 'mock_rss_feed_response' ), 10, 3 );
 	}
 
 	/**
@@ -122,7 +143,41 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		wp_delete_post( $this->client_id, true );
 		wp_delete_post( $this->untitled_client_id, true );
 
+		remove_filter( 'pre_http_request', array( $this, 'mock_rss_feed_response' ), 10 );
+
 		parent::tear_down();
+	}
+
+	/**
+	 * お知らせセクションの pre_http_request フィルターコールバック
+	 *
+	 * billvektor.com/feed 宛のリクエストのみを横取りし、固定のRSS 2.0フィードを返す。
+	 * それ以外のURLは $preempt をそのまま返し、通常どおりリクエストを継続させる。
+	 *
+	 * @param false|array|WP_Error $preempt     短絡させる場合の戻り値。
+	 * @param array                $parsed_args リクエスト引数（このモックでは未使用）。
+	 * @param string               $url         リクエスト先URL。
+	 * @return false|array $preempt をそのまま、または固定のフィードレスポンス配列。
+	 */
+	public function mock_rss_feed_response( $preempt, $parsed_args, $url ) {
+		if ( false === strpos( $url, 'billvektor.com/feed' ) ) {
+			return $preempt;
+		}
+
+		$feed_xml = '<?xml version="1.0" encoding="UTF-8"?>'
+			. '<rss version="2.0"><channel><title>Test Feed</title>'
+			. '<item>'
+			. '<title>' . htmlspecialchars( $this->rss_entry_title, ENT_XML1 ) . '</title>'
+			. '<link>' . htmlspecialchars( $this->rss_entry_link, ENT_XML1 ) . '</link>'
+			. '<category>お知らせ</category>'
+			. '<pubDate>Mon, 01 Jan 2024 00:00:00 +0900</pubDate>'
+			. '</item>'
+			. '</channel></rss>';
+
+		return array(
+			'response' => array( 'code' => 200 ),
+			'body'     => $feed_xml,
+		);
 	}
 
 	/**
@@ -352,6 +407,72 @@ class IndexTemplateTest extends WP_UnitTestCase {
 
 			// 期待値テスト
 			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] . ' / 実際のセル: ' . $cell );
+		}
+
+		/*
+		 * issue #310: target="_blank" のリンクには例外なく rel="noopener" が付与されている
+		 * ことを、ページ全体（get_header()・get_footer() を含む）の不変条件として検証する。
+		 * このアサーションは footer.php・template-parts/export-box.php の対応も含めて
+		 * ページ内の target="_blank" リンクを1つ残らずカバーする狙いがあるため、
+		 * 個別セルではなくレンダリング結果全体（$html）に対して行う。
+		 */
+		$this->assertSame(
+			substr_count( $html, 'target="_blank"' ),
+			substr_count( $html, 'target="_blank" rel="noopener"' ),
+			'ページ内のtarget="_blank"リンクにはすべてrel="noopener"が付与されている（issue #310）'
+		);
+
+		// お知らせ（RSS）セクションのHTMLを取り出す
+		preg_match( '#<ul class="post-list" id="newsEntries">(.*?)</ul>#s', $html, $news_matches );
+		$news_html = isset( $news_matches[1] ) ? $news_matches[1] : '';
+
+		// お知らせが1件も含まれていないと以降の検証が意味を成さないため確認する
+		$this->assertNotSame( '', $news_html, 'お知らせセクション（モックフィード）がレンダリングされている' );
+
+		// お知らせリンクのテストの配列
+		$news_test_cases = array(
+			array(
+				'test_condition_name' => 'お知らせのタイトルが表示される',
+				'needle'              => esc_html( $this->rss_entry_title ),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => 'お知らせリンクにrel="noopener"が付与されている（issue #310）',
+				'needle'              => 'rel="noopener"',
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => 'お知らせリンクに外部リンクアイコンが付与されている（issue #310）',
+				'needle'              => '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>',
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => 'お知らせリンクに「外部サイトが新しいタブで開きます」の予告が付与されている（issue #310）',
+				'needle'              => '<span class="screen-reader-text">（外部サイトが新しいタブで開きます）</span>',
+				'expected'            => true,
+			),
+			array(
+
+				/*
+				 * issue #310 レビュー対応: add_query_arg() で rel=rss を連結するため、
+				 * フィード側の link が既にクエリー文字列を持っていても
+				 * "...?p=1?rel=rss" のような壊れたURLにならないことを確認する。
+				 * esc_url() は & を &#038; に変換するため、その形で連結される。
+				 */
+				'test_condition_name' => 'お知らせリンクのURLが既存クエリーとrel=rssを正しく連結している（issue #310）',
+				'needle'              => 'href="https://billvektor.com/test-news/?utm_source=feed&#038;rel=rss"',
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => 'お知らせリンクのURLに二重の "?" が含まれない（issue #310）',
+				'needle'              => '??',
+				'expected'            => false,
+			),
+		);
+
+		foreach ( $news_test_cases as $case ) {
+			$actual = false !== strpos( $news_html, $case['needle'] );
+			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] . ' / 実際のお知らせHTML: ' . $news_html );
 		}
 	}
 }
