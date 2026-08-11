@@ -242,13 +242,18 @@ $created_titles    = array(
 	'サイトリニューアル見積',
 );
 $conflicts         = array();
-// e2e はログイン済み（管理者）でフロント一覧を確認するため、'private' の書類も一覧に
-// 表示される。'publish' だけを対象にすると、'private' の書類に衝突する件名があっても
-// 検知できないため、実際に一覧へ出てくるステータスに揃える。
+// このスクリプトは wp eval-file を --user なしで実行する想定のため、ログインユーザーが
+// いない扱いになる（create-test-data-pr-273.php の get_edit_post_link() に関する
+// コメントと同じ制約）。get_posts() の 'private' は「現在のユーザーが非公開投稿を
+// 読める権限を持っているか」で絞り込まれるため、この実行方法では 'private' を
+// 指定しても除外されてしまい、検知対象には増えない。
+// そのため対象は 'publish' のみとし、e2e が実際にフロント一覧で確認する
+// 'private' の書類まではこのチェックではカバーしない（現時点で create-test-data 系
+// スクリプトが 'private' の書類を作ることは無いため、実害は無い）。
 $client_bills      = get_posts(
 	array(
 		'post_type'      => array( 'post', 'estimate' ),
-		'post_status'    => array( 'publish', 'private' ),
+		'post_status'    => 'publish',
 		'posts_per_page' => -1,
 		'meta_query'     => array(
 			array(
