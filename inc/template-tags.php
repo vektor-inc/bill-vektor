@@ -786,12 +786,36 @@ function bill_get_client_short_name( $post ) {
  * 値は画面へ直接出力せず戻り値として返す。エスケープは呼び出し側で行うこと
  * （この関数はエスケープ前の生値を返す）。
  *
- * @param WP_Post $post 書類の投稿オブジェクト。
- * @return string 敬称。取引先（イレギュラー）が入力されている場合は空文字。
+ * @param int|WP_Post $post 書類の投稿IDまたは投稿オブジェクト。
+ * @return string 敬称。取引先（イレギュラー）が入力されている場合や
+ *                投稿が存在しない場合は空文字。
  */
 function bill_get_client_honorific( $post ) {
-	// 取引先（イレギュラー）が入力されている場合は敬称を出さない
-	if ( ! empty( $post->bill_client_name_manual ) ) {
+	/*
+	 * 空の値を get_post() に渡すとグローバルの $post が返るため、
+	 * 意図しない書類の敬称を返さないよう先に判定する。
+	 */
+	if ( empty( $post ) ) {
+		return '';
+	}
+
+	// 投稿IDでも投稿オブジェクトでも受け取れるように WP_Post に正規化する
+	$post = get_post( $post );
+
+	// 投稿が存在しない場合は空文字を返す（bill_get_client_short_name() と揃える）
+	if ( ! $post instanceof WP_Post ) {
+		return '';
+	}
+
+	/*
+	 * 取引先（イレギュラー）が入力されている場合は敬称を出さない。
+	 * この値も保存時にサニタイズされておらず配列などが入り得るため、
+	 * bill_get_client_name() と同じ判定式を使う（同じ「イレギュラー入力あり」の
+	 * 判定を関数ごとに別の書き方で持たせないため。以前は empty() だけで判定しており、
+	 * '0' が入力されている場合や配列が入力されている場合に bill_get_client_name() と
+	 * 判定結果がずれていた）。
+	 */
+	if ( is_scalar( $post->bill_client_name_manual ) && '' !== (string) $post->bill_client_name_manual ) {
 		return '';
 	}
 

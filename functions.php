@@ -247,16 +247,26 @@ function bill_title_custom( $title ) {
 			/*
 			 * 敬称。取得・検証のロジックは bill_get_client_honorific() に集約している
 			 * （書類フレーム側と同じ判定をここでも重複して持たないようにするため）。
-			 * 取引先（イレギュラー）の場合は空文字が返るため、その場合は区切りの
-			 * アンダースコアのみが続く（敬称は付かない）。
+			 * 取引先（イレギュラー）の場合は空文字が返る。書類本体に敬称が
+			 * 表示されないのと見た目を揃えるため、その場合は敬称を付けず、
+			 * 区切りのアンダースコアが二重にならないようにする。
 			 */
-			$title .= bill_get_client_honorific( $post ) . '_';
+			$client_honorific = bill_get_client_honorific( $post );
+			if ( '' !== $client_honorific ) {
+				$title .= $client_honorific;
+			}
+			$title .= '_';
 			// 件名
-			$title     .= get_the_title() . '_';
-				$title .= get_the_date( 'Ymd' );
+			$title .= get_the_title() . '_';
+			$title .= get_the_date( 'Ymd' );
 		}
 	}
-	return strip_tags( $title );
+	/*
+	 * <title> は WordPress 本体（_wp_render_title_tag()）が一切エスケープせず出力するため、
+	 * ここでエスケープする。取引先名・件名も含めタグを除去した上でエスケープすることで、
+	 * HTML 出力文脈での破壊やタグ混入を防ぐ。
+	 */
+	return esc_html( strip_tags( $title ) );
 }
 add_filter( 'wp_title', 'bill_title_custom', 11 );
 add_filter( 'pre_get_document_title', 'bill_title_custom', 11 );

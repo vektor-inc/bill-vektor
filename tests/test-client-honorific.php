@@ -100,6 +100,17 @@ class ClientHonorificTest extends WP_UnitTestCase {
 			)
 		);
 
+		/*
+		 * この投稿にも client_honorific と同名のメタ値を登録しておく。
+		 * ここに何も登録しないと、取引先IDの検証（post_type が client かどうか）を
+		 * していない実装でも get_post_meta() が空文字を返すため既定の「御中」と
+		 * 一致してしまい、「無関係な投稿のメタ値を敬称として読んでいないか」を
+		 * このテストで検出できない（=空振りするテストになる）。
+		 * 既定値の「御中」とは異なる値を登録しておくことで、検証漏れがあれば
+		 * このメタ値がそのまま返ってきて red になるようにする。
+		 */
+		update_post_meta( $this->non_client_id, 'client_honorific', '殿' );
+
 		// テスト用の書類（請求書）を作成
 		$this->bill_id = wp_insert_post(
 			array(
@@ -143,7 +154,7 @@ class ClientHonorificTest extends WP_UnitTestCase {
 				'test_condition_name' => '取引先に敬称が登録されている場合 => 登録された敬称',
 				'conditions'          => array(
 					'bill_client_name_manual' => '',
-					'bill_client'              => 'client_id',
+					'bill_client'             => 'client_id',
 				),
 				'expected'            => $this->client_honorific,
 			),
@@ -151,7 +162,7 @@ class ClientHonorificTest extends WP_UnitTestCase {
 				'test_condition_name' => '取引先が選択されているが敬称が未登録の場合 => 既定の敬称「御中」',
 				'conditions'          => array(
 					'bill_client_name_manual' => '',
-					'bill_client'              => 'no_honorific_client_id',
+					'bill_client'             => 'no_honorific_client_id',
 				),
 				'expected'            => '御中',
 			),
@@ -159,7 +170,7 @@ class ClientHonorificTest extends WP_UnitTestCase {
 				'test_condition_name' => '取引先が両方とも未設定の場合 => 既定の敬称「御中」',
 				'conditions'          => array(
 					'bill_client_name_manual' => '',
-					'bill_client'              => '',
+					'bill_client'             => '',
 				),
 				'expected'            => '御中',
 			),
@@ -167,7 +178,7 @@ class ClientHonorificTest extends WP_UnitTestCase {
 				'test_condition_name' => 'bill_client が 0 の場合 => 既定の敬称「御中」',
 				'conditions'          => array(
 					'bill_client_name_manual' => '',
-					'bill_client'              => '0',
+					'bill_client'             => '0',
 				),
 				'expected'            => '御中',
 			),
@@ -175,19 +186,21 @@ class ClientHonorificTest extends WP_UnitTestCase {
 				'test_condition_name' => '削除済の取引先IDが bill_client に残っている場合 => 既定の敬称「御中」',
 				'conditions'          => array(
 					'bill_client_name_manual' => '',
-					'bill_client'              => '99999999',
+					'bill_client'             => '99999999',
 				),
 				'expected'            => '御中',
 			),
 			array(
 				/*
 				 * 実在する投稿IDでも取引先（client）以外を指している場合に、
-				 * その投稿のメタ値（無関係な値）を敬称として読まないことを確認する。
+				 * その投稿に登録した client_honorific メタ値（set_up で登録した「殿」。
+				 * 無関係な値）を敬称として読まないことを確認する。
+				 * post_type の検証をしていない実装だと、ここで「殿」が返ってしまう。
 				 */
-				'test_condition_name' => 'bill_client が実在する取引先以外の投稿（固定ページ）を指している場合 => 既定の敬称「御中」',
+				'test_condition_name' => 'bill_client が実在する取引先以外の投稿（固定ページ）を指している場合 => 既定の敬称「御中」（その投稿の client_honorific メタ値を読まない）',
 				'conditions'          => array(
 					'bill_client_name_manual' => '',
-					'bill_client'              => 'non_client_id',
+					'bill_client'             => 'non_client_id',
 				),
 				'expected'            => '御中',
 			),
@@ -195,7 +208,7 @@ class ClientHonorificTest extends WP_UnitTestCase {
 				'test_condition_name' => 'bill_client に配列が入っている場合 => 既定の敬称「御中」（型ガード）',
 				'conditions'          => array(
 					'bill_client_name_manual' => '',
-					'bill_client'              => array( 'invalid' ),
+					'bill_client'             => array( 'invalid' ),
 				),
 				'expected'            => '御中',
 			),
@@ -207,7 +220,7 @@ class ClientHonorificTest extends WP_UnitTestCase {
 				'test_condition_name' => 'bill_client に数値以外の文字列が入っている場合 => 既定の敬称「御中」（型ガード・敬称を返さない）',
 				'conditions'          => array(
 					'bill_client_name_manual' => '',
-					'bill_client'              => 'client_id_with_suffix',
+					'bill_client'             => 'client_id_with_suffix',
 				),
 				'expected'            => '御中',
 			),
@@ -222,7 +235,7 @@ class ClientHonorificTest extends WP_UnitTestCase {
 				'test_condition_name' => 'bill_client に敬称ありの取引先IDの負数が入っている場合 => 既定の敬称「御中」（別の取引先の敬称を返さない）',
 				'conditions'          => array(
 					'bill_client_name_manual' => '',
-					'bill_client'              => 'client_id_negative',
+					'bill_client'             => 'client_id_negative',
 				),
 				'expected'            => '御中',
 			),
@@ -230,15 +243,43 @@ class ClientHonorificTest extends WP_UnitTestCase {
 				'test_condition_name' => 'bill_client に敬称ありの取引先IDの小数が入っている場合 => 既定の敬称「御中」（別の取引先の敬称を返さない）',
 				'conditions'          => array(
 					'bill_client_name_manual' => '',
-					'bill_client'              => 'client_id_decimal',
+					'bill_client'             => 'client_id_decimal',
 				),
 				'expected'            => '御中',
+			),
+			array(
+				/*
+				 * 先頭ゼロも absint() を通すと元の文字列と一致しなくなる
+				 * （例: '0' . $client_id を absint() すると先頭ゼロが落ちて
+				 * 別の数値表現になる）。型ガードにより不正値として扱われ、
+				 * 別の取引先の敬称を返さないことを確認する。
+				 */
+				'test_condition_name' => 'bill_client に敬称ありの取引先IDの先頭にゼロを付けた値が入っている場合 => 既定の敬称「御中」（別の取引先の敬称を返さない）',
+				'conditions'          => array(
+					'bill_client_name_manual' => '',
+					'bill_client'             => 'client_id_leading_zero',
+				),
+				'expected'            => '御中',
+			),
+			array(
+				/*
+				 * client_honorific も無加工の $_POST が保存されるため配列などが入り得る。
+				 * bill_get_client_short_name() の省略名と同じ型ガード
+				 * （! is_scalar( $client_honorific )）が効いていることを確認する。
+				 */
+				'test_condition_name' => '取引先が選択されているが敬称に配列が登録されている場合 => 既定の敬称「御中」（型ガード）',
+				'conditions'          => array(
+					'bill_client_name_manual' => '',
+					'bill_client'             => 'no_honorific_client_id',
+				),
+				'client_honorific_meta' => array( 'invalid' ),
+				'expected'              => '御中',
 			),
 			array(
 				'test_condition_name' => '取引先（イレギュラー）が入力されている場合 => 空文字（敬称を出さない）',
 				'conditions'          => array(
 					'bill_client_name_manual' => '個人事業主テスト',
-					'bill_client'              => 'client_id',
+					'bill_client'             => 'client_id',
 				),
 				'expected'            => '',
 			),
@@ -246,9 +287,37 @@ class ClientHonorificTest extends WP_UnitTestCase {
 				'test_condition_name' => '取引先（イレギュラー）が入力されていて bill_client が不正値の場合 => 空文字（敬称を出さない）',
 				'conditions'          => array(
 					'bill_client_name_manual' => '個人事業主テスト',
-					'bill_client'              => array( 'invalid' ),
+					'bill_client'             => array( 'invalid' ),
 				),
 				'expected'            => '',
+			),
+			array(
+				/*
+				 * bill_get_client_name() は '0' を「イレギュラーの入力あり」として
+				 * 扱う（is_scalar() && '' !== (string) ... の判定）。敬称側もこの
+				 * 判定式に揃えたため、「0」という取引先名なのに登録済取引先の敬称が
+				 * 付いてしまう（「0 様」のような表示になる）ことがないかを確認する。
+				 */
+				'test_condition_name' => '取引先（イレギュラー）が文字列「0」の場合 => 空文字（敬称を出さない）',
+				'conditions'          => array(
+					'bill_client_name_manual' => '0',
+					'bill_client'             => 'client_id',
+				),
+				'expected'            => '',
+			),
+			array(
+				/*
+				 * 配列は is_scalar() が false になるため「イレギュラーの入力なし」
+				 * として扱われ、登録済取引先の敬称にフォールバックする
+				 * （bill_get_client_name() が同じ条件で登録済取引先名にフォールバック
+				 * するのと挙動を揃える）。
+				 */
+				'test_condition_name' => 'bill_client_name_manual に配列が入っている場合 => 登録済取引先の敬称にフォールバック',
+				'conditions'          => array(
+					'bill_client_name_manual' => array( 'invalid' ),
+					'bill_client'             => 'client_id',
+				),
+				'expected'            => $this->client_honorific,
 			),
 		);
 
@@ -276,7 +345,16 @@ class ClientHonorificTest extends WP_UnitTestCase {
 					// 実在する取引先IDに小数部を付けた値（absint() を通すとIDに戻る）
 					$meta_value = $this->client_id . '.9';
 				}
+				if ( 'client_id_leading_zero' === $meta_value ) {
+					// 実在する取引先IDの先頭にゼロを付けた値（absint() を通すと先頭ゼロが落ちる）
+					$meta_value = '0' . $this->client_id;
+				}
 				update_post_meta( $this->bill_id, $meta_name, $meta_value );
+			}
+
+			// 取引先側の敬称メタ値を上書きするケース（配列などが登録されている状態を再現する）
+			if ( isset( $case['client_honorific_meta'] ) ) {
+				update_post_meta( $this->no_honorific_client_id, 'client_honorific', $case['client_honorific_meta'] );
 			}
 
 			// テスト対象の投稿オブジェクトを取得
@@ -289,7 +367,7 @@ class ClientHonorificTest extends WP_UnitTestCase {
 			 */
 			ob_start();
 			$actual = bill_get_client_honorific( $post );
-			$echoed  = ob_get_clean();
+			$echoed = ob_get_clean();
 
 			// 期待値テスト（戻り値）
 			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
@@ -301,6 +379,33 @@ class ClientHonorificTest extends WP_UnitTestCase {
 			foreach ( array_keys( $case['conditions'] ) as $meta_name ) {
 				delete_post_meta( $this->bill_id, $meta_name );
 			}
+
+			// 取引先側の敬称メタ値の上書きを元（未登録）に戻す
+			if ( isset( $case['client_honorific_meta'] ) ) {
+				delete_post_meta( $this->no_honorific_client_id, 'client_honorific' );
+			}
 		}
+
+		/*
+		 * 存在しない投稿IDを渡した場合は、取引先が未設定のときの既定「御中」ではなく
+		 * 空文字を返す（bill_get_client_short_name() が空文字を返すのと揃える）。
+		 */
+		$this->assertSame( '', bill_get_client_honorific( 99999999 ), '存在しない投稿IDの場合 => 空文字' );
+
+		// 投稿IDが 0 の場合はグローバルの $post を参照せず空文字を返す
+		update_post_meta( $this->bill_id, 'bill_client', $this->client_id );
+		$GLOBALS['post'] = get_post( $this->bill_id );
+		$this->assertSame( '', bill_get_client_honorific( 0 ), '投稿IDが 0 の場合 => 空文字（グローバルの $post を参照しない）' );
+		unset( $GLOBALS['post'] );
+		delete_post_meta( $this->bill_id, 'bill_client' );
+
+		// 投稿オブジェクトだけでなく投稿IDを渡しても敬称が取得できる
+		update_post_meta( $this->bill_id, 'bill_client', $this->client_id );
+		$this->assertSame(
+			$this->client_honorific,
+			bill_get_client_honorific( $this->bill_id ),
+			'投稿ID（int）を渡した場合 => 敬称'
+		);
+		delete_post_meta( $this->bill_id, 'bill_client' );
 	}
 }
