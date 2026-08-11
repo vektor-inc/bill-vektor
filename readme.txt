@@ -13,8 +13,6 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
-[ 開発環境 ] template-parts/breadcrumb.php の関数定義が二重読み込みに耐えられず、書類一覧の index.php を検証する PHPUnit テストが書けない不具合を修正
-
 1.14.0
 [ 機能追加 ] 書類の閲覧に必要な権限を変更できる bill_vektor_can_view_documents フィルターを追加（購読者など閲覧専用のアカウントにも従来どおり表示したい場合に使用）
 [ 機能追加 ] 請求書一覧画面に取引先名を表示するカラムを追加

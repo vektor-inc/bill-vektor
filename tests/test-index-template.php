@@ -70,6 +70,22 @@ class IndexTemplateTest extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		/*
+		 * index.php（156〜183行目）はレンダリングのたびに billvektor.com へ実際に
+		 * 外部リクエストを送る「お知らせ」欄を含む。テストで外部通信が発生すると
+		 * CI が本番サイトへ都度リクエストしてしまい、かつネットワークの成否で
+		 * date_default_timezone_set() の実行有無が変わってテストが flaky になるため、
+		 * pre_http_request をスタブして常に失敗させる。
+		 * WP_UnitTestCase::tear_down() の _restore_hooks() で自動的に外れるため、
+		 * このテストクラス側での後片付けは不要。
+		 */
+		add_filter(
+			'pre_http_request',
+			function () {
+				return new WP_Error( 'http_request_blocked', 'テストでは外部リクエストを行わない' );
+			}
+		);
+
 		// テスト用の登録済取引先（client 投稿）を作成
 		$this->client_id = wp_insert_post(
 			array(
