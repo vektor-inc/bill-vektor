@@ -505,6 +505,57 @@ function bill_get_document_type_column( $post_type_slug, $single_list_post_type 
 	return '<a href="' . esc_url( home_url( '/?post_type=' . $post_type_slug ) ) . '">' . esc_html( $post_type_label ) . '</a>';
 }
 
+/**
+ * 別タブで開くことを予告するアイコン（装飾用）のHTMLを返す
+ *
+ * target="_blank" のリンクが新しいタブで開くことを、外部リンクアイコンと screen-reader-text の
+ * 併用で予告する（issue #310）。このアイコンは装飾のため aria-hidden="true" を付けて
+ * 音声読み上げには乗せない。bill_get_new_window_notice() から使うほか、既存の翻訳文字列に
+ * 予告文言を合成する箇所（index.php の「名称未設定の取引先」など）でも、アイコン部分の
+ * マークアップを重複させないためにこの関数を直接使う。
+ *
+ * @return string アイコンのHTML（エスケープ不要な固定マークアップ）。
+ */
+function bill_get_new_window_icon() {
+	return '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>';
+}
+
+/**
+ * 別タブで開くことを予告する文言（括弧付き・エスケープ済み）を返す
+ *
+ * 画面拡大利用者にはアイコンの aria-hidden が届かないため、screen-reader-text で
+ * 別タブで開くことをテキストとしても予告する（issue #310）。
+ * 既存の翻訳文字列（「名称未設定の取引先」等）と1つの screen-reader-text span 内で
+ * 連結したい場合はこの関数を、アイコンとセットでそのまま追記したい場合は
+ * bill_get_new_window_notice() を使う。
+ *
+ * @param bool $is_external 遷移先が外部サイトかどうか。true の場合は「外部サイトが新しいタブで
+ *                           開きます」、false の場合は「新しいタブで開きます」の文言になる。
+ * @return string 括弧付きのエスケープ済み文言（例:「（新しいタブで開きます）」）。
+ */
+function bill_get_new_window_notice_text( $is_external = false ) {
+	if ( $is_external ) {
+		return esc_html__( '（外部サイトが新しいタブで開きます）', 'bill-vektor' );
+	}
+
+	return esc_html__( '（新しいタブで開きます）', 'bill-vektor' );
+}
+
+/**
+ * 別タブで開くことを予告するマークアップ（アイコン＋screen-reader-text）を返す
+ *
+ * target="_blank" のリンクのテキストの直後に連結して使う。集約前は取引先一覧の取引先名リンク・
+ * 書類一覧の取引先（登録済）リンク・件名リンク・お知らせ（RSS）リンクの4箇所で同じ
+ * マークアップが重複しており、この関数に集約した（issue #310 レビュー対応）。現在は
+ * footer.php・template-parts/export-box.php の外部リンク3箇所も加わり、合計7箇所で使用している。
+ *
+ * @param bool $is_external 遷移先が外部サイトかどうか。bill_get_new_window_notice_text() に委譲する。
+ * @return string エスケープ済みのHTML（アイコン span ＋ screen-reader-text span）。
+ */
+function bill_get_new_window_notice( $is_external = false ) {
+	return bill_get_new_window_icon() . '<span class="screen-reader-text">' . bill_get_new_window_notice_text( $is_external ) . '</span>';
+}
+
 /*
 	bill_get_terms()
 /*-------------------------------------------*/

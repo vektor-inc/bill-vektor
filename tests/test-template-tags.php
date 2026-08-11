@@ -770,4 +770,107 @@ class TemplateTagsTest extends WP_UnitTestCase {
 		$link_html = bill_get_document_type_column( 'post', '' );
 		$this->assertStringNotContainsString( 'target="_blank"', $link_html, '書類カラムのリンクに target="_blank" が付いていない' );
 	}
+
+	/**
+	 * bill_get_new_window_icon() のテスト
+	 *
+	 * 別タブで開くことを予告する装飾用アイコンが、常に aria-hidden="true" 付きの
+	 * 固定マークアップを返すことを検証する（issue #310）。
+	 *
+	 * この関数は引数を取らず、条件分岐も持たない固定値返却の関数のため、
+	 * 同ファイルの他2つの新設テスト（test_bill_get_new_window_notice_text() /
+	 * test_bill_get_new_window_notice()）のような配列ループ形式にしていない。
+	 * 入力が無い以上、複数ケースに分けても同じ呼び出し・同じ期待値の繰り返しにしかならず、
+	 * 「意味のある正常系2パターン以上」を作れないと判断したため、1ケースのまま
+	 * assertSame() による完全一致で検証する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_get_new_window_icon() {
+		$this->assertSame(
+			'<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>',
+			bill_get_new_window_icon(),
+			'アイコンは装飾用の固定マークアップ（aria-hidden="true"付き）を返す'
+		);
+	}
+
+	/**
+	 * bill_get_new_window_notice_text() のテスト
+	 *
+	 * $is_external の値に応じて、内部リンク用・外部リンク用の異なる予告文言を
+	 * 返すことを検証する（issue #310）。
+	 *
+	 * @return void
+	 */
+	public function test_bill_get_new_window_notice_text() {
+		// テストの配列
+		$test_cases = array(
+			array(
+				'test_condition_name' => '引数省略（既定値） => 内部リンク用の文言「（新しいタブで開きます）」',
+				'conditions'          => array( 'is_external' => null ),
+				'expected'            => '（新しいタブで開きます）',
+			),
+			array(
+				'test_condition_name' => '$is_external = false を明示 => 内部リンク用の文言「（新しいタブで開きます）」',
+				'conditions'          => array( 'is_external' => false ),
+				'expected'            => '（新しいタブで開きます）',
+			),
+			array(
+				'test_condition_name' => '$is_external = true（外部サイト） => 外部リンク用の文言「（外部サイトが新しいタブで開きます）」',
+				'conditions'          => array( 'is_external' => true ),
+				'expected'            => '（外部サイトが新しいタブで開きます）',
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			// 引数省略のケースは null をマークにして呼び分ける
+			$actual = null === $case['conditions']['is_external']
+				? bill_get_new_window_notice_text()
+				: bill_get_new_window_notice_text( $case['conditions']['is_external'] );
+
+			// 期待値テスト
+			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+		}
+	}
+
+	/**
+	 * bill_get_new_window_notice() のテスト
+	 *
+	 * アイコン（bill_get_new_window_icon()）と screen-reader-text（予告文言）を
+	 * 組み合わせたマークアップを、$is_external の値に応じて返すことを検証する（issue #310）。
+	 * 取引先一覧の取引先名リンク・書類一覧の取引先(登録済)リンク・件名リンク・
+	 * お知らせ（RSS）リンク・footer.php や template-parts/export-box.php の外部リンクなど、
+	 * 合計7箇所で共通して使う関数のため、この組み合わせ自体を検証する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_get_new_window_notice() {
+		// テストの配列
+		$test_cases = array(
+			array(
+				'test_condition_name' => '引数省略（既定値） => アイコン＋内部リンク用screen-reader-text',
+				'conditions'          => array( 'is_external' => null ),
+				'expected'            => '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span><span class="screen-reader-text">（新しいタブで開きます）</span>',
+			),
+			array(
+				'test_condition_name' => '$is_external = false を明示 => アイコン＋内部リンク用screen-reader-text',
+				'conditions'          => array( 'is_external' => false ),
+				'expected'            => '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span><span class="screen-reader-text">（新しいタブで開きます）</span>',
+			),
+			array(
+				'test_condition_name' => '$is_external = true（外部サイト） => アイコン＋外部リンク用screen-reader-text',
+				'conditions'          => array( 'is_external' => true ),
+				'expected'            => '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span><span class="screen-reader-text">（外部サイトが新しいタブで開きます）</span>',
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			$actual = null === $case['conditions']['is_external']
+				? bill_get_new_window_notice()
+				: bill_get_new_window_notice( $case['conditions']['is_external'] );
+
+			// 期待値テスト
+			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+		}
+	}
 }

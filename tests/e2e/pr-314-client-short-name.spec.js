@@ -110,13 +110,16 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 			await gotoPageContaining(page, DOC_LIST_PATH, '請求書A取引先あり'),
 			2
 		);
-		await expect(withClient).toHaveText('テスト取引先');
+		// issue #310: 別タブで開くことを予告するscreen-reader-textがセルのテキストに合成される
+		await expect(withClient).toHaveText('テスト取引先（新しいタブで開きます）');
 		const withClientLink = withClient.locator('a');
 		await expect(withClientLink).toHaveCount(1);
 		// リンク先が「書類自身」ではなく「取引先」のページであること
 		const href = await withClientLink.getAttribute('href');
 		expect(href).toBeTruthy();
 		await expect(withClientLink).toHaveAttribute('target', '_blank');
+		// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること
+		await expect(withClientLink).toHaveAttribute('rel', /\bnoopener\b/);
 
 		// 実際に開いて取引先ページに着地することを確認する
 		await expectClientPage(page, href, '株式会社テスト取引先', '請求書A取引先あり');
@@ -126,7 +129,8 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 			await gotoPageContaining(page, DOC_LIST_PATH, '請求書C_省略名なし取引先'),
 			2
 		);
-		await expect(noShortName).toHaveText('合同会社ショートネームなし');
+		// issue #310: 別タブで開くことを予告するscreen-reader-textがセルのテキストに合成される
+		await expect(noShortName).toHaveText('合同会社ショートネームなし（新しいタブで開きます）');
 		await expect(noShortName.locator('a')).toHaveCount(1);
 
 		// --- 取引先（イレギュラー）のみ → 手入力名をテキストで表示し、リンクにしない ---
@@ -172,13 +176,16 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 				await gotoPageContaining(page, CLIENT_LIST_PATH, fullName),
 				1
 			);
-			// フルネームがそのまま表示されていること（省略名ではない）
-			await expect(cell).toHaveText(fullName);
+			// フルネームがそのまま表示されていること（省略名ではない）。
+			// issue #310: 別タブで開くことを予告するscreen-reader-textがセルのテキストに合成される。
+			await expect(cell).toHaveText(`${fullName}（新しいタブで開きます）`);
 			// ダッシュになっていないこと（ここが「—」ならデグレ）
 			await expect(cell).not.toHaveText('—');
 			// 取引先ページへの唯一の導線となるリンクが存在すること
 			const link = cell.locator('a');
 			await expect(link).toHaveCount(1);
+			// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること
+			await expect(link).toHaveAttribute('rel', /\bnoopener\b/);
 
 			if (shortName) {
 				// 省略名だけの表示になっていないことを明示的に確認する
@@ -196,7 +203,8 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 		/*
 		 * 取引先一覧の「取引先」列は取引先ページを開く唯一の導線のため、
 		 * 名前を付けずに保存された取引先でもリンクが何を指すのか読み上げられる必要がある。
-		 * 現行 master（#311）はダッシュ＋代替テキスト「名称未設定の取引先」を出している。
+		 * issue #310 対応後は、ダッシュ＋代替テキスト「名称未設定の取引先（新しいタブで開きます）」
+		 * （別タブで開くことの予告を合成した文言）を出している。
 		 */
 		await page.goto(CLIENT_LIST_PATH);
 		await page.waitForLoadState('domcontentloaded');
@@ -204,12 +212,17 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 		const untitledLink = page.locator('table.table td a[href*="untitled-client"]');
 		await expect(untitledLink).toHaveCount(1);
 
+		// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること
+		await expect(untitledLink).toHaveAttribute('rel', /\bnoopener\b/);
+
 		// リンクにアクセシブルネーム（読み上げられる文字列）があること
 		const accessibleName = await untitledLink.evaluate((element) => element.innerText.trim());
 		expect(
 			accessibleName,
 			'無題の取引先のリンクが空になっており、読み上げ時に何のリンクか分からない'
 		).not.toBe('');
+		// issue #310: 別タブで開くことを予告する文言が実際に読み上げ対象になっていること
+		expect(accessibleName).toContain('（新しいタブで開きます）');
 	});
 
 	test('CSVエクスポート: 省略名が入り、取引先未設定の行は空になる', async ({ page }) => {

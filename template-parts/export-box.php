@@ -13,7 +13,7 @@ wp_nonce_field( 'bill_csv_export', '_wpnonce', false );
 <a href="<?php echo home_url(); ?>/#search-box">※エクスポートしたい期間・キーワードなど必要に応じて上部検索ボックスで指定してください。</a></p>
 <h4>MFクラウド会計</h4>
 <p>仕分帳用に出力する最初の取引Noを入力した上でCSVエクスポートボタンを押してください。</p>
-<p>MFクラウド会計でのインポートは「<a href="https://accounting.moneyforward.com/books" target="_blank">会計帳簿 > 仕訳帳</a>」より行います。</p>
+<p>MFクラウド会計でのインポートは「<a href="https://accounting.moneyforward.com/books" target="_blank" rel="noopener">会計帳簿 > 仕訳帳<?php echo bill_get_new_window_notice( true ); ?></a>」より行います。</p>
 <div class="row">
 <div class="col-sm-3">
 <dl>
@@ -27,7 +27,7 @@ wp_nonce_field( 'bill_csv_export', '_wpnonce', false );
 </div>
 
 <h4>freee</h4>
-<p>freeeでのインポートは「<a href="https://secure.freee.co.jp/hub_pages/deals" target="_blank">取引 > 取引のインポート</a>」より行います。</p>
+<p>freeeでのインポートは「<a href="https://secure.freee.co.jp/hub_pages/deals" target="_blank" rel="noopener">取引 > 取引のインポート<?php echo bill_get_new_window_notice( true ); ?></a>」より行います。</p>
 
 <div class="row">
 <div class="col-sm-9 col-sm-offset-3">

@@ -12,6 +12,36 @@ body {
 	background-color: #f9f9f9;
 	font-size:12px;
 }
+
+/*
+ * issue #310: 書類一覧テーブルを囲んだ .table-responsive（overflow-x: auto）が
+ * 親の .section（overflow-x: hidden）の内側に入れ子になると、表の本来の幅が
+ * 両方をすり抜けてさらに外側の .container（overflow-x: visible）まで伝わり、
+ * ページ全体（documentElement）の scrollWidth が広がって横スクロールが発生する
+ * （767px以下でのみ再現。Bootstrap 3 の .table-responsive のスクロール指定自体が
+ * @media (max-width:767px) 内でしか効かないため）。取引先列は仕様上折り返さない
+ * （text-nowrap）ため、長い取引先名が入るとこの現象が起きやすい。
+ *
+ * 表側の幅を縮めるのではなく、ページ全体としては横に動かさず表の中だけ横に
+ * 送れるようにしたい（A案）ため、html/body に overflow-x: hidden を足して
+ * documentElement 側の横スクロールそのものを抑止する。
+ *
+ * 適用範囲は 767px 以下に限定する。768px以上では実測でこの溢れが発生しないため、
+ * 範囲を絞ることで「他の箇所が将来はみ出しても気付けなくなる」副作用を最小限にする。
+ *
+ * 既知の副作用: overflow-x: hidden を html/body に付けると position: sticky が
+ * 効かなくなることがあるが、このテーマ・Bootstrap・jQuery UI のいずれにも
+ * position: sticky の使用箇所は無いため影響しない（確認済み）。
+ * position: fixed（Bootstrap の .navbar-fixed-top・.modal 等）は overflow の
+ * 影響を受けない実装のため対象外だが、念のためテーマのテンプレートでの
+ * 使用有無も確認済み（未使用）。
+ */
+@media screen and (max-width: 767px) {
+	html,
+	body {
+		overflow-x: hidden;
+	}
+}
 a {
 	color:$color_key_dark;
 }
@@ -31,6 +61,15 @@ a:hover {
 	border: 0;
 	word-wrap: normal !important;
 }
+
+/*
+ * 別タブで開くことを予告するアイコン（issue #310）。bill_get_new_window_notice() が
+ * 出力する専用クラスのみを対象にした基本ルール。他の .glyphicon（パンくずの
+ * glyphicon-home・ボタンの glyphicon-download-alt 等）には影響しない。
+ * bill_get_new_window_notice() を新しい箇所で使う際も、ここに1本あることで
+ * 呼び出し側での余白指定漏れが起きない。
+ */
+.glyphicon-new-window { margin-left: .3em; }
 
 /* common */
 /*-------------------*/
@@ -71,6 +110,35 @@ h3:first-child {
 }
 table.table {
 	th { font-weight: lighter; }
+}
+
+/*
+ * issue #310: index.php の書類一覧テーブルを .table-responsive（Bootstrap 3）で囲んだことで、
+ * 767px 以下では bootstrap.min.css の
+ * `.table-responsive>.table>tbody>tr>td, .table-responsive>.table>tbody>tr>th { white-space: nowrap; }`
+ * が全セルに強制される。このテーマでは折り返さない指定（text-nowrap）は「書類」「取引先」列
+ * だけの意図的な設計で、「件名」「カテゴリー」列は長い文字列を折り返して読めるようにしたい。
+ * そのため text-nowrap の付いていないセルだけ white-space を normal に戻す（植草さんの方針）。
+ *
+ * td だけでなく th も対象にしている。このテーブルは <thead> を持たないため、
+ * ブラウザのHTMLパーサーが見出し行（th）も暗黙の <tbody> の中に入れる。そのため
+ * Bootstrap の `.table-responsive>.table>tbody>tr>th` も見出しセルに効いたままになる。
+ * 現在の見出し語（書類／発行日／取引先／件名／カテゴリー）は短く実害が無いが、
+ * 将来見出しが長くなったり翻訳されたりしたときに同じ問題が起きるのを避けるため、
+ * 先回りして th 側も打ち消しておく。
+ *
+ * :where(:not(...)) は詳細度に加算されないため、この指定は打ち消したい Bootstrap 側の
+ * ルールと同じ詳細度（0,2,3）になる。同詳細度はソース順の後勝ちで決まり、bill-css（このファイル）は
+ * bill-css-bootstrap（bootstrap.min.css）に依存指定されて後から読み込まれる
+ * （functions.php の bill_theme_scripts() 参照）。ビルド後の assets/css/style.css に
+ * `.table-responsive>.table>tbody>tr>td:where(:not(.text-nowrap)),
+ * .table-responsive>.table>tbody>tr>th:where(:not(.text-nowrap)){white-space:normal}` が
+ * そのまま出力され、bootstrap.min.css 側のルールと詳細度が同じであることを確認済み。
+ * ブラウザでの実際の描画確認は別途 e2e テストで行う。
+ */
+.table-responsive > .table > tbody > tr > td:where(:not(.text-nowrap)),
+.table-responsive > .table > tbody > tr > th:where(:not(.text-nowrap)) {
+	white-space: normal;
 }
 
 
@@ -319,6 +387,13 @@ ul.post-list {
 		}
 		.post-title {
 			width:calc( 100% - 19em );
+			/*
+			 * 別タブで開くことを予告するアイコン（issue #310）。基本の余白は
+			 * 上部の `.glyphicon-new-window { margin-left: .3em; }` から効くが、
+			 * 上の `span { margin-right:1em; }`（子孫セレクタ）がこのアイコンにも
+			 * 意図せず効いてしまうため、ここでは右余白だけを打ち消す。
+			 */
+			.glyphicon-new-window { margin-right: 0; }
 		}
 	}
 }
