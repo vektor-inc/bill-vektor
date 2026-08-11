@@ -3,6 +3,8 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
+const { requireTestDataPresent } = require('./require-test-data');
+const { AUTH_STATE_PATH, withAuthenticatedPage } = require('./auth-helpers');
 
 /**
  * PR #298 e2e テスト
@@ -26,7 +28,7 @@ const path = require('path');
  */
 
 // global-setup.js で保存したログイン済み Cookie を使用する。
-test.use({ storageState: 'tests/e2e/.auth-state.json' });
+test.use({ storageState: AUTH_STATE_PATH });
 
 const SCREENSHOT_DIR = path.resolve('tests/e2e/screenshots');
 
@@ -74,6 +76,30 @@ async function setPostsPerPage(page, value) {
 
 test.beforeAll(() => {
 	fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
+});
+
+// データ作成スクリプト未実行の環境で、各テストが30秒タイムアウトを積み重ねて
+// 落ちるのを防ぐため、前提データ（請求書）が1件でも存在するかを先に確認する。
+const PR298_SETUP_HINT =
+	'PR #298 のテストデータを作成してから実行してください:\n' +
+	'  npx wp-env run cli --env-cwd="wp-content/themes/$(basename "$PWD")" wp eval-file tests/e2e/create-test-data-298.php';
+
+test.beforeAll(async ({ browser }) => {
+	await withAuthenticatedPage(browser, (page) =>
+		requireTestDataPresent(
+			page,
+			// フロントのトップページ「/」は新着10件までしか表示されないため、
+			// 他のテストデータ作成スクリプト（例: create-test-data-pr-314.php が
+			// 実行時刻を発行日にした投稿を11件作る）が積み重なると対象がページ外へ
+			// 押し出され、存在するのに「見つからない」と誤判定してしまう。
+			// 件数に依存しない管理画面の検索結果で確認する。
+			'/wp-admin/edit.php?post_type=post&s=' +
+				encodeURIComponent('ロゴ制作費'),
+			(p) => p.locator('.row-title', { hasText: 'ロゴ制作費' }),
+			'PR #298 の請求書「ロゴ制作費」',
+			PR298_SETUP_HINT
+		)
+	);
 });
 
 test.describe('PR #298: キーワード検索と既存条件の併用', () => {

@@ -3,8 +3,14 @@
  * PR #266 e2e テスト用データ作成スクリプト
  * wp-env run cli で実行する
  *
- * 実行方法:
- *   npx wp-env run cli --env-cwd='wp-content/themes/bill-vektor' wp eval-file tests/e2e/create-test-data.php
+ * 実行方法（テーマのディレクトリ＝このリポジトリのルートで実行する）:
+ *   npx wp-env run cli --env-cwd="wp-content/themes/$(basename "$PWD")" wp eval-file tests/e2e/create-test-data.php
+ *
+ * テーマのディレクトリ名は git worktree などで bill-vektor 以外になることがあるため、
+ * --env-cwd はカレントディレクトリ名から求める。
+ * package.json の phpunit スクリプトはシェルのパラメータ展開で同じ値を求めているが、
+ * その記法はブロックコメントの終端と同じ文字並びを含みコメント内に書けないため、
+ * ここでは同じ結果になる basename を使う。
  *
  * 作成する投稿:
  * 1. 税込6000円（四捨五入）+ 消費税デフォルト（四捨五入）

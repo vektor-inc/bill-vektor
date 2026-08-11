@@ -1,6 +1,8 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+const { TEST_DATA, verifyDocumentVisible } = require('./test-data-319.js');
+const { withAuthenticatedPage } = require('./auth-helpers');
 
 /**
  * PR #319 フロント側の書類閲覧権限に関する e2e テスト。
@@ -8,39 +10,75 @@ const { test, expect } = require('@playwright/test');
  * 購読者への 403 表示と情報漏えい防止、ログアウトを挟む復帰導線、
  * 寄稿者・管理者・未ログイン時の回帰、狭い画面でのレイアウトを確認する。
  *
+ * 参照する書類の投稿ID・確認用アカウントは決め打ちにせず、
+ * create-test-data-pr-319.php が書き出すマニフェスト（test-data-319.js 経由）から読む。
+ * 実行前にテストデータを作成しておくこと（未作成の場合は require 時に案内付きで落ちる）:
+ *   npx wp-env run cli --env-cwd="wp-content/themes/$(basename "$PWD")" wp eval-file tests/e2e/create-test-data-pr-319.php
+ *
  * 実行例:
  *   WP_BASE_URL=http://localhost:9126 npx playwright test tests/e2e/pr-319-view-auth.spec.js
  */
 
-// ローカルの確認用アカウント。依頼で用意済みのユーザーだけを使い、テスト中にDBは変更しない。
+// ローカルの確認用アカウント。create-test-data-pr-319.php が冪等に作成した
+// billsub（購読者）・billcon（寄稿者）をマニフェスト経由で参照する。
+// 管理者は wp-env の既定管理者（globalSetup と同じ規約）を使う。
 const USERS = {
-	subscriber: { login: 'billsub', password: 'password' },
-	contributor: { login: 'billcon', password: 'password' },
-	administrator: { login: 'admin', password: 'password' },
+	subscriber: TEST_DATA.users.subscriber,
+	contributor: TEST_DATA.users.contributor,
+	administrator: {
+		login: process.env.WP_TEST_USERNAME || 'admin',
+		password: process.env.WP_TEST_PASSWORD || 'password',
+	},
 };
+
+// テスト対象の書類（権限確認用に create-test-data-pr-319.php が作成したもの）
+const DOCUMENT = TEST_DATA.document;
 
 // 購読者を遮断する必要があるフロント側の全経路。
 const FORBIDDEN_PATHS = [
 	'/',
-	'/?p=4',
+	DOCUMENT.url,
 	'/?feed=rss2',
 	'/wp-sitemap.xml',
 	'/?s=test',
 	'/?post_type=estimate',
-	'/?p=4&embed=true',
+	`${DOCUMENT.url}&embed=true`,
 ];
 
 // 書類から案内ページへ漏れてはいけない既知の文言。
+// タイトル・合計金額はテストデータ次第で変わるためマニフェストから取り、
+// 「合計」「御請求」「振込口座」はどの書類にも共通する frame-bill.php 上の固定文言なので直接指定する。
 const DOCUMENT_LEAK_TEXTS = [
-	'テスト請求書',
-	'10,998',
+	DOCUMENT.title,
+	DOCUMENT.total,
 	'合計',
 	'御請求',
 	'振込口座',
 ];
 
+// フロント一覧を件数非依存で絞り込むための bill_keyword（件名検索）。
+// create-test-data-pr-319.php が作る書類タイトル（[e2e-test] PR319 〜）に含まれる
+// 一意なトークンで、他のテストデータの件名とは衝突しない前提。
+// タイトルの文言自体を変更する場合は、このトークンも一致するよう合わせて直すこと。
+const PR319_LIST_KEYWORD = 'PR319';
+
 // 各テストは未ログイン状態から開始し、前のテストの権限を持ち越さない。
 test.use({ storageState: { cookies: [], origins: [] } });
+
+/**
+ * 正規表現の特殊文字をエスケープする。
+ *
+ * マニフェスト由来の値（ログイン名など）を new RegExp() に埋め込む際に使う。
+ * このスクリプトが作成するログイン名は英数字のみだが、その保証はマニフェストの
+ * 生成側（create-test-data-pr-319.php）にあり spec 側では検証していないため、
+ * 埋め込み側でも無条件にエスケープしておく。
+ *
+ * @param {string} value エスケープ対象の文字列。
+ * @return {string} 正規表現の特殊文字をエスケープした文字列。
+ */
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 /**
  * 指定ユーザーでログインする。
@@ -80,8 +118,12 @@ async function expectForbiddenPage(page, response) {
 		})
 	).toBeVisible();
 	// WordPress の言語パック有無により標準ロール名は日本語／英語のどちらにもなる。
+	// ログイン名はマニフェストから読んだ購読者アカウントを使う。正規表現にする必要があるのは
+	// ロール名部分の (?:購読者|Subscriber) だけなので、ログイン名側はエスケープしてから埋め込む。
 	await expect(page.locator('body')).toContainText(
-		/現在 billsub（(?:購読者|Subscriber)）としてログインしています。/
+		new RegExp(
+			`現在 ${escapeRegExp(USERS.subscriber.login)}（(?:購読者|Subscriber)）としてログインしています。`
+		)
 	);
 	await expect(
 		page.getByRole('link', { name: 'ログアウトしてログインし直す' })
@@ -98,7 +140,7 @@ async function expectForbiddenPage(page, response) {
 	expect(title).toMatch(
 		/^この画面を表示する権限がありません - .+/
 	);
-	expect(title).not.toContain('テスト請求書');
+	expect(title).not.toContain(DOCUMENT.title);
 	expect(title).not.toContain('御中');
 
 	const html = await page.content();
@@ -132,6 +174,14 @@ function countRedirects(response) {
 }
 
 test.describe.serial('PR #319 書類の閲覧権限', () => {
+	// このテストは「購読者に見せない」という否定形の検証が主なため、
+	// 対象の書類が実在しないと DOCUMENT_LEAK_TEXTS の検証が何も比較せず素通りして
+	// PASS してしまう（空振り PASS）。すべてのテストの前に、権限を持つ管理者アカウントで
+	// 書類が意図した内容（タイトル・合計金額）で表示できることを確認しておく。
+	test.beforeAll(async ({ browser }) => {
+		await withAuthenticatedPage(browser, verifyDocumentVisible);
+	});
+
 	test('購読者は全フロント経路で 403 になり、書類情報が漏れない', async ({
 		page,
 	}) => {
@@ -179,18 +229,29 @@ test.describe.serial('PR #319 書類の閲覧権限', () => {
 		for (const user of [USERS.contributor, USERS.administrator]) {
 			await loginAs(page, user);
 
-			const listResponse = await page.goto('/', {
-				waitUntil: 'domcontentloaded',
-			});
+			// フロントのトップページ「/」は新着10件までしか表示されないため、
+			// 他のテストデータ作成スクリプトの実行順（例: create-test-data-pr-314.php が
+			// 実行時刻を発行日にした投稿を11件作る）によっては対象の書類が1ページ目から
+			// 押し出されてしまう。「権限のあるユーザーには一覧が普通に見える」という
+			// PR #319 の検証対象はすり替えず、bill_keyword による件名絞り込み
+			// （/?bill_keyword=...）で件数非依存にする。
+			// bill_keyword は WordPress 標準の s とは別経路で pre_get_posts の中で
+			// セットされるため is_search() は true にならず、index.php の一覧表示の
+			// 分岐（is_front_page() 等）や権限チェックの経路は「/」と変わらない
+			// （inc/functions-pre-get-posts.php の bill_custom_home_post_type() 参照）。
+			const listResponse = await page.goto(
+				`/?bill_keyword=${encodeURIComponent(PR319_LIST_KEYWORD)}`,
+				{ waitUntil: 'domcontentloaded' }
+			);
 			expect(listResponse && listResponse.status()).toBe(200);
-			await expect(page.locator('body')).toContainText('テスト請求書');
+			await expect(page.locator('body')).toContainText(DOCUMENT.title);
 			await expect(
 				page.getByRole('heading', {
 					name: 'この画面を表示する権限がありません',
 				})
 			).toHaveCount(0);
 
-			const singleResponse = await page.goto('/?p=4', {
+			const singleResponse = await page.goto(DOCUMENT.url, {
 				waitUntil: 'domcontentloaded',
 			});
 			expect(singleResponse && singleResponse.status()).toBe(200);
@@ -199,12 +260,19 @@ test.describe.serial('PR #319 書類の閲覧権限', () => {
 			await expect(page.locator('body')).toContainText('振込口座');
 		}
 
+		// RSS の確認は「フィードがブロックされずに従来どおり機能すること」の回帰確認が
+		// 目的であり、特定のテストデータが含まれることの確認ではないため、
+		// bill_keyword は使わず、ステータス・Content-Type・アイテムが1件以上あることまでを見る。
+		// （フィードの既定表示件数はトップページと同じ上限を持つため、
+		// 対象書類の件名が必ず含まれる保証はない）
 		const feedResponse = await page.request.get('/?feed=rss2');
 		expect(feedResponse.status()).toBe(200);
 		expect(feedResponse.headers()['content-type'] || '').toContain(
 			'application/rss+xml'
 		);
-		expect(await feedResponse.text()).toContain('テスト請求書');
+		const feedBody = await feedResponse.text();
+		const feedItemCount = (feedBody.match(/<item>/g) || []).length;
+		expect(feedItemCount).toBeGreaterThan(0);
 
 		const adminResponse = await page.goto('/wp-admin/', {
 			waitUntil: 'domcontentloaded',

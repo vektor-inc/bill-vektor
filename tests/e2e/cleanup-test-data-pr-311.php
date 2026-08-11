@@ -2,8 +2,14 @@
 /**
  * PR #311 e2e テストデータを個別に完全削除する。
  *
- * 実行方法:
- * npx wp-env run cli wp eval-file wp-content/themes/bill-vektor/tests/e2e/cleanup-test-data-pr-311.php
+ * 実行方法（テーマのディレクトリ＝このリポジトリのルートで実行する）:
+ * npx wp-env run cli wp eval-file "wp-content/themes/$(basename "$PWD")/tests/e2e/cleanup-test-data-pr-311.php"
+ *
+ * テーマのディレクトリ名は git worktree などで bill-vektor 以外になることがあるため、
+ * $(basename "$PWD") でカレントディレクトリ名から求める。
+ * package.json の phpunit スクリプトはシェルのパラメータ展開で同じ値を求めているが、
+ * その記法はブロックコメントの終端と同じ文字並びを含みコメント内に書けないため、
+ * ここでは同じ結果になる basename を使う。
  */
 
 $post_ids = get_option( 'bill_e2e_pr311_post_ids', array() );
