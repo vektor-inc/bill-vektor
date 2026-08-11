@@ -93,11 +93,13 @@ function bill_e2e_319_find_post_by_title( $title ) {
 			'title'          => $title,
 			// 探したい状態をすべて明示する。
 			// 'any' は「検索から除外する設定（exclude_from_search）の投稿状態を除く」という
-			// 指定で、配列で 'any' と併記しても除外設定のない draft・pending は拾えない
-			// （#324 の create-test-data-pr-273.php で判明済み。当初この関数もこの勘違いを
-			// 再導入していたが、PR #338 のレビューで指摘され本 PR で直した）。
-			// 拾い漏らすと同じ件名の投稿を重複して作ってしまい冪等でなくなるため、
-			// ゴミ箱（trash）を含めて状態を並べて指定している
+			// 指定だが、配列で 'any' と他の状態（trash 等）を併記したときに draft・pending
+			// まで拾えるかは WordPress のバージョンや条件によって変わりうる
+			// （#324 の create-test-data-pr-273.php も同じ理由から明示列挙に統一しており、
+			// 当時の再現条件までは追えていない）。
+			// 'any' の解釈に依存せず、探したい状態を明示することで、環境やバージョンに
+			// よらず同じ結果になるようにしている。拾い漏らすと同じ件名の投稿を重複して
+			// 作ってしまい冪等でなくなるため、ゴミ箱（trash）を含めて状態を並べて指定している
 			// （tests/e2e/create-test-data.php 等、他のスクリプトは array( 'any', 'trash' ) の
 			// ままだが、それぞれ別 PR の成果物のため本 PR では変更していない）
 			'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future', 'trash' ),
