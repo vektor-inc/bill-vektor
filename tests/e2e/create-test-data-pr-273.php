@@ -52,13 +52,11 @@ function bill_e2e_273_find_post_by_title( $title ) {
 			'post_type'      => 'post',
 			// 'title' は post_title の完全一致検索（部分一致の 's' ではない）
 			'title'          => $title,
-			// 探したい状態をすべて明示する。
-			// 'any' は「検索から除外する設定（exclude_from_search）の投稿状態を除く」という
-			// 指定で、配列で 'any' と併記しても除外設定のない draft・pending は拾えない。
-			// 拾い漏らすと同じ件名の投稿を重複して作ってしまい冪等でなくなるため、
-			// ゴミ箱（trash）を含めて状態を並べて指定している
-			// （tests/e2e/create-test-data.php は array( 'any', 'trash' ) のままだが、
-			//   そちらは PR #276 の成果物のため本 PR では変更していない）
+			// 探したい状態を明示する。
+			// 'any' は「すべての状態」ではなく、exclude_from_search が true の状態
+			// （コアでは trash と auto-draft の2つ）を除くという指定。
+			// draft・pending・private・future は 'any' でも拾えるが、trash は拾えない。
+			// ゴミ箱に残った投稿を見落として重複作成しないよう、状態を並べて明示している
 			'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future', 'trash' ),
 			'posts_per_page' => 1,
 			'fields'         => 'ids',
