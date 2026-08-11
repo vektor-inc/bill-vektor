@@ -261,7 +261,7 @@ class IndexTemplateDocumentListTest extends WP_UnitTestCase {
 			array(
 				'post_type'      => 'estimate',
 				'post__in'       => array_values( $this->doc_ids ),
-				'posts_per_page' => 10,
+				'posts_per_page' => -1,
 			)
 		);
 		$query->is_archive = true;
@@ -305,6 +305,10 @@ class IndexTemplateDocumentListTest extends WP_UnitTestCase {
 		 * （並び順がどう変わっても、同じ行から取れたペアであることに変わりはないため）。
 		 */
 		$client_cell_by_title = array_combine( $title_cells, $client_cells );
+
+		// array_combine() は件名が重複すると後勝ちで静かに要素が減るため、
+		// 全ケース分の件名がユニークなまま残っているか（＝件名の重複で行を取り違えていないか）を確認する
+		$this->assertCount( count( $this->doc_ids ), $client_cell_by_title, '件名が重複しておらず、全ケースの行を件名で引き当てられる' );
 
 		/**
 		 * ケース名から、そのケースの取引先カラムのセルを取得する
