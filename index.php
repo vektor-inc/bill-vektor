@@ -22,6 +22,14 @@
 </div>
 
 	<?php $post_type = bill_get_post_type(); ?>
+	<?php
+	/*
+	 * 「書類」列のリンク判定に使う、現在の一覧が単一の投稿タイプに絞り込まれているかどうか。
+	 * 請求書一覧・見積書一覧・取引先一覧などでは行ごとに毎回同じ結果になるため、
+	 * ループの外で1回だけ算出する。
+	 */
+	$single_list_post_type = bill_get_single_post_type_slug();
+	?>
 
 <div class="section">
 	<?php if ( have_posts() ) { ?>
@@ -53,10 +61,11 @@
 <!-- [ 書類 ] -->
 <td class="text-nowrap">
 			<?php
-			$post_type = bill_get_post_type();
+			$post_type      = bill_get_post_type();
 			$post_type_slug = get_post_type();
-			$post_type_object = get_post_type_object( $post_type_slug );
-			echo '<a href="' . esc_url( get_post_type_archive_link( 'url' ) ) . '">' . esc_html( $post_type_object->labels->name ) . '</a>';
+			// セル内容（テキストかリンクか、ラベル・URLの組み立て）は
+			// PHPUnit で検証できるよう inc/template-tags.php 側の関数に委譲する。
+			echo bill_get_document_type_column( $post_type_slug, $single_list_post_type );
 			?>
 </td>
 

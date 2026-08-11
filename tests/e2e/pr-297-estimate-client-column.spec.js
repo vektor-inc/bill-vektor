@@ -327,12 +327,17 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 		}
 	});
 
-	test('請求書一覧は列構成が変わらず、CSVエクスポート操作も応答する', async ({ page }) => {
+	test('請求書一覧にも取引先列があり、CSVエクスポート操作も応答する', async ({ page }) => {
 		test.setTimeout(60000);
 		await page.goto('/wp-admin/edit.php');
 		await page.waitForLoadState('networkidle');
-		await expect(page.locator('th.column-bill_client_name')).toHaveCount(0);
-		await expect(page.locator('.wp-list-table thead')).not.toContainText('取引先');
+		/*
+		 * #297 の時点では請求書一覧に取引先列が無いことを回帰として固定していたが、
+		 * PR #326 で請求書一覧にも同じ列を追加したため、あることの確認に変更した。
+		 * 一覧の上下にヘッダー行（thead / tfoot）があるため2件になる。
+		 */
+		await expect(page.locator('th.column-bill_client_name')).toHaveCount(2);
+		await expect(page.locator('.wp-list-table thead')).toContainText('取引先');
 
 		const suffix = `${Date.now()}`;
 		const title = `PR297 CSV回帰確認 ${suffix}`;

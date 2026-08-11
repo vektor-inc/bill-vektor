@@ -51,9 +51,19 @@ class AdminColumnsTest extends WP_UnitTestCase {
 	private $untitled_client_id;
 
 	/**
+	 * 取引先ではない投稿（固定ページ）の投稿IDを保持する
+	 *
+	 * bill_client に取引先以外の投稿IDが保存されている状態を再現するために使う。
+	 *
+	 * @var int
+	 */
+	private $non_client_id;
+
+	/**
 	 * テスト前の共通セットアップ
 	 *
-	 * テスト用の見積書と登録済取引先（通常・無題）を作成する。
+	 * テスト用の見積書と登録済取引先（通常・無題）、
+	 * および取引先ではない投稿を作成する。
 	 *
 	 * @return void
 	 */
@@ -84,6 +94,26 @@ class AdminColumnsTest extends WP_UnitTestCase {
 		 */
 		$this->assertGreaterThan( 0, $this->untitled_client_id, '無題の登録済取引先が作成できている' );
 
+		/*
+		 * 取引先ではない投稿（非公開の固定ページ）を作成する。
+		 * bill_client に取引先以外の投稿IDが保存されていると、この投稿のタイトルが
+		 * 取引先カラムに出力されてしまうため、その状態を再現するために使う。
+		 */
+		$this->non_client_id = wp_insert_post(
+			array(
+				'post_title'  => '取引先ではない非公開ページ',
+				'post_status' => 'private',
+				'post_type'   => 'page',
+			)
+		);
+
+		/*
+		 * 取引先ではない投稿のタイトルが空だと、修正前でもダッシュが出力されて
+		 * 「他の投稿のタイトルが漏れる」不具合を検出できないため、
+		 * タイトルを取得できることを確認する。
+		 */
+		$this->assertNotSame( '', get_the_title( $this->non_client_id ), '取引先ではない投稿にタイトルがある' );
+
 		// テスト用の見積書を作成
 		$this->estimate_id = wp_insert_post(
 			array(
@@ -108,6 +138,7 @@ class AdminColumnsTest extends WP_UnitTestCase {
 		wp_delete_post( $this->estimate_id, true );
 		wp_delete_post( $this->client_id, true );
 		wp_delete_post( $this->untitled_client_id, true );
+		wp_delete_post( $this->non_client_id, true );
 
 		parent::tear_down();
 	}
@@ -292,6 +323,25 @@ class AdminColumnsTest extends WP_UnitTestCase {
 				'expected'            => array( 'cb', 'title', $column_key, 'taxonomy-estimate-cat', 'date' ),
 			),
 			array(
+				/*
+				 * 請求書（post）一覧は見積書より列が多く、作成者・カテゴリー・タグ・
+				 * コメントが並ぶ。列が増えても取引先がタイトルの直後に入ることを検証する。
+				 */
+				'test_condition_name' => '請求書一覧の標準的なカラム構成の場合 => タイトルの直後（作成者より前）に取引先を挿入',
+				'conditions'          => array(
+					'columns' => array(
+						'cb'         => '<input type="checkbox" />',
+						'title'      => 'タイトル',
+						'author'     => '作成者',
+						'categories' => 'カテゴリー',
+						'tags'       => 'タグ',
+						'comments'   => 'コメント',
+						'date'       => '日付',
+					),
+				),
+				'expected'            => array( 'cb', 'title', $column_key, 'author', 'categories', 'tags', 'comments', 'date' ),
+			),
+			array(
 				'test_condition_name' => 'タイトル列が無い場合 => 末尾に取引先を追加',
 				'conditions'          => array(
 					'columns' => array(
@@ -379,6 +429,36 @@ class AdminColumnsTest extends WP_UnitTestCase {
 				'expected'            => '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">取引先なし</span>',
 			),
 			array(
+				/*
+				 * bill_client に不正な値が入っていても、無関係な投稿のタイトルを
+				 * 出力しないことを出力レベルで検証する（報告された症状はこの層で起きたため）。
+				 */
+				'test_condition_name' => 'bill_client が取引先以外の投稿を指している場合 => ダッシュと代替テキスト「取引先なし」を出力',
+				'conditions'          => array(
+					'column_name' => $column_key,
+					'post_meta'   => array(
+						'bill_client_name_manual' => '',
+						'bill_client'             => 'non_client_id',
+					),
+				),
+				'expected'            => '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">取引先なし</span>',
+			),
+			array(
+				/*
+				 * absint() は符号を落とすため、-123 をそのまま通すと
+				 * 投稿ID 123 のタイトルが取引先カラムに出力されてしまう。
+				 */
+				'test_condition_name' => 'bill_client に負数が入っている場合 => ダッシュと代替テキスト「取引先なし」を出力',
+				'conditions'          => array(
+					'column_name' => $column_key,
+					'post_meta'   => array(
+						'bill_client_name_manual' => '',
+						'bill_client'             => 'non_client_id_negative',
+					),
+				),
+				'expected'            => '<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">取引先なし</span>',
+			),
+			array(
 				'test_condition_name' => '対象外のカラムが渡された場合 => 何も出力しない',
 				'conditions'          => array(
 					'column_name' => 'date',
@@ -395,6 +475,13 @@ class AdminColumnsTest extends WP_UnitTestCase {
 			foreach ( $case['conditions']['post_meta'] as $meta_name => $meta_value ) {
 				if ( 'untitled_client_id' === $meta_value ) {
 					$meta_value = $this->untitled_client_id;
+				}
+				if ( 'non_client_id' === $meta_value ) {
+					$meta_value = $this->non_client_id;
+				}
+				if ( 'non_client_id_negative' === $meta_value ) {
+					// 取引先ではない投稿IDの負数（absint() を通すとそのIDに戻る）
+					$meta_value = '-' . $this->non_client_id;
 				}
 				update_post_meta( $this->estimate_id, $meta_name, $meta_value );
 			}
@@ -417,6 +504,67 @@ class AdminColumnsTest extends WP_UnitTestCase {
 
 			// グローバルの $post を破棄
 			unset( $GLOBALS['post'] );
+		}
+	}
+
+	/**
+	 * bill_get_client_column_post_types() のテスト
+	 *
+	 * 取引先カラムの対象となる投稿タイプ（請求書・見積書）が含まれ、
+	 * 対象外の投稿タイプが含まれないことを検証する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_get_client_column_post_types() {
+
+		// テスト関数実行
+		$post_types = bill_get_client_column_post_types();
+
+		// テストの配列
+		$test_cases = array(
+			array(
+				'test_condition_name' => '請求書（post）の場合 => 対象に含まれる',
+				'conditions'          => array(
+					'post_type' => 'post',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '見積書（estimate）の場合 => 対象に含まれる',
+				'conditions'          => array(
+					'post_type' => 'estimate',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '領収書（receipt）の場合 => 対象外なので含まれない',
+				'conditions'          => array(
+					'post_type' => 'receipt',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '取引先（client）の場合 => 対象外なので含まれない',
+				'conditions'          => array(
+					'post_type' => 'client',
+				),
+				'expected'            => false,
+			),
+			array(
+				'test_condition_name' => '固定ページ（page）の場合 => 対象外なので含まれない',
+				'conditions'          => array(
+					'post_type' => 'page',
+				),
+				'expected'            => false,
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			// 対象の投稿タイプに含まれているかを検証
+			$actual = in_array( $case['conditions']['post_type'], $post_types, true );
+
+			// 期待値テスト
+			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
 		}
 	}
 
@@ -451,9 +599,29 @@ class AdminColumnsTest extends WP_UnitTestCase {
 				'expected'            => true,
 			),
 			array(
-				'test_condition_name' => '請求書（post）の場合 => 今回はスコープ外なので登録されていない',
+				'test_condition_name' => '請求書（post）の場合 => カラム追加フィルターが登録されている',
 				'conditions'          => array(
 					'hook_name'     => 'manage_post_posts_columns',
+					'callback_name' => 'bill_add_client_admin_column',
+				),
+				'expected'            => true,
+			),
+			array(
+				'test_condition_name' => '請求書（post）の場合 => カラム出力アクションが登録されている',
+				'conditions'          => array(
+					'hook_name'     => 'manage_post_posts_custom_column',
+					'callback_name' => 'bill_render_client_admin_column',
+				),
+				'expected'            => true,
+			),
+			array(
+				/*
+				 * 領収書（receipt）は対象外のため、対象の投稿タイプにだけ
+				 * フックが登録されていることを異常系として検証する。
+				 */
+				'test_condition_name' => '領収書（receipt）の場合 => 対象外なので登録されていない',
+				'conditions'          => array(
+					'hook_name'     => 'manage_receipt_posts_columns',
 					'callback_name' => 'bill_add_client_admin_column',
 				),
 				'expected'            => false,
