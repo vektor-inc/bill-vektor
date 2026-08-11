@@ -36,6 +36,13 @@ class RewriteRulesFlushTest extends WP_UnitTestCase {
 	private $original_permalink_structure;
 
 	/**
+	 * set_up() で変更する前の $wp_rewrite->extra_permastructs（tear_down() での復元用）
+	 *
+	 * @var array
+	 */
+	private $original_extra_permastructs;
+
+	/**
 	 * テスト前のセットアップ
 	 *
 	 * リライトルールはパーマリンク構造が「基本（プレーン）」だと生成されないため、
@@ -49,6 +56,7 @@ class RewriteRulesFlushTest extends WP_UnitTestCase {
 
 		global $wp_rewrite;
 		$this->original_permalink_structure = $wp_rewrite->permalink_structure;
+		$this->original_extra_permastructs  = $wp_rewrite->extra_permastructs;
 		$this->set_permalink_structure( '/%postname%/' );
 
 		// WP_Post_Type::add_rewrite_rules()（register_post_type() の内部処理）は、
@@ -69,15 +77,21 @@ class RewriteRulesFlushTest extends WP_UnitTestCase {
 	 * テスト後のクリーンアップ
 	 *
 	 * このテーマの wp-phpunit（WP_RUN_CORE_TESTS 未定義）は $wp_rewrite を
-	 * 自動リセットしないため、set_up() で変更したパーマリンク構造を明示的に
-	 * 元へ戻す。DBはトランザクションで巻き戻るが、$wp_rewrite はプロセス内で
-	 * 使い回されるメモリ上のオブジェクトのため、戻さないと同一プロセスで後に走る
-	 * 他のテスト（go_to() を使う test-search-keyword.php 等）に影響してしまう。
-	 * 先頭で戻してから、バージョン記録用オプションを削除する。
+	 * 自動リセットしないため、set_up() で変更した状態を明示的に元へ戻す。DBは
+	 * トランザクションで巻き戻るが、$wp_rewrite はプロセス内で使い回されるメモリ上の
+	 * オブジェクトのため、戻さないと同一プロセスで後に走る他のテスト（go_to() を
+	 * 使う test-search-keyword.php 等）に影響してしまう。
+	 *
+	 * $wp_rewrite->extra_permastructs は set_permalink_structure() 内部の
+	 * $wp_rewrite->init() ではリセットされないプロパティのため、
+	 * set_up() の投稿タイプ再登録で増えた分をここで明示的に戻す必要がある。
+	 * これらを戻してから、バージョン記録用オプションを削除する。
 	 *
 	 * @return void
 	 */
 	public function tear_down() {
+		global $wp_rewrite;
+		$wp_rewrite->extra_permastructs = $this->original_extra_permastructs;
 		$this->set_permalink_structure( $this->original_permalink_structure );
 		delete_option( $this->option_name );
 		parent::tear_down();
@@ -195,6 +209,71 @@ class RewriteRulesFlushTest extends WP_UnitTestCase {
 						$case['test_condition_name'] . '（対応表が変更されず維持されること）'
 					);
 				}
+			} catch ( \Throwable $e ) {
+				// このケースの失敗を記録し、次のケースの検証を続行する
+				$failures[] = $case['test_condition_name'] . "\n  " . $e->getMessage();
+			}
+		}
+
+		// 収集した失敗が1件でもあれば、全件まとめて失敗理由を表示する
+		$this->assertSame( array(), $failures, "以下のケースで失敗しました:\n\n" . implode( "\n\n", $failures ) );
+	}
+
+	/**
+	 * bill_reset_rewrite_rules_version() のテスト
+	 *
+	 * テーマ切り替え時にバージョンの記録が削除され、次の wp_loaded で
+	 * bill_maybe_flush_rewrite_rules() の判定が「不一致」になり作り直しが走る
+	 * 状態に戻ることを検証する。この関数は他テーマ有効中にパーマリンクを保存された
+	 * 場合の自己修復（issue #35 の再発防止）の要のため、after_switch_theme への
+	 * 登録が外れると気づけないまま同じ404が再発してしまう。他のテストからは
+	 * 登録漏れを検知できないため、専用のテストで固定する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_reset_rewrite_rules_version() {
+
+		// after_switch_theme に登録されていること。
+		// このフックは init 優先度99 の check_theme_switched() から発火するため、
+		// 同じリクエストの wp_loaded（bill_maybe_flush_rewrite_rules）に間に合う
+		$this->assertNotFalse(
+			has_action( 'after_switch_theme', 'bill_reset_rewrite_rules_version' ),
+			'bill_reset_rewrite_rules_version() が after_switch_theme に登録されていること'
+		);
+
+		$test_cases = array(
+			array(
+				'test_condition_name' => 'バージョン記録が現在のテーマバージョンと一致する状態で実行した場合 => 記録が削除される',
+				'stored_version'      => BILLVEKTOR_THEME_VERSION,
+			),
+			array(
+				'test_condition_name' => 'バージョン記録が古いバージョンの状態で実行した場合 => 記録が削除される',
+				'stored_version'      => '0.0.1',
+			),
+			array(
+				'test_condition_name' => 'バージョン記録が存在しない状態で実行した場合 => エラーにならず削除済みのまま変化しない',
+				'stored_version'      => false,
+			),
+		);
+
+		$failures = array();
+
+		foreach ( $test_cases as $case ) {
+			try {
+				// バージョン記録をケースの前提条件に合わせる
+				if ( false === $case['stored_version'] ) {
+					delete_option( $this->option_name );
+				} else {
+					update_option( $this->option_name, $case['stored_version'] );
+				}
+
+				bill_reset_rewrite_rules_version();
+
+				// バージョンの記録が削除されていること
+				$this->assertFalse(
+					get_option( $this->option_name ),
+					$case['test_condition_name']
+				);
 			} catch ( \Throwable $e ) {
 				// このケースの失敗を記録し、次のケースの検証を続行する
 				$failures[] = $case['test_condition_name'] . "\n  " . $e->getMessage();
