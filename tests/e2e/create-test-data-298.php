@@ -26,7 +26,8 @@
  */
 
 /**
- * 同じ件名・書類種別の投稿があれば再利用し、無ければ作成する
+ * 同じ件名・書類種別の投稿があれば再利用し、下書き・ゴミ箱に落ちていた場合は
+ * 公開状態に戻す。無ければ作成する
  *
  * このスクリプトを2回実行すると同じ件名の書類が重複し、
  * 「1件だけヒットすること」を確認している spec が落ちるため、
@@ -39,11 +40,16 @@
  * @return int 作成または再利用した投稿の ID。
  */
 function bill_e2e_298_create_post( $title, $post_type, $date = '', $content = '' ) {
-	// 既に同じ件名の書類があるか確認する
+	// 既に同じ件名の書類があるか確認する。
+	// 探したい状態を明示する。'any' は「すべての状態」ではなく、
+	// exclude_from_search が true の状態（コアでは trash と auto-draft の2つ）を
+	// 除くという指定。draft・pending・private・future は 'any' でも拾えるが、
+	// trash は拾えない。ゴミ箱に残った投稿を見落として重複作成しないよう、
+	// 状態を並べて明示している
 	$existing = get_posts(
 		array(
 			'post_type'              => $post_type,
-			'post_status'            => 'any',
+			'post_status'            => array( 'publish', 'draft', 'pending', 'private', 'future', 'trash' ),
 			'posts_per_page'         => 1,
 			'title'                  => $title,
 			'update_post_meta_cache' => false,
@@ -51,8 +57,27 @@ function bill_e2e_298_create_post( $title, $post_type, $date = '', $content = ''
 		)
 	);
 	if ( $existing ) {
-		echo 'Skipped (already exists): ' . $title . ' / ID: ' . $existing[0]->ID . "\n";
-		return $existing[0]->ID;
+		$post_id = $existing[0]->ID;
+
+		// 既存投稿を再利用する。ゴミ箱（trash）まで拾うようにしたことで
+		// ゴミ箱の投稿をそのまま返してしまうと一覧に表示されず spec が落ちるため、
+		// 下書き・ゴミ箱のままだった場合は公開状態に揃える
+		if ( 'publish' !== get_post_status( $post_id ) ) {
+			$updated = wp_update_post(
+				array(
+					'ID'          => $post_id,
+					'post_status' => 'publish',
+				),
+				true
+			);
+
+			if ( is_wp_error( $updated ) ) {
+				WP_CLI::error( '投稿の公開状態への変更に失敗しました（' . $title . '）: ' . $updated->get_error_message() );
+			}
+		}
+
+		echo 'Skipped (already exists): ' . $title . ' / ID: ' . $post_id . "\n";
+		return $post_id;
 	}
 
 	$postarr = array(

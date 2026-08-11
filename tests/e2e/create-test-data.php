@@ -52,9 +52,12 @@ function bill_e2e_266_find_post_by_title( $title ) {
 			'post_type'      => 'post',
 			// 'title' は post_title の完全一致検索（部分一致の 's' ではない）
 			'title'          => $title,
-			// 'any' はゴミ箱を含まないため trash を明示し、
-			// ゴミ箱に残った投稿を見落として重複作成するのを防ぐ
-			'post_status'    => array( 'any', 'trash' ),
+			// 探したい状態を明示する。
+			// 'any' は「すべての状態」ではなく、exclude_from_search が true の状態
+			// （コアでは trash と auto-draft の2つ）を除くという指定。
+			// draft・pending・private・future は 'any' でも拾えるが、trash は拾えない。
+			// ゴミ箱に残った投稿を見落として重複作成しないよう、状態を並べて明示している
+			'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future', 'trash' ),
 			'posts_per_page' => 1,
 			'fields'         => 'ids',
 			'no_found_rows'  => true,

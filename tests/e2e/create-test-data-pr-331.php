@@ -36,11 +36,16 @@
  * @return int 作成または再利用した投稿の ID。
  */
 function bill_e2e_331_create_post( $title, $post_type, $date = '' ) {
-	// 既に同じ件名の書類があれば再利用する（ゴミ箱にある投稿も既存として扱う）
+	// 既に同じ件名の書類があれば再利用する（ゴミ箱にある投稿も既存として扱う）。
+	// 探したい状態を明示する。'any' は「すべての状態」ではなく、
+	// exclude_from_search が true の状態（コアでは trash と auto-draft の2つ）を
+	// 除くという指定。draft・pending・private・future は 'any' でも拾えるが、
+	// trash は拾えない。ゴミ箱に残った投稿を見落として重複作成しないよう、
+	// 状態を並べて明示している
 	$existing = get_posts(
 		array(
 			'post_type'      => $post_type,
-			'post_status'    => array( 'any', 'trash' ),
+			'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future', 'trash' ),
 			'posts_per_page' => 1,
 			'title'          => $title,
 			'fields'         => 'ids',
