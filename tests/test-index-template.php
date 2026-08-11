@@ -82,8 +82,9 @@ class IndexTemplateTest extends WP_UnitTestCase {
 	 * このテストのレンダリングでは必ず実行される。PHPUnit は全テストクラスを同一プロセスで
 	 * 実行し、WordPress はPHPの既定タイムゾーンがUTCであることを前提にしているため、
 	 * このテストが変更したタイムゾーンを他のテストへ持ち越さないよう退避・復元する。
+	 * set_up() で値が入るまでは未初期化状態を表す null。
 	 *
-	 * @var string
+	 * @var string|null
 	 */
 	private $original_timezone;
 
@@ -441,10 +442,13 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		 * template-parts/export-box.php は current_user_can( 'edit_posts' ) のガードで
 		 * 出し分けられるため、上で編集者権限のユーザーを設定していないとこの1回の
 		 * レンダリングに出力されず、下の不変条件アサーションが export-box を素通りしてしまう。
-		 * 「カバーしているつもりで実は範囲外だった」という誤解を防ぐため、実際に
-		 * レンダリングされていることをここで確認してから不変条件を検証する。
+		 * 「id="csv-export"」の div 自体は中身が空でも出力されるため、それだけでは
+		 * 中の target="_blank" リンク（MFクラウド会計・freee の2本）が実際に出力された
+		 * 証明にならない。将来どちらかのリンクが消えても div の存在だけでは気づけないため、
+		 * リンク先URLそのものが含まれることを直接確認する。
 		 */
-		$this->assertStringContainsString( 'id="csv-export"', $html, 'CSVエクスポートボックス（template-parts/export-box.php）がレンダリングされている' );
+		$this->assertStringContainsString( 'accounting.moneyforward.com', $html, 'MFクラウド会計へのリンク（template-parts/export-box.php）がレンダリングされている' );
+		$this->assertStringContainsString( 'secure.freee.co.jp', $html, 'freeeへのリンク（template-parts/export-box.php）がレンダリングされている' );
 
 		/*
 		 * issue #310: target="_blank" のリンクには例外なく rel="noopener" が付与されている
