@@ -224,13 +224,6 @@ function bill_add_post_type_estimate() {
  * flush_rewrite_rules() は全投稿タイプ・全タクソノミーの対応表を再構築する重い処理のため、
  * バージョンが一致している間（毎リクエスト）は実行しない。
  *
- * この関数の PHPUnit テストには、検証できていない前提が1つある。テスト環境では
- * did_action( 'wp_loaded' ) が既に真のため flush_rewrite_rules() は同期的に実行されるが、
- * 本番の通常リクエストでは wp_loaded フックの実行タイミングで初めて真になるため、
- * 「記録は済んだが作り直しは wp_loaded 到達まで未実行」という遅延経路を通る
- * （wp_loaded に登録する理由は下の add_action() のコメントを参照）。PHPUnit のテストは
- * この本番の遅延実行パスまでは再現・検証できていない。
- *
  * @return void
  */
 function bill_maybe_flush_rewrite_rules() {
@@ -253,8 +246,12 @@ function bill_maybe_flush_rewrite_rules() {
 		return;
 	}
 
-	// $hard = false（ソフトフラッシュ）。このテーマは add_rewrite_rule() を使っておらず
-	// .htaccess に書き足す内容が無いため、ファイル書き込みは行わない
+	// $hard = false（ソフトフラッシュ）。$hard = true（既定）は rewrite_rules オプションの
+	// 再構築に加えて .htaccess への書き込みも行うが、書き込まれる内容は
+	// パーマリンク構造から生成される定型のブロックのみで、個別のルール（add_rewrite_rule() 等）
+	// が使われているかどうかとは無関係（WP_Rewrite::mod_rewrite_rules()）。
+	// ソフトフラッシュにすることで、この不要なファイル書き込みを避けつつ、
+	// 管理画面から実行された場合とフロントから実行された場合とで挙動を揃えられる
 	flush_rewrite_rules( false );
 }
 // wp_loaded で実行する。init の時点では、WP_Rewrite::flush_rules() が
