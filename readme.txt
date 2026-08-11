@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634,una9
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.13.0
+Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.14.0
 [ 機能追加 ] 書類の閲覧に必要な権限を変更できる bill_vektor_can_view_documents フィルターを追加（購読者など閲覧専用のアカウントにも従来どおり表示したい場合に使用）
 [ 機能追加 ] 請求書一覧画面に取引先名を表示するカラムを追加
 [ 仕様変更 ] 請求書・見積書の閲覧に書類の編集権限（寄稿者以上）を必須に変更し、権限のないログインユーザーには案内ページを表示
