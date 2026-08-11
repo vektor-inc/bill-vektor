@@ -32,6 +32,15 @@ a:hover {
 	word-wrap: normal !important;
 }
 
+/*
+ * 別タブで開くことを予告するアイコン（issue #310）。bill_get_new_window_notice() が
+ * 出力する専用クラスのみを対象にした基本ルール。他の .glyphicon（パンくずの
+ * glyphicon-home・ボタンの glyphicon-download-alt 等）には影響しない。
+ * bill_get_new_window_notice() を新しい箇所で使う際も、ここに1本あることで
+ * 呼び出し側での余白指定漏れが起きない。
+ */
+.glyphicon-new-window { margin-left: .3em; }
+
 /* common */
 /*-------------------*/
 
@@ -71,12 +80,6 @@ h3:first-child {
 }
 table.table {
 	th { font-weight: lighter; }
-	/*
-	 * 別タブで開くことを予告するアイコン（issue #310）。
-	 * .glyphicon 全体に余白を足すとパンくず・ボタンに波及するため、
-	 * このアイコンだけを対象にした最小限の指定にする。
-	 */
-	.glyphicon-new-window { margin-left: .3em; }
 }
 
 
@@ -326,14 +329,12 @@ ul.post-list {
 		.post-title {
 			width:calc( 100% - 19em );
 			/*
-			 * 別タブで開くことを予告するアイコン（issue #310）。
+			 * 別タブで開くことを予告するアイコン（issue #310）。基本の余白は
+			 * 上部の `.glyphicon-new-window { margin-left: .3em; }` から効くが、
 			 * 上の `span { margin-right:1em; }`（子孫セレクタ）がこのアイコンにも
-			 * 意図せず効いてしまうため、右余白を打ち消してテキストとの間隔だけ付け直す。
+			 * 意図せず効いてしまうため、ここでは右余白だけを打ち消す。
 			 */
-			.glyphicon-new-window {
-				margin-right: 0;
-				margin-left: .3em;
-			}
+			.glyphicon-new-window { margin-right: 0; }
 		}
 	}
 }

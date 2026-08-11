@@ -76,12 +76,23 @@ class IndexTemplateTest extends WP_UnitTestCase {
 	private $rss_entry_link = 'https://billvektor.com/test-news/?utm_source=feed';
 
 	/**
+	 * テスト実行前の既定タイムゾーン（PHPの date_default_timezone_get() の戻り値）を保持する
+	 *
+	 * index.php のお知らせセクションが date_default_timezone_set( 'Asia/Tokyo' ) を実行するため、
+	 * このテストのレンダリングでは必ず実行される。PHPUnit は全テストクラスを同一プロセスで
+	 * 実行し、WordPress はPHPの既定タイムゾーンがUTCであることを前提にしているため、
+	 * このテストが変更したタイムゾーンを他のテストへ持ち越さないよう退避・復元する。
+	 *
+	 * @var string
+	 */
+	private $original_timezone;
+
+	/**
 	 * テスト前の共通セットアップ
 	 *
 	 * 取引先一覧に表示するための取引先（通常・無題）を作成する。
-	 * あわせて、お知らせセクションが実際に billvektor.com へ HTTP リクエストを
-	 * 送らないよう、固定のフィードを返す pre_http_request フィルターを登録する
-	 * （issue #310 レビュー対応: テスト実行のたびに外部通信が発生する問題の解消も兼ねる）。
+	 * あわせて、お知らせセクションが実際に外部へ HTTP リクエストを送らないよう
+	 * pre_http_request フィルターを1本だけ登録する（mock_rss_feed_response() 参照）。
 	 *
 	 * @return void
 	 */
@@ -93,16 +104,14 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		 * 外部リクエストを送る「お知らせ」欄を含む。テストで外部通信が発生すると
 		 * CI が本番サイトへ都度リクエストしてしまい、かつネットワークの成否で
 		 * date_default_timezone_set() の実行有無が変わってテストが flaky になるため、
-		 * pre_http_request をスタブして常に失敗させる。
+		 * pre_http_request を横取りする。billvektor.com/feed 宛だけ固定のフィードを返し、
+		 * それ以外の外部リクエストは WP_Error を返して常に失敗させる（1つのフィルターに
+		 * 両方の意図を持たせる。同じフックへ意図の異なるフィルターを2本登録すると、
+		 * 登録順に依存する動作になり事故のもとになるため）。
 		 * WP_UnitTestCase::tear_down() の _restore_hooks() で自動的に外れるため、
-		 * このテストクラス側での後片付けは不要。
+		 * このテストクラス側での明示的な remove_filter() は不要。
 		 */
-		add_filter(
-			'pre_http_request',
-			function () {
-				return new WP_Error( 'http_request_blocked', 'テストでは外部リクエストを行わない' );
-			}
-		);
+		add_filter( 'pre_http_request', array( $this, 'mock_rss_feed_response' ), 10, 3 );
 
 		// テスト用の登録済取引先（client 投稿）を作成
 		$this->client_id = wp_insert_post(
@@ -125,8 +134,8 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		// 無題の取引先が作成できていないと空アンカーの検証ができないため確認する
 		$this->assertGreaterThan( 0, $this->untitled_client_id, '無題の登録済取引先が作成できている' );
 
-		// お知らせセクションのRSS取得を固定フィードで横取りする
-		add_filter( 'pre_http_request', array( $this, 'mock_rss_feed_response' ), 10, 3 );
+		// index.php のお知らせセクションが変更するタイムゾーンを、テスト後に復元できるよう退避する
+		$this->original_timezone = date_default_timezone_get();
 	}
 
 	/**
@@ -143,7 +152,10 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		wp_delete_post( $this->client_id, true );
 		wp_delete_post( $this->untitled_client_id, true );
 
-		remove_filter( 'pre_http_request', array( $this, 'mock_rss_feed_response' ), 10 );
+		// index.php のお知らせセクションが date_default_timezone_set() で変更したタイムゾーンを復元する
+		if ( null !== $this->original_timezone ) {
+			date_default_timezone_set( $this->original_timezone );
+		}
 
 		parent::tear_down();
 	}
@@ -151,17 +163,19 @@ class IndexTemplateTest extends WP_UnitTestCase {
 	/**
 	 * お知らせセクションの pre_http_request フィルターコールバック
 	 *
-	 * billvektor.com/feed 宛のリクエストのみを横取りし、固定のRSS 2.0フィードを返す。
-	 * それ以外のURLは $preempt をそのまま返し、通常どおりリクエストを継続させる。
+	 * billvektor.com/feed 宛のリクエストのみ固定のRSS 2.0フィードを返して横取りする。
+	 * それ以外のURLへの外部リクエストは、CI から本番サイト等へ実際に飛ばさないよう
+	 * WP_Error を返して常に失敗させる（テスト実行のたびに外部通信が発生する問題への対処）。
 	 *
-	 * @param false|array|WP_Error $preempt     短絡させる場合の戻り値。
+	 * @param false|array|WP_Error $preempt     短絡させる場合の戻り値（このコールバックでは未使用）。
 	 * @param array                $parsed_args リクエスト引数（このモックでは未使用）。
 	 * @param string               $url         リクエスト先URL。
-	 * @return false|array $preempt をそのまま、または固定のフィードレスポンス配列。
+	 * @return array|WP_Error billvektor.com/feed 宛は固定のフィードレスポンス配列、
+	 *                         それ以外は常に WP_Error（リクエストを失敗させる）。
 	 */
 	public function mock_rss_feed_response( $preempt, $parsed_args, $url ) {
 		if ( false === strpos( $url, 'billvektor.com/feed' ) ) {
-			return $preempt;
+			return new WP_Error( 'http_request_blocked', 'テストでは外部リクエストを行わない' );
 		}
 
 		$feed_xml = '<?xml version="1.0" encoding="UTF-8"?>'
@@ -192,6 +206,17 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		// index.php はグローバルの $post / $wp_query を参照するため、この scope でもグローバルを使う
 		global $post, $wp_query, $wp_the_query;
 
+		/*
+		 * index.php はテンプレートパーツの都合で1プロセス中に1回しかレンダリングできないため
+		 * （クラスDocコメント参照）、CSVエクスポートボックス（current_user_can('edit_posts')で
+		 * 出し分けられる）もこの1回のレンダリングでカバーする。set_up() でユーザーを設定すると
+		 * 他のテストケースにも影響するため、このメソッドの中だけで一時的に編集者権限の
+		 * ユーザーを設定し、レンダリング直後に元へ戻す。
+		 */
+		$original_user_id = get_current_user_id();
+		$admin_user_id    = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_user_id );
+
 		// レンダリング後に元へ戻せるようメインクエリを退避する
 		$original_wp_query     = $wp_query;
 		$original_wp_the_query = $wp_the_query;
@@ -219,6 +244,9 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		$wp_query     = $original_wp_query;
 		$wp_the_query = $original_wp_the_query;
 		wp_reset_postdata();
+
+		// 現在のユーザーを元に戻す（このテストのためだけに設定した編集者権限を残さない）
+		wp_set_current_user( $original_user_id );
 
 		// 各行の取引先カラムのセルを取り出す
 		preg_match_all( '#<!-- \[ 取引先 \] -->\s*<td[^>]*>(.*?)</td>#s', $html, $matches );
@@ -410,11 +438,19 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		}
 
 		/*
+		 * template-parts/export-box.php は current_user_can( 'edit_posts' ) のガードで
+		 * 出し分けられるため、上で編集者権限のユーザーを設定していないとこの1回の
+		 * レンダリングに出力されず、下の不変条件アサーションが export-box を素通りしてしまう。
+		 * 「カバーしているつもりで実は範囲外だった」という誤解を防ぐため、実際に
+		 * レンダリングされていることをここで確認してから不変条件を検証する。
+		 */
+		$this->assertStringContainsString( 'id="csv-export"', $html, 'CSVエクスポートボックス（template-parts/export-box.php）がレンダリングされている' );
+
+		/*
 		 * issue #310: target="_blank" のリンクには例外なく rel="noopener" が付与されている
-		 * ことを、ページ全体（get_header()・get_footer() を含む）の不変条件として検証する。
-		 * このアサーションは footer.php・template-parts/export-box.php の対応も含めて
-		 * ページ内の target="_blank" リンクを1つ残らずカバーする狙いがあるため、
-		 * 個別セルではなくレンダリング結果全体（$html）に対して行う。
+		 * ことを、ページ全体（get_header()・get_footer()・template-parts/export-box.php を含む）の
+		 * 不変条件として検証する。個別セルではなくレンダリング結果全体（$html）に対して行うことで、
+		 * ページ内の target="_blank" リンクを1つ残らずカバーする。
 		 */
 		$this->assertSame(
 			substr_count( $html, 'target="_blank"' ),
