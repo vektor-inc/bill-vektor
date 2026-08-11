@@ -568,6 +568,12 @@ class TemplateTagsTest extends WP_UnitTestCase {
 					 * 既定の混在表示 array( 'post', 'estimate' ) にフォールバックする。
 					 * そのため post_type クエリー変数は配列になり、is_scalar() のガードにより
 					 * 警告なく空文字（絞り込みなし）と判定できることを確認する。
+					 *
+					 * この下の「日本語」「記号のみ」の2ケースも、bill_custom_home_post_type() が
+					 * 「指定なし」と判定して同じ既定の混在表示へフォールバックするため、この関数
+					 * （bill_get_single_post_type_slug()）から見るといずれも post_type クエリー変数が
+					 * 配列になる同じ経路を通る。異なる経路の網羅ではなく、#331 側の入力パターン
+					 * （配列指定・日本語・記号のみ）に対する回帰確認として3ケース残している。
 					 */
 					'test_condition_name' => 'post_type を配列で指定（post_type[]=post）=> 空文字（警告を出さずに絞り込みなし扱い）',
 					'conditions'          => array(
@@ -591,6 +597,27 @@ class TemplateTagsTest extends WP_UnitTestCase {
 					'test_condition_name' => 'post_type に記号のみ（sanitize_key()で空文字に丸められる値）を指定 => 空文字（表示が壊れない）',
 					'conditions'          => array(
 						'url' => home_url( '/' ) . '?' . http_build_query( array( 'post_type' => '!!!' ) ),
+					),
+					'expected'            => '',
+				),
+				array(
+					/*
+					 * issue #331 との相性確認（未カバーだった経路）: フロントページ以外では、
+					 * bill_custom_home_post_type() は post_type が配列の場合に上書きしないため、
+					 * post_type[]=a&post_type[]=b のような複数指定が配列のまま WP_Query に渡る
+					 * （フロントページの混在表示へのフォールバックとは異なる経路で、post_type
+					 * クエリー変数が配列になるケース）。この場合も単一の投稿タイプに絞り込まれて
+					 * いるとは言えないため、is_scalar() のガードにより空文字を返す。
+					 * 書き方は tests/test-post-type-filter.php の年別アーカイブのケースに揃えている。
+					 */
+					'test_condition_name' => 'トップページ以外（年別アーカイブ）で post_type を配列で指定した場合 => 空文字（単一の投稿タイプに絞り込まれていない）',
+					'conditions'          => array(
+						'url' => home_url( '/' ) . '?' . http_build_query(
+							array(
+								'year'      => 2024,
+								'post_type' => array( 'post', 'estimate' ),
+							)
+						),
 					),
 					'expected'            => '',
 				),
