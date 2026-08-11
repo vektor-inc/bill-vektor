@@ -222,7 +222,6 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		 */
 		$original_user_id = get_current_user_id();
 		$admin_user_id    = self::factory()->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_user_id );
 
 		// レンダリング後に元へ戻せるようメインクエリを退避する
 		$original_wp_query     = $wp_query;
@@ -247,6 +246,10 @@ class IndexTemplateTest extends WP_UnitTestCase {
 		$html = '';
 
 		try {
+			// このメソッドが変更する状態（現在のユーザー）は保護区間（finally での復元）に
+			// 収まるよう、切り替え自体も try の中で行う
+			wp_set_current_user( $admin_user_id );
+
 			$wp_query     = $query;
 			$wp_the_query = $query;
 

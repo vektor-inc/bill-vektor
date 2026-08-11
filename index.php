@@ -44,14 +44,33 @@
 		 * 指定を assets/_scss/style.scss に追加している（そちらにも詳細コメントあり）。
 		 *
 		 * tabindex="0" + role="region" + aria-label はキーボード操作者がこのスクロール領域に
-		 * 直接フォーカスして到達できるようにするため付与する。行内の書類・取引先・件名リンクへの
-		 * Tab 移動だけでは、ブラウザはフォーカスした要素が見える最小限までしかスクロールしないため、
-		 * リンクを持たない「カテゴリー」列（5列目）が表示される保証がない。増えるタブストップは
-		 * ページ内で1つだけであり、読めない列が残るリスクの方が重いという判断（植草さんの方針）。
-		 * このコメントは、次にこの tabindex を「不要なもの」として消さないための記録も兼ねる。
+		 * 直接フォーカスして到達できるようにするため付与する。カテゴリー列（5列目）は
+		 * bill_get_terms() がタームなしの行では空を返すためリンクを持つとは限らず、
+		 * カテゴリー未設定の行では行内リンクへの Tab 移動だけでは最右列に到達できない。
+		 * 増えるタブストップはページ内で1つだけであり、読めない列が残るリスクの方が
+		 * 重いという判断（植草さんの方針）。このコメントは、次にこの tabindex を
+		 * 「不要なもの」として消さないための記録も兼ねる。
 		 */
 		?>
-<div class="table-responsive" tabindex="0" role="region" aria-label="<?php echo esc_attr( $page_post_type['name'] . '一覧の表' ); ?>">
+<?php
+/*
+ * aria-label 用のラベルを組み立てる。
+ * - $page_post_type['name']（bill_get_post_type() の戻り値）は既に esc_html() 済みのため、
+ *   ここで esc_attr() を重ねると二重エスケープになる（& を含むラベルだと &amp;amp; になり
+ *   読み上げが不自然になる）。get_post_type_object() から素の値を取り直し、esc_attr() を
+ *   1回だけ通す。bill_get_post_type() 自体は他の判定にも広く使われているため変更しない。
+ * - フロントページ（$single_list_post_type が空文字＝請求書・見積書が混在する一覧）では
+ *   単一の投稿タイプのラベル（例:「請求書」）を出すと、見積書も混ざった表を
+ *   誤って案内することになるため、中立な「書類」を使う。
+ */
+$aria_label_post_type_object = get_post_type_object( $page_post_type['slug'] );
+if ( '' !== $single_list_post_type && $aria_label_post_type_object ) {
+	$table_aria_label = sprintf( __( '%s一覧の表', 'bill-vektor' ), $aria_label_post_type_object->labels->name );
+} else {
+	$table_aria_label = __( '書類一覧の表', 'bill-vektor' );
+}
+?>
+<div class="table-responsive" tabindex="0" role="region" aria-label="<?php echo esc_attr( $table_aria_label ); ?>">
 <table class="table table-striped table-borderd">
 <tr>
 <th scope="col">書類</th>
