@@ -12,6 +12,36 @@ body {
 	background-color: #f9f9f9;
 	font-size:12px;
 }
+
+/*
+ * issue #310: 書類一覧テーブルを囲んだ .table-responsive（overflow-x: auto）が
+ * 親の .section（overflow-x: hidden）の内側に入れ子になると、表の本来の幅が
+ * 両方をすり抜けてさらに外側の .container（overflow-x: visible）まで伝わり、
+ * ページ全体（documentElement）の scrollWidth が広がって横スクロールが発生する
+ * （767px以下でのみ再現。Bootstrap 3 の .table-responsive のスクロール指定自体が
+ * @media (max-width:767px) 内でしか効かないため）。取引先列は仕様上折り返さない
+ * （text-nowrap）ため、長い取引先名が入るとこの現象が起きやすい。
+ *
+ * 表側の幅を縮めるのではなく、ページ全体としては横に動かさず表の中だけ横に
+ * 送れるようにしたい（A案）ため、html/body に overflow-x: hidden を足して
+ * documentElement 側の横スクロールそのものを抑止する。
+ *
+ * 適用範囲は 767px 以下に限定する。768px以上では実測でこの溢れが発生しないため、
+ * 範囲を絞ることで「他の箇所が将来はみ出しても気付けなくなる」副作用を最小限にする。
+ *
+ * 既知の副作用: overflow-x: hidden を html/body に付けると position: sticky が
+ * 効かなくなることがあるが、このテーマ・Bootstrap・jQuery UI のいずれにも
+ * position: sticky の使用箇所は無いため影響しない（確認済み）。
+ * position: fixed（Bootstrap の .navbar-fixed-top・.modal 等）は overflow の
+ * 影響を受けない実装のため対象外だが、念のためテーマのテンプレートでの
+ * 使用有無も確認済み（未使用）。
+ */
+@media screen and (max-width: 767px) {
+	html,
+	body {
+		overflow-x: hidden;
+	}
+}
 a {
 	color:$color_key_dark;
 }
