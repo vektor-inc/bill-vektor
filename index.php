@@ -71,7 +71,8 @@ if ( '' !== $single_list_post_type && $aria_label_post_type_object ) {
 }
 ?>
 <div class="table-responsive" tabindex="0" role="region" aria-label="<?php echo esc_attr( $table_aria_label ); ?>">
-<table class="table table-striped table-borderd">
+<table class="table table-striped table-bordered">
+<thead>
 <tr>
 <th scope="col">書類</th>
 		<?php if ( $page_post_type['slug'] != 'client' ) { ?>
@@ -91,6 +92,8 @@ if ( '' !== $single_list_post_type && $aria_label_post_type_object ) {
 	<?php } ?>
 <?php } ?>
 </tr>
+</thead>
+<tbody>
 		<?php
 		while ( have_posts() ) :
 			the_post();
@@ -208,6 +211,7 @@ if ( '' !== $single_list_post_type && $aria_label_post_type_object ) {
 
 </tr>
 <?php endwhile; ?>
+</tbody>
 </table>
 </div>
 		<?php the_posts_pagination(); ?>

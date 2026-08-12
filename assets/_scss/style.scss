@@ -105,9 +105,6 @@ h3:first-child {
 	dd { display: inline; }
 	dt { margin-right:1em; }
 }
-.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
-	border-top:none;
-}
 table.table {
 	th { font-weight: lighter; }
 }
@@ -120,9 +117,12 @@ table.table {
  * だけの意図的な設計で、「件名」「カテゴリー」列は長い文字列を折り返して読めるようにしたい。
  * そのため text-nowrap の付いていないセルだけ white-space を normal に戻す（植草さんの方針）。
  *
- * td だけでなく th も対象にしている。このテーブルは <thead> を持たないため、
- * ブラウザのHTMLパーサーが見出し行（th）も暗黙の <tbody> の中に入れる。そのため
- * Bootstrap の `.table-responsive>.table>tbody>tr>th` も見出しセルに効いたままになる。
+ * td だけでなく th も対象にしている。issue #317 対応で index.php の見出し行を
+ * <thead>、データ行を <tbody> で囲むようになったため、見出しセル（th）は
+ * <thead> 側に入る。bootstrap.min.css の white-space:nowrap 強制ルールは
+ * `.table-responsive>.table>thead>tr>th` のように thead・tbody を明示的に
+ * 分けて定義されているため、tbody 用の打ち消しだけでは見出しセルに効かない。
+ * そのため thead 用のセレクタも別途用意し、tbody・thead の両方を打ち消す。
  * 現在の見出し語（書類／発行日／取引先／件名／カテゴリー）は短く実害が無いが、
  * 将来見出しが長くなったり翻訳されたりしたときに同じ問題が起きるのを避けるため、
  * 先回りして th 側も打ち消しておく。
@@ -132,12 +132,14 @@ table.table {
  * bill-css-bootstrap（bootstrap.min.css）に依存指定されて後から読み込まれる
  * （functions.php の bill_theme_scripts() 参照）。ビルド後の assets/css/style.css に
  * `.table-responsive>.table>tbody>tr>td:where(:not(.text-nowrap)),
- * .table-responsive>.table>tbody>tr>th:where(:not(.text-nowrap)){white-space:normal}` が
+ * .table-responsive>.table>tbody>tr>th:where(:not(.text-nowrap)),
+ * .table-responsive>.table>thead>tr>th:where(:not(.text-nowrap)){white-space:normal}` が
  * そのまま出力され、bootstrap.min.css 側のルールと詳細度が同じであることを確認済み。
  * ブラウザでの実際の描画確認は別途 e2e テストで行う。
  */
 .table-responsive > .table > tbody > tr > td:where(:not(.text-nowrap)),
-.table-responsive > .table > tbody > tr > th:where(:not(.text-nowrap)) {
+.table-responsive > .table > tbody > tr > th:where(:not(.text-nowrap)),
+.table-responsive > .table > thead > tr > th:where(:not(.text-nowrap)) {
 	white-space: normal;
 }
 
