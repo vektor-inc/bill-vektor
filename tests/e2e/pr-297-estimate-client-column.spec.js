@@ -87,6 +87,27 @@ function estimateRow(page, title) {
 }
 
 /**
+ * 見積書一覧から、指定タイトルの行を検索結果ページで取得する。
+ *
+ * issue #322（麗美のフルスイート実測で pr-311 の同種の穴を検出したのを機に横断点検）:
+ * LIST_PATH（絞り込み無しの一覧）は既定20件/ページのため、他スペックのデータが
+ * 積み重なると対象がページ外へ押し出されうる。実測では見積の総数が19件
+ * （既定の20件/ページに迫る水準）まで積み上がっており、他スペックが見積を
+ * 1〜2件増やすだけで超過しうる。件名で絞り込んだ管理画面の検索結果（&s=）を
+ * 使うことで、DB全体の件数に依存せず対象1件だけに絞り込む
+ * （requireTestDataPresent() が使っているのと同じ手法）。
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} title
+ * @return {Promise<import('@playwright/test').Locator>}
+ */
+async function gotoEstimateRow(page, title) {
+	await page.goto(`${LIST_PATH}&s=${encodeURIComponent(title)}`);
+	await page.waitForLoadState('networkidle');
+	return estimateRow(page, title);
+}
+
+/**
  * 要素内のテキストが実際に何行で描画されているかを数える。
  *
  * @param {import('@playwright/test').Locator} locator
@@ -190,7 +211,7 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 		];
 
 		for (const [title, client] of cases) {
-			const cell = estimateRow(page, title).locator('.column-bill_client_name');
+			const cell = (await gotoEstimateRow(page, title)).locator('.column-bill_client_name');
 			await expect(cell).toHaveText(client);
 			// 仕様どおり、取引先名にはリンクを付けない。
 			await expect(cell.locator('a')).toHaveCount(0);
@@ -198,12 +219,18 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 
 		// 未設定と無題の登録済取引先は、どちらもダッシュ＋読み上げ文言になること。
 		for (const title of ['取引先未設定の見積', '名称未設定の取引先を選んだ見積']) {
-			const cell = estimateRow(page, title).locator('.column-bill_client_name');
+			const cell = (await gotoEstimateRow(page, title)).locator('.column-bill_client_name');
 			await expect(cell.locator('[aria-hidden="true"]')).toHaveText('—');
 			await expect(cell.locator('.screen-reader-text')).toHaveText('取引先なし');
 			// 書類自身の件名が取引先名として漏れていないこと。
 			expect((await cell.textContent())?.replace('取引先なし', '').trim()).toBe('—');
 		}
+
+		// CSS の列幅・バージョン確認は絞り込みの有無に左右されないが、直前の検索結果
+		// ページのまま計測すると表示件数が変わって見えるため、改めて絞り込み無しの
+		// 一覧を開き直してから計測する。
+		await page.goto(LIST_PATH);
+		await page.waitForLoadState('networkidle');
 
 		// CSS の列幅指定と、テーマバージョン付き URL をブラウザ上の実値で確認する。
 		const width = await page.locator('#bill_client_name').evaluate((element) =>
@@ -240,7 +267,7 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 			expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
 
 			if (width === 1280) {
-				const longJapaneseRow = estimateRow(
+				const longJapaneseRow = await gotoEstimateRow(
 					page,
 					'新規オフィス移転に伴う社内ネットワーク再構築およびセキュリティ強化対応一式のお見積'
 				);
@@ -249,13 +276,13 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 				expect(await renderedLineCount(longJapaneseRow.locator('.column-title .row-title'))).toBe(1);
 
 				// 英字1語の長い取引先名もセル外へはみ出さないこと。
-				const englishCell = estimateRow(page, '英字取引先テスト').locator('.column-bill_client_name');
+				const englishCell = (await gotoEstimateRow(page, '英字取引先テスト')).locator('.column-bill_client_name');
 				const overflow = await englishCell.evaluate((element) => element.scrollWidth - element.clientWidth);
 				expect(overflow).toBeLessThanOrEqual(1);
 			}
 
 			if (width <= 782) {
-				const row = estimateRow(page, 'Webサイト制作見積（登録済取引先）');
+				const row = await gotoEstimateRow(page, 'Webサイト制作見積（登録済取引先）');
 				const toggle = row.locator('.toggle-row');
 				await expect(toggle).toBeVisible();
 				await toggle.click();
@@ -288,7 +315,7 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 		}
 		await expect(page.locator('#bill_client_name')).toBeVisible();
 
-		const row = estimateRow(page, '単発ロゴ制作見積（イレギュラー）');
+		const row = await gotoEstimateRow(page, '単発ロゴ制作見積（イレギュラー）');
 		// WordPress の行アクションは視覚上表示されていても Playwright が画面外と
 		// 判定することがあるため、実際のクリックと同じ click イベントを送る。
 		await row.locator('.editinline').dispatchEvent('click');
@@ -304,7 +331,7 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 
 	test('編集画面で既存の取引先値を保持したまま保存できる', async ({ page }) => {
 		test.setTimeout(60000);
-		const row = estimateRow(page, '単発ロゴ制作見積（イレギュラー）');
+		const row = await gotoEstimateRow(page, '単発ロゴ制作見積（イレギュラー）');
 		await row.locator('.row-title').click();
 		await expect(page.locator('#bill_client_name_manual')).toHaveValue('個人事業主 山田太郎');
 

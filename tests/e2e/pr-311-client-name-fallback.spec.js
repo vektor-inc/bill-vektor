@@ -67,10 +67,35 @@ function adminEstimateRow(page, title) {
 	});
 }
 
+/**
+ * 管理画面の見積書一覧から、指定タイトルの行を検索結果ページで取得する。
+ *
+ * issue #322: 絞り込み無しの管理画面一覧は既定20件/ページのため、他スペックの
+ * データが積み重なると対象がページ外へ押し出されうる（麗美のフルスイート実測で、
+ * 見積の総数が19件まで積み上がっていることを確認済み。20件/ページに迫っており、
+ * 他スペックが見積を1〜2件増やすだけで超過しうる）。件名で絞り込んだ検索結果
+ * （&s=）を使うことで、DB全体の件数に依存せず対象1件だけに絞り込む
+ * （pr-297-estimate-client-column.spec.js の gotoEstimateRow() と同じ手法）。
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} title
+ * @return {Promise<import('@playwright/test').Locator>}
+ */
+async function gotoAdminEstimateRow(page, title) {
+	await page.goto(`/wp-admin/edit.php?post_type=estimate&s=${encodeURIComponent(title)}`);
+	await page.waitForLoadState('networkidle');
+	return adminEstimateRow(page, title);
+}
+
 test.describe('PR #311: 取引先名フォールバック', () => {
 	test('フロントの見積書一覧で各取引先パターンを正しく表示する', async ({ page }) => {
-		await page.goto('/?post_type=estimate');
-		await page.waitForLoadState('networkidle');
+		// issue #322（麗美のフルスイート実測で再発を検出）: 見積書一覧は既定の
+		// 件数（10件/ページ）でページ送りされるため、他スペックのデータが
+		// 積み重なると PR311 の見積が2ページ目以降へ押し出されうる
+		// （実測: 見積19件・PR311の見積は発行日降順で12番目のため1ページ目に無い）。
+		// 行ごとに見つかるページまで自動で送ることで、他スペックのデータ量に
+		// 依存しない検証にする。他の行と別ページに落ちても個別に見つけられるよう、
+		// タイトルごとに毎回 gotoPageContaining() で探索し直す。
 
 		// 未設定・不正値・削除済み ID は、書類自身や無関係な投稿へリンクせずダッシュにする。
 		for (const title of [
@@ -79,7 +104,8 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 			'PR311 配列値の見積',
 			'PR311 削除済み取引先の見積',
 		]) {
-			const cell = frontClientCell(page, title);
+			const row = await gotoPageContaining(page, '/?post_type=estimate', (p) => frontRow(p, title));
+			const cell = row.locator('td').nth(2);
 			await expect(cell.locator('[aria-hidden="true"]')).toHaveText('—');
 			await expect(cell.locator('.screen-reader-text')).toHaveText('取引先なし');
 			await expect(cell.locator('a')).toHaveCount(0);
@@ -88,7 +114,10 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		}
 
 		// 登録済み取引先は省略名を表示し、取引先ページへ別タブリンクを張る。
-		const registeredCell = frontClientCell(page, 'PR311 登録済み取引先の見積');
+		const registeredRow = await gotoPageContaining(page, '/?post_type=estimate', (p) =>
+			frontRow(p, 'PR311 登録済み取引先の見積')
+		);
+		const registeredCell = registeredRow.locator('td').nth(2);
 		await expect(registeredCell).toContainText('PR311 テスト社');
 		await expect(registeredCell.locator('a')).toHaveCount(1);
 		await expect(registeredCell.locator('a')).toHaveAttribute('href', /[?&]client=\d+|\/client\//);
@@ -98,19 +127,23 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		// issue #310: 別タブで開くことを読み上げ用テキストで予告していること
 		await expect(registeredCell.locator('.screen-reader-text')).toHaveText('（新しいタブで開きます）');
 
-		// 手入力の取引先は文字列だけを表示し、リンクは張らない。
-		const manualCell = frontClientCell(page, 'PR311 手入力取引先の見積');
-		await expect(manualCell).toHaveText('PR311 手入力の取引先');
-		await expect(manualCell.locator('a')).toHaveCount(0);
-
 		// issue #310: 件名リンクにも別タブで開くことの予告（rel="noopener"・アイコン・screen-reader-text）が付与されている
-		const subjectCell = frontSubjectCell(page, 'PR311 登録済み取引先の見積');
+		// （登録済み取引先の行を再取得すると同じ行のため、上で取得済みの行から件名セルを取る）
+		const subjectCell = registeredRow.locator('td').nth(3);
 		const subjectLink = subjectCell.locator('a');
 		await expect(subjectLink).toHaveCount(1);
 		await expect(subjectLink).toHaveAttribute('target', '_blank');
 		await expect(subjectLink).toHaveAttribute('rel', /\bnoopener\b/);
 		await expect(subjectLink.locator('.glyphicon-new-window')).toHaveCount(1);
 		await expect(subjectLink.locator('.screen-reader-text')).toHaveText('（新しいタブで開きます）');
+
+		// 手入力の取引先は文字列だけを表示し、リンクは張らない。
+		const manualRow = await gotoPageContaining(page, '/?post_type=estimate', (p) =>
+			frontRow(p, 'PR311 手入力取引先の見積')
+		);
+		const manualCell = manualRow.locator('td').nth(2);
+		await expect(manualCell).toHaveText('PR311 手入力の取引先');
+		await expect(manualCell.locator('a')).toHaveCount(0);
 	});
 
 	test('取引先一覧で名前あり・無題の行をアクセシブルに表示する', async ({ page }) => {
@@ -193,8 +226,11 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 	});
 
 	test('取引先未設定の見積単体で件名を取引先欄と title に重複表示しない', async ({ page }) => {
-		await page.goto('/?post_type=estimate');
-		const row = frontRow(page, 'PR311 未設定（メタなし）の見積');
+		// issue #322: 見積書一覧はページ送りされるため、他スペックのデータが
+		// 積み重なると対象がページ外へ押し出されうる（上のテストと同じ理由）。
+		const row = await gotoPageContaining(page, '/?post_type=estimate', (p) =>
+			frontRow(p, 'PR311 未設定（メタなし）の見積')
+		);
 		const detailLink = row.getByRole('link', { name: 'PR311 未設定（メタなし）の見積' });
 		const href = await detailLink.getAttribute('href');
 		expect(href).toBeTruthy();
@@ -212,11 +248,8 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 	});
 
 	test('管理画面の見積書一覧で取引先あり・未設定を従来どおり表示する', async ({ page }) => {
-		await page.goto('/wp-admin/edit.php?post_type=estimate');
-		await page.waitForLoadState('networkidle');
-
 		await expect(
-			adminEstimateRow(page, 'PR311 登録済み取引先の見積').locator('.column-bill_client_name')
+			(await gotoAdminEstimateRow(page, 'PR311 登録済み取引先の見積')).locator('.column-bill_client_name')
 		).toHaveText('PR311 株式会社テスト取引先');
 
 		for (const title of [
@@ -225,7 +258,7 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 			'PR311 配列値の見積',
 			'PR311 削除済み取引先の見積',
 		]) {
-			const cell = adminEstimateRow(page, title).locator('.column-bill_client_name');
+			const cell = (await gotoAdminEstimateRow(page, title)).locator('.column-bill_client_name');
 			await expect(cell.locator('[aria-hidden="true"]')).toHaveText('—');
 			await expect(cell.locator('.screen-reader-text')).toHaveText('取引先なし');
 			await expect(cell).not.toContainText(title);
