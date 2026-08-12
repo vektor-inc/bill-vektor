@@ -63,6 +63,42 @@ async function getDocumentTitles(page) {
 }
 
 /**
+ * 現在のページを含め、指定ページ数まで一覧をめくりながら件名を集める。
+ *
+ * issue #322: 絞り込み無し（または投稿タイプのみ等の緩い絞り込み）の一覧は、
+ * 他の e2e テストデータ作成スクリプトが作った書類も対象に含む。他スペックの
+ * データが積み重なるとページ送りが発生し、このPR用の書類（固定で2024年の
+ * 日付を持つため、既定の「発行日の新しい順」では他スペックの当日日付の
+ * データより下に来やすい）が1ページ目に無いことがある。指定ページ数分の
+ * 件名を集約して判定することで、他スペックのデータ量に依存しない検証にする。
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {number} [maxPages=5] 探索するページ数の上限。
+ * @returns {Promise<string[]>}
+ */
+async function collectDocumentTitlesAcrossPages(page, maxPages = 5) {
+	const basePath = page.url();
+	/** @type {string[]} */
+	const titles = [];
+
+	for (let paged = 1; paged <= maxPages; paged += 1) {
+		if (paged > 1) {
+			const url = new URL(basePath);
+			url.searchParams.set('paged', String(paged));
+			const response = await page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
+			// 存在しないページ番号を送るとエラーや空一覧になるため、その時点で打ち切る
+			if (!response || !response.ok()) break;
+		}
+
+		const pageTitles = await getDocumentTitles(page);
+		if (pageTitles.length === 0) break;
+		titles.push(...pageTitles);
+	}
+
+	return titles;
+}
+
+/**
  * 一覧テーブルの発行日セル（YYYY.MM.DD 表記）を上から順に取得する。
  *
  * @param {import('@playwright/test').Page} page
@@ -139,7 +175,7 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		const bodyText = await page.content();
 		expect(bodyText).not.toContain(ARRAY_WARNING_TEXT);
 
-		const titles = await getDocumentTitles(page);
+		const titles = await collectDocumentTitlesAcrossPages(page);
 		expect(titles.length).toBeGreaterThan(0);
 		// 配列指定は「未指定」と同じ扱いになり、請求書・見積書の両方が既定表示される。
 		expect(titles).toContain(TITLES.invoiceA);
@@ -154,7 +190,7 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		// この PR が対象にした不具合（配列の警告とは別の既存の修正点）。
 		await page.goto(`/?post_type=${encodeURIComponent('見積')}`);
 
-		const titles = await getDocumentTitles(page);
+		const titles = await collectDocumentTitlesAcrossPages(page);
 		expect(titles).toContain(TITLES.invoiceA);
 		expect(titles).toContain(TITLES.estimateA);
 	});
@@ -162,7 +198,7 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 	test('post_type=（空文字）でも既定の一覧になる', async ({ page }) => {
 		await page.goto('/?post_type=');
 
-		const titles = await getDocumentTitles(page);
+		const titles = await collectDocumentTitlesAcrossPages(page);
 		expect(titles).toContain(TITLES.invoiceA);
 		expect(titles).toContain(TITLES.estimateA);
 	});
@@ -173,7 +209,7 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		await page.locator('#post_type').selectOption('estimate');
 		await submitFilters(page);
 
-		const titles = await getDocumentTitles(page);
+		const titles = await collectDocumentTitlesAcrossPages(page);
 		expect(titles).toContain(TITLES.estimateA);
 		expect(titles).not.toContain(TITLES.invoiceA);
 		expect(titles).not.toContain(TITLES.invoiceB);
@@ -289,7 +325,7 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		expect(bodyText).not.toContain(ARRAY_WARNING_TEXT);
 
 		// PR331契約書A・B は既定のカテゴリー（Uncategorized）のまま作成しているため表示される。
-		const titles = await getDocumentTitles(page);
+		const titles = await collectDocumentTitlesAcrossPages(page);
 		expect(titles).toContain(TITLES.invoiceA);
 	});
 });

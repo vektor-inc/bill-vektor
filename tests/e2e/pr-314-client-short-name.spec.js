@@ -1,6 +1,8 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { gotoPageContaining: gotoPageContainingLocator } = require('./list-pagination-helpers');
 
 /**
  * PR #314 取引先の省略名優先判定の共通関数化にともなう UI / e2e テスト。
@@ -50,21 +52,18 @@ function listRow(page, title) {
  * ページ送りの見出しを確認するため表示件数を絞っているので、
  * 目的の行が見つかるまでページを送りながら該当行を探す。
  *
+ * 実体は list-pagination-helpers.js の共通ヘルパー（issue #322 で
+ * pr-311-client-name-fallback.spec.js とも共有するために切り出した）。
+ * 呼び出し側の書き換えを避けるため、件名からロケーターを組み立てる
+ * ラッパーとしてここに残している。
+ *
  * @param {import('@playwright/test').Page} page
  * @param {string} basePath 一覧のパス
  * @param {string} title 探す件名
  * @param {number} maxPages 探索するページ数の上限
  */
 async function gotoPageContaining(page, basePath, title, maxPages = 5) {
-	for (let paged = 1; paged <= maxPages; paged += 1) {
-		const separator = basePath.includes('?') ? '&' : '?';
-		await page.goto(paged === 1 ? basePath : `${basePath}${separator}paged=${paged}`);
-		await page.waitForLoadState('domcontentloaded');
-		if (await listRow(page, title).count()) {
-			return listRow(page, title);
-		}
-	}
-	throw new Error(`一覧に「${title}」の行が見つかりませんでした（${basePath}）。`);
+	return gotoPageContainingLocator(page, basePath, (p) => listRow(p, title), maxPages);
 }
 
 /**
@@ -101,6 +100,27 @@ async function expectClientPage(page, href, clientFullName, notContain) {
  */
 function clientCell(row, index) {
 	return row.locator('td').nth(index);
+}
+
+/**
+ * 取引先一覧（書類 / 取引先の2列）で、取引先セルの表示テキストが完全一致する
+ * セルを取得する。
+ *
+ * issue #322: listRow() は行全体のテキストに対する部分一致のため、ある取引先名が
+ * 別スペックの取引先名の部分文字列になっている場合（例:「株式会社テスト取引先」が
+ * 「PR311 株式会社テスト取引先」に含まれる）、両方の行にヒットしてしまい、
+ * clientCell() の nth(1) が意図しない方の行のセルを返すことがある
+ * （複数データセットを同時投入した状態で実際に発生を確認済み）。
+ * セル自体の完全一致（前後の空白のみ許容）で絞り込むことでこの誤ヒットを避ける。
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} cellText 取引先セルに表示されるべき完全なテキスト。
+ */
+function exactClientCell(page, cellText) {
+	const escaped = cellText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	return page.locator('table.table td:nth-child(2)').filter({
+		hasText: new RegExp(`^\\s*${escaped}\\s*$`),
+	});
 }
 
 test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
@@ -172,9 +192,12 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 		];
 
 		for (const [fullName, shortName] of clients) {
-			const cell = clientCell(
-				await gotoPageContaining(page, CLIENT_LIST_PATH, fullName),
-				1
+			// issue #322: listRow(title) は行全体への部分一致のため、他スペックの
+			// 取引先名がこの fullName を部分文字列として含む場合（例: PR311 の
+			// 「PR311 株式会社テスト取引先」）に誤って複数行へヒットする。
+			// セル自体の完全一致で絞り込む exactClientCell() を使う。
+			const cell = await gotoPageContainingLocator(page, CLIENT_LIST_PATH, (p) =>
+				exactClientCell(p, `${fullName}（新しいタブで開きます）`)
 			);
 			// フルネームがそのまま表示されていること（省略名ではない）。
 			// issue #310: 別タブで開くことを予告するscreen-reader-textがセルのテキストに合成される。
@@ -206,10 +229,14 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 		 * issue #310 対応後は、ダッシュ＋代替テキスト「名称未設定の取引先（新しいタブで開きます）」
 		 * （別タブで開くことの予告を合成した文言）を出している。
 		 */
-		await page.goto(CLIENT_LIST_PATH);
-		await page.waitForLoadState('domcontentloaded');
-
-		const untitledLink = page.locator('table.table td a[href*="untitled-client"]');
+		// issue #322: 取引先一覧は既定の件数でページ送りされるため、他スペックが
+		// 作った取引先が積み重なると対象がページ外へ押し出されうる
+		// （実際にフルスイート相当のデータを投入した状態で、1ページ目固定の
+		// 参照だと見つからず落ちることを確認済み）。見つかるページまで自動で
+		// 送ることで、他スペックのデータ量に依存しない検証にする。
+		const untitledLink = await gotoPageContainingLocator(page, CLIENT_LIST_PATH, (p) =>
+			p.locator('table.table td a[href*="untitled-client"]')
+		);
 		await expect(untitledLink).toHaveCount(1);
 
 		// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること

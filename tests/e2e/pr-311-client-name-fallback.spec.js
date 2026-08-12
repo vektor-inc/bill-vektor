@@ -1,6 +1,8 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { gotoPageContaining } = require('./list-pagination-helpers');
 
 /**
  * PR #311 取引先名フォールバック修正の UI / e2e テスト。
@@ -112,8 +114,9 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 	});
 
 	test('取引先一覧で名前あり・無題の行をアクセシブルに表示する', async ({ page }) => {
-		await page.goto('/?post_type=client');
-		await page.waitForLoadState('networkidle');
+		// issue #322: 取引先一覧は既定の件数でページ送りされるため、他スペックが
+		// 作ったデータが積み重なると対象がページ外へ押し出されうる。見つかる
+		// ページまで自動で送ることで、他スペックのデータ量に依存しない検証にする。
 
 		// 名前ありの取引先は自身のページへの別タブリンクを維持する。
 		// issue #310: 別タブで開くことを screen-reader-text で予告するため、
@@ -121,10 +124,12 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		// マークアップ上はテキストノード・aria-hiddenのアイコンspan・screen-reader-textのspanと
 		// 複数の子要素が並んでおり、ブラウザのアクセシブルネーム算出は各要素の寄与をスペースで
 		// 連結するため、社名と括弧の間に半角スペースが1つ入る（実測値に合わせる）。
-		const namedLink = page.getByRole('link', {
-			name: 'PR311 株式会社テスト取引先 （新しいタブで開きます）',
-			exact: true,
-		});
+		const namedLink = await gotoPageContaining(page, '/?post_type=client', (p) =>
+			p.getByRole('link', {
+				name: 'PR311 株式会社テスト取引先 （新しいタブで開きます）',
+				exact: true,
+			})
+		);
 		await expect(namedLink).toHaveCount(1);
 		await expect(namedLink).toHaveAttribute('target', '_blank');
 		// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること
@@ -133,10 +138,16 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		// 無題の取引先は空アンカーにせず、ダッシュと読み上げ用テキストをリンク内に置く。
 		// issue #310: 既存の screen-reader-text に「新しいタブで開きます」を合成しているため、
 		// アクセシブルネームもその合成後の文言になる。
-		const untitledLink = page.getByRole('link', {
-			name: '名称未設定の取引先（新しいタブで開きます）',
-			exact: true,
-		});
+		//
+		// issue #322: 「名称未設定の取引先」という読み上げテキストは、タイトルを空で
+		// 保存した取引先を作る他スペック（pr-297 / pr-314 / pr-326 等）とも共通のため、
+		// アクセシブルネームだけでは PR311 が作った1件に絞り込めない
+		// （フルスイート実行時に他スペックの無題取引先と衝突し、件数が1件を超えて落ちる）。
+		// create-test-data-pr-311.php が固定したスラッグ（pr311-untitled-client）を
+		// href に含むリンクへ絞り込むことで、他スペックのデータと衝突しないようにする。
+		const untitledLink = await gotoPageContaining(page, '/?post_type=client', (p) =>
+			p.locator('a[href*="pr311-untitled-client"]')
+		);
 		await expect(untitledLink).toHaveCount(1);
 		await expect(untitledLink).toHaveAttribute('target', '_blank');
 		await expect(untitledLink).toHaveAttribute('rel', /\bnoopener\b/);
