@@ -84,7 +84,19 @@ function adminEstimateRow(page, title) {
 async function gotoAdminEstimateRow(page, title) {
 	await page.goto(`/wp-admin/edit.php?post_type=estimate&s=${encodeURIComponent(title)}`);
 	await page.waitForLoadState('networkidle');
-	return adminEstimateRow(page, title);
+	const row = adminEstimateRow(page, title);
+	/*
+	 * issue #322 レビュー指摘（MEDIUM 3）: これまでは page.goto() した後に
+	 * ロケーターを返すだけで、それが何件に解決するかを一切検査していなかった。
+	 * 0件（検索結果自体のページ送りで対象が2ページ目以降へ落ちた場合）でも、
+	 * 2件以上（他スペックのタイトルが部分文字列として一致した場合）でも黙って
+	 * 返してしまい、呼び出し元の否定アサーション（not.toContainText 等）は
+	 * 対象が画面に無ければ必ず通るため、存在保証とセットでなければ意味を持たない。
+	 * gotoPageContaining()（list-pagination-helpers.js）と同じ水準に揃え、
+	 * 探索の成否をヘルパー自身で保証する。
+	 */
+	await expect(row, `管理画面の見積書一覧に「${title}」の行が1件だけ見つかること`).toHaveCount(1);
+	return row;
 }
 
 test.describe('PR #311: 取引先名フォールバック', () => {

@@ -222,6 +222,18 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		// 配列指定は「未指定」と同じ扱いになり、請求書・見積書の両方が既定表示される。
 		expect(titles).toContain(TITLES.invoiceA);
 		expect(titles).toContain(TITLES.estimateA);
+		/*
+		 * issue #322 レビュー指摘（横断点検）: invoiceB（取引先未設定の請求書）は
+		 * このファイル全体で「絞り込みによって除外されるべき対象」としてのみ登場し
+		 * （後続の3テストで not.toContain(TITLES.invoiceB) を検証している）、
+		 * invoiceB 自身が一覧に実在することを確認している箇所が無かった。
+		 * create-test-data-pr-331.php の実行漏れ等で invoiceB が存在しない場合、
+		 * それらの否定アサーションは対象が画面に無いことで空振りのまま成立してしまい、
+		 * 絞り込みロジックが壊れて invoiceB まで表示される回帰を検知できない。
+		 * 絞り込み無しの一覧（＝両方の投稿タイプが既定表示される場面）で invoiceB の
+		 * 実在を保証しておくことで、後続の否定アサーションを意味のある検証にする。
+		 */
+		expect(titles).toContain(TITLES.invoiceB);
 	});
 
 	test('post_type=見積（日本語・sanitize_keyで空文字化）でも請求書だけにならず、既定の一覧になる', async ({

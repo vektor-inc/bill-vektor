@@ -339,9 +339,19 @@ test.describe('PR #326: 請求書一覧の取引先列', () => {
 		}
 
 		// 3. フロント側の書類一覧
-		await page.goto('/');
-		await page.waitForLoadState('networkidle');
-		await expect(page.locator('body')).not.toContainText(SECRET_PAGE_TITLE);
+		// issue #322 レビュー指摘: 絞り込み無しのフロント一覧は10件/ページで、
+		// PR326の不正値書類6件は作成時点の日付が古く post 37件・estimate 18件の
+		// 後ろへ押し出され1ページ目に存在しない。対象が写っていない画面に対して
+		// 「漏れていないこと」を確認しても、否定アサーションが空振りで成立するだけで
+		// 検証になっていない。件名（bill_keyword）で絞り込み、対象が実際にこの画面に
+		// 写っていることを保証してから漏れの有無を検証する。
+		for (const postType of ['post', 'estimate']) {
+			await page.goto(`/?post_type=${postType}&bill_keyword=PR326&action=send`);
+			await page.waitForLoadState('networkidle');
+			// 否定検証の前に、対象がこの画面に存在することを保証する
+			await expect(page.locator('table.table tr').filter({ hasText: 'PR326 不正値' })).toHaveCount(3);
+			await expect(page.locator('body')).not.toContainText(SECRET_PAGE_TITLE);
+		}
 
 		// 4. CSV エクスポートにも出ていないこと
 		const nonce = await page.locator('.export-box input[name="_wpnonce"]').first().inputValue();

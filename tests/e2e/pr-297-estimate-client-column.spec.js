@@ -104,7 +104,20 @@ function estimateRow(page, title) {
 async function gotoEstimateRow(page, title) {
 	await page.goto(`${LIST_PATH}&s=${encodeURIComponent(title)}`);
 	await page.waitForLoadState('networkidle');
-	return estimateRow(page, title);
+	const row = estimateRow(page, title);
+	/*
+	 * issue #322 レビュー指摘（MEDIUM 3）: これまでは page.goto() した後に
+	 * ロケーターを返すだけで、それが何件に解決するかを一切検査していなかった。
+	 * 0件（検索結果自体のページ送りで対象が2ページ目以降へ落ちた場合や、他スペックの
+	 * 一時投稿削除タイミングと重なった場合）でも、2件以上（他スペックのタイトルが
+	 * 部分文字列として一致した場合）でも黙って返してしまい、呼び出し元で「否定
+	 * アサーションが先に来るテストがたまたま0件を検出する／toHaveText 系が先に来る
+	 * 順序に守られる」という偶然にしか支えられていなかった。gotoPageContaining()
+	 * （list-pagination-helpers.js）と同じ水準に揃え、探索の成否をヘルパー自身で
+	 * 保証する。
+	 */
+	await expect(row, `見積書一覧に「${title}」の行が1件だけ見つかること`).toHaveCount(1);
+	return row;
 }
 
 /**
@@ -359,17 +372,31 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 			await page.locator('#publish').dispatchEvent('click');
 			await expect(page.locator('#message')).toContainText(/公開しました|更新しました|Post published|Post updated/);
 
-			await page.goto(LIST_PATH);
-			const row = estimateRow(page, title);
+			/*
+			 * issue #322 レビュー指摘: LIST_PATH（絞り込み無しの一覧）は既定20件/ページ。
+			 * estimate は実測18件で残り2枠しかなく、このテスト自身が1件作って19件に
+			 * なった上、他スペックが実行中に作る一時投稿でも容易に20件を超える。
+			 * 超えた瞬間に対象が1ページ目から押し出され toHaveCount(1) が0件で落ちる
+			 * ―― 今通っているのは「直前に publish した投稿が発行日降順で1行目に来る」
+			 * という並び順への暗黙依存でしかない。他の呼び出し箇所と同じ
+			 * gotoEstimateRow()（&s= で件名絞り込み）に揃え、件数に依存しない検証にする。
+			 */
+			const row = await gotoEstimateRow(page, title);
 			await expect(row).toHaveCount(1);
 			const cell = row.locator('.column-bill_client_name');
 			await expect(cell).toContainText(payload);
 			await expect(cell.locator('script')).toHaveCount(0);
 			expect(await page.evaluate(() => globalThis.__pr297_xss)).toBeUndefined();
 		} finally {
-			// 作成した検証投稿は UI からゴミ箱へ移し、既存データを汚さない。
-			await page.goto(LIST_PATH);
-			const row = estimateRow(page, title);
+			/*
+			 * issue #322 レビュー指摘: 絞り込み無しの LIST_PATH のままだと、上と同じ理由で
+			 * 対象が押し出された場合に if (await row.count()) が黙ってゴミ箱送りをスキップし、
+			 * 直後の permanentlyDeleteTestPosts() はゴミ箱一覧しか見ないため拾えず、
+			 * このタイトルの投稿が実行のたびに1件ずつ DB に残り続けてしまう
+			 * （estimate の母数が単調増加し、この取りこぼし自体が20件超過を早める自己増殖）。
+			 * gotoEstimateRow() で件数に依存せず対象を確実に見つけてからゴミ箱へ移す。
+			 */
+			const row = await gotoEstimateRow(page, title);
 			if (await row.count()) {
 				const trashHref = await row.locator('.submitdelete').getAttribute('href');
 				if (trashHref) await page.goto(trashHref);
