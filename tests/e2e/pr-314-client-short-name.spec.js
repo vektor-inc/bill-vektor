@@ -1,6 +1,8 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { gotoPageContaining: gotoPageContainingLocator } = require('./list-pagination-helpers');
 
 /**
  * PR #314 取引先の省略名優先判定の共通関数化にともなう UI / e2e テスト。
@@ -13,13 +15,18 @@ const { test, expect } = require('@playwright/test');
  *   5. レイアウトのデグレ（横スクロール・レスポンシブ）
  *
  * 前提となる検証データ（wp-cli で投入済みであること）:
- *   - 取引先「株式会社テスト取引先」（省略名: テスト取引先）
- *   - 取引先「有限会社サンプル商会」（省略名: サンプル商会）
- *   - 取引先「合同会社ショートネームなし」（省略名なし）
- *   - 請求書A取引先あり        → 取引先（登録済）= 株式会社テスト取引先
+ *   - 取引先「PR314 株式会社テスト取引先」（省略名: テスト取引先）
+ *   - 取引先「PR314 有限会社サンプル商会」（省略名: サンプル商会）
+ *   - 取引先「PR314 合同会社ショートネームなし」（省略名なし）
+ *   - 請求書A取引先あり        → 取引先（登録済）= PR314 株式会社テスト取引先
  *   - 請求書B取引先なし        → 取引先の設定なし
- *   - 請求書C_省略名なし取引先 → 取引先（登録済）= 合同会社ショートネームなし
+ *   - 請求書C_省略名なし取引先 → 取引先（登録済）= PR314 合同会社ショートネームなし
  *   - 請求書D_イレギュラー取引先 → 取引先（イレギュラー）= イレギュラー商店
+ *
+ * コードレビュー指摘（issue #322）: 取引先名は PR番号なしの一般的な社名だと、
+ * 他スペックの取引先名（例: pr-311 の「PR311 株式会社テスト取引先」）の
+ * 部分文字列になり、部分一致ロケータで誤って複数行にヒットしうる。
+ * このスペック固有のプレフィックス「PR314」を付けて回避している。
  *
  * bill-vektor テーマはログインが必要なため、
  * global-setup.js で取得したログイン済み storageState を使い回す。
@@ -50,21 +57,18 @@ function listRow(page, title) {
  * ページ送りの見出しを確認するため表示件数を絞っているので、
  * 目的の行が見つかるまでページを送りながら該当行を探す。
  *
+ * 実体は list-pagination-helpers.js の共通ヘルパー（issue #322 で
+ * pr-311-client-name-fallback.spec.js とも共有するために切り出した）。
+ * 呼び出し側の書き換えを避けるため、件名からロケーターを組み立てる
+ * ラッパーとしてここに残している。
+ *
  * @param {import('@playwright/test').Page} page
  * @param {string} basePath 一覧のパス
  * @param {string} title 探す件名
- * @param {number} maxPages 探索するページ数の上限
+ * @param {number} [safetyLimit] 探索するページ数の上限（異常検知用。未指定なら共通ヘルパーの既定値）
  */
-async function gotoPageContaining(page, basePath, title, maxPages = 5) {
-	for (let paged = 1; paged <= maxPages; paged += 1) {
-		const separator = basePath.includes('?') ? '&' : '?';
-		await page.goto(paged === 1 ? basePath : `${basePath}${separator}paged=${paged}`);
-		await page.waitForLoadState('domcontentloaded');
-		if (await listRow(page, title).count()) {
-			return listRow(page, title);
-		}
-	}
-	throw new Error(`一覧に「${title}」の行が見つかりませんでした（${basePath}）。`);
+async function gotoPageContaining(page, basePath, title, safetyLimit) {
+	return gotoPageContainingLocator(page, basePath, (p) => listRow(p, title), safetyLimit);
 }
 
 /**
@@ -122,7 +126,7 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 		await expect(withClientLink).toHaveAttribute('rel', /\bnoopener\b/);
 
 		// 実際に開いて取引先ページに着地することを確認する
-		await expectClientPage(page, href, '株式会社テスト取引先', '請求書A取引先あり');
+		await expectClientPage(page, href, 'PR314 株式会社テスト取引先', '請求書A取引先あり');
 
 		// --- 取引先（登録済）＋省略名なし → 取引先名（フルネーム）を表示しリンクする ---
 		const noShortName = clientCell(
@@ -130,7 +134,7 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 			2
 		);
 		// issue #310: 別タブで開くことを予告するscreen-reader-textがセルのテキストに合成される
-		await expect(noShortName).toHaveText('合同会社ショートネームなし（新しいタブで開きます）');
+		await expect(noShortName).toHaveText('PR314 合同会社ショートネームなし（新しいタブで開きます）');
 		await expect(noShortName.locator('a')).toHaveCount(1);
 
 		// --- 取引先（イレギュラー）のみ → 手入力名をテキストで表示し、リンクにしない ---
@@ -166,12 +170,18 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 
 		const clients = [
 			// [表示されるべきフルネーム, 省略名（表示されてはいけない）]
-			['株式会社テスト取引先', 'テスト取引先'],
-			['有限会社サンプル商会', 'サンプル商会'],
-			['合同会社ショートネームなし', null],
+			['PR314 株式会社テスト取引先', 'テスト取引先'],
+			['PR314 有限会社サンプル商会', 'サンプル商会'],
+			['PR314 合同会社ショートネームなし', null],
 		];
 
 		for (const [fullName, shortName] of clients) {
+			// コードレビュー指摘（issue #322）: 以前はここで exactClientCell() による
+			// セル完全一致を使っていたが、それは取引先名が他スペックの取引先名の
+			// 部分文字列になっていた（例: 「株式会社テスト取引先」が pr-311 の
+			// 「PR311 株式会社テスト取引先」に含まれる）ことへの対症療法だった。
+			// 取引先名自体に「PR314」プレフィックスを付けて衝突の原因を絶ったため、
+			// listRow（行を特定）→ clientCell（セルを取り出す）という素直な形に戻せる。
 			const cell = clientCell(
 				await gotoPageContaining(page, CLIENT_LIST_PATH, fullName),
 				1
@@ -206,10 +216,29 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 		 * issue #310 対応後は、ダッシュ＋代替テキスト「名称未設定の取引先（新しいタブで開きます）」
 		 * （別タブで開くことの予告を合成した文言）を出している。
 		 */
-		await page.goto(CLIENT_LIST_PATH);
-		await page.waitForLoadState('domcontentloaded');
-
-		const untitledLink = page.locator('table.table td a[href*="untitled-client"]');
+		// issue #322: 取引先一覧は既定の件数でページ送りされるため、他スペックが
+		// 作った取引先が積み重なると対象がページ外へ押し出されうる
+		// （実際にフルスイート相当のデータを投入した状態で、1ページ目固定の
+		// 参照だと見つからず落ちることを確認済み）。見つかるページまで自動で
+		// 送ることで、他スペックのデータ量に依存しない検証にする。
+		//
+		// コードレビュー指摘: href*= の部分一致だと、他スペックが「untitled-client」を
+		// 部分文字列として含むスラッグ（例: 過去に検討した pr-311 側の
+		// 'pr311-untitled-client'）を使っていた場合に誤ヒットする。href$= で
+		// 「/{スラッグ}/」の末尾一致にすることで、他スペックのスラッグに
+		// このスラッグが含まれる・含まれないどちらの衝突も避ける。
+		// スラッグ自体もスペック固有の 'pr314-untitled-client' にしている
+		// （create-test-data-pr-314.php 参照）。
+		//
+		// コードレビュー指摘: 末尾一致（/スラッグ/）はパーマリンク構造が
+		// 末尾スラッシュ付きであることが前提。/%postname% のようにスラッシュ無しの
+		// 構造を持ち込む DB でも一致するよう、末尾スラッシュあり・なしの2パターンを
+		// カンマ区切りで併記する（境界一致は保ったまま、どちらの構造にも対応する）。
+		const untitledLink = await gotoPageContainingLocator(page, CLIENT_LIST_PATH, (p) =>
+			p.locator(
+				'table.table td a[href$="/pr314-untitled-client/"], table.table td a[href$="/pr314-untitled-client"]'
+			)
+		);
 		await expect(untitledLink).toHaveCount(1);
 
 		// issue #310: window.opener 経由の操作を防ぐ rel="noopener" が付与されていること
@@ -254,7 +283,7 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 		// 省略名が無い取引先の行 → 取引先名（フルネーム）が入っている
 		const rowC = rows.find((row) => row.includes('請求書C_省略名なし取引先'));
 		expect(rowC).toBeTruthy();
-		expect(rowC).toContain('"合同会社ショートネームなし"');
+		expect(rowC).toContain('"PR314 合同会社ショートネームなし"');
 
 		// 取引先を設定していない行 → 取引先名は空で、書類の件名が入らないこと
 		const rowB = rows.find((row) => row.includes('請求書B取引先なし'));

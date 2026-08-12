@@ -38,11 +38,15 @@ function bill_e2e_pr314_create_post( $post_type, $title, $meta = array(), $post_
 	$timestamp = $GLOBALS['bill_e2e_pr314_base_time'] - ( $GLOBALS['bill_e2e_pr314_date_offset'] * MINUTE_IN_SECONDS );
 	++$GLOBALS['bill_e2e_pr314_date_offset'];
 
+	// post_date はサイトのローカル時刻を入れる欄で、UTC のままだと wp-env の既定（UTC）
+	// 以外のタイムゾーン設定（日本時間など）では実際の作成時刻より過去にずれ、
+	// 日時を指定していない他スペックのデータより古く並んでしまう（issue #322 コードレビュー指摘）。
+	// get_date_from_gmt() で UTC → サイトのタイムゾーンへ変換してから設定する。
 	$postarr = array(
 		'post_title'    => $title,
 		'post_type'     => $post_type,
 		'post_status'   => 'publish',
-		'post_date'     => gmdate( 'Y-m-d H:i:s', $timestamp ),
+		'post_date'     => get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $timestamp ) ),
 		'post_date_gmt' => gmdate( 'Y-m-d H:i:s', $timestamp ),
 		'meta_input'    => $meta,
 	);
@@ -95,10 +99,17 @@ function bill_e2e_pr314_doc_meta( $extra = array() ) {
 }
 
 // 前回中断時のデータがあれば、重複作成を避けるため先に個別削除する。
+// 探したい状態を明示する。
+// 'any' は「すべての状態」ではなく、exclude_from_search が true の状態
+// （コアでは trash と auto-draft の2つ）を除くという指定。
+// draft・pending・private・future は 'any' でも拾えるが、trash は拾えない。
+// ゴミ箱に残った投稿を見落とすと孤児として残り、この PR で href の完全一致に
+// 変えたスラッグ照合（pr-314-client-short-name.spec.js）が孤児の古いスラッグを
+// 掴んでしまうため、状態を並べて明示している（コードレビュー指摘。PR #335 と同じ対応）。
 $existing_ids = get_posts(
 	array(
 		'post_type'      => array( 'post', 'client' ),
-		'post_status'    => 'any',
+		'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future', 'trash' ),
 		'posts_per_page' => -1,
 		'fields'         => 'ids',
 		'meta_key'       => BILL_E2E_PR314_MARKER_KEY,
@@ -110,24 +121,32 @@ foreach ( $existing_ids as $existing_id ) {
 }
 
 // 省略名が登録されている取引先（一覧・CSVで省略名が優先されることの確認用）。
+//
+// コードレビュー指摘: 取引先名を PR番号なしの一般的な社名にしていたため、
+// 他スペック（例: pr-311 の「PR311 株式会社テスト取引先」）の取引先名の
+// 部分文字列となり、部分一致ロケータで誤って複数行にヒットしていた。
+// スペック固有のプレフィックスを付けて他スペックのデータと衝突しないようにする。
 $short_name_client_id = bill_e2e_pr314_create_post(
 	'client',
-	'株式会社テスト取引先',
+	'PR314 株式会社テスト取引先',
 	array( 'client_short_name' => 'テスト取引先' )
 );
 
 // 取引先一覧でフルネームが表示されること（省略名にならないこと）の確認用。
 bill_e2e_pr314_create_post(
 	'client',
-	'有限会社サンプル商会',
+	'PR314 有限会社サンプル商会',
 	array( 'client_short_name' => 'サンプル商会' )
 );
 
 // 省略名が登録されていない取引先（投稿タイトルへのフォールバック確認用）。
-$no_short_name_client_id = bill_e2e_pr314_create_post( 'client', '合同会社ショートネームなし' );
+$no_short_name_client_id = bill_e2e_pr314_create_post( 'client', 'PR314 合同会社ショートネームなし' );
 
 // 無題の取引先（空アンカーの回帰確認用。リンクを特定できるようスラッグを固定する）。
-bill_e2e_pr314_create_post( 'client', '', array(), 'untitled-client' );
+// コードレビュー指摘（issue #322）: 素の 'untitled-client' のままだと、他スペックが
+// 同じ語を含むスラッグを使った場合にまた衝突しうる。「フィクスチャはスペック固有にする」
+// という本 issue の原則に合わせ、pr-311 と同様にスペック名を含める。
+bill_e2e_pr314_create_post( 'client', '', array(), 'pr314-untitled-client' );
 
 // 取引先（登録済）＋省略名あり。
 bill_e2e_pr314_create_post(

@@ -1,6 +1,8 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { hasNextPage } = require('./list-pagination-helpers');
 
 /**
  * PR #331 / issue #318 の e2e テスト
@@ -60,6 +62,82 @@ async function getDocumentTitles(page) {
 				return clone.textContent.trim();
 			})
 		);
+}
+
+/**
+ * 現在のページを含め、次ページが無くなるまで一覧をめくりながら件名を集める。
+ *
+ * issue #322: 絞り込み無し（または投稿タイプのみ等の緩い絞り込み）の一覧は、
+ * 他の e2e テストデータ作成スクリプトが作った書類も対象に含む。他スペックの
+ * データが積み重なるとページ送りが発生し、このPR用の書類（固定で2024年の
+ * 日付を持つため、既定の「発行日の新しい順」では他スペックの当日日付の
+ * データより下に来やすい）が1ページ目に無いことがある。全ページ分の
+ * 件名を集約して判定することで、他スペックのデータ量に依存しない検証にする。
+ *
+ * 終了条件は固定のページ数ではなく、list-pagination-helpers.js の
+ * hasNextPage() による「次ページへのリンクが無くなったか」で判定する
+ * （コードレビュー指摘: 固定回数で打ち切ると、データが増えて正常にページ数が
+ * 増えただけのケースまで誤判定してしまう。かつ not.toContain 系の検証が
+ * 途中で打ち切られて素通りする恐れもある）。safetyLimit は異常検知用の保険。
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {number} [safetyLimit=30] 探索するページ数の上限（異常検知用）。
+ * @param {string} [forbiddenText] 各ページに含まれていてはいけない文字列（見つかれば例外）。
+ *   コードレビュー指摘: PHP警告の非存在確認が1ページ目でしか行われず、ヘルパーが
+ *   めくった2ページ目以降を検査していなかったため、探索した全ページで検査できるようにする。
+ * @returns {Promise<string[]>}
+ */
+async function collectDocumentTitlesAcrossPages(page, safetyLimit = 30, forbiddenText) {
+	// e2e ルール（testing/e2e.md）: page.goto() には絶対URLではなく相対パスを渡す。
+	// ベースURLは playwright.config.js の baseURL / WP_BASE_URL 環境変数に任せる
+	// （CIとローカルでポートが異なるため）。list-pagination-helpers.js の
+	// gotoPageContaining() が basePath を相対パスで受け取る流儀と揃える
+	// （コードレビュー指摘: 以前は page.url() の絶対URLをそのまま組み立て直して
+	// 渡しており、このファイルの他の page.goto() 呼び出しと不統一だった）。
+	const currentUrl = new URL(page.url());
+	const basePath = currentUrl.pathname + currentUrl.search;
+	/** @type {string[]} */
+	const titles = [];
+	let paged = 1;
+
+	// eslint-disable-next-line no-constant-condition
+	while (true) {
+		if (paged > 1) {
+			const separator = basePath.includes('?') ? '&' : '?';
+			const response = await page.goto(`${basePath}${separator}paged=${paged}`, {
+				waitUntil: 'domcontentloaded',
+			});
+			// コードレビュー指摘: hasNextPage() で「次ページへのリンクがある」と
+			// 判定した上で遷移しているため、ここで応答が失敗するのは想定外の異常
+			// （ネットワークエラー・サーバーエラー等）のときだけ。以前はここで
+			// 静かに break していたが、それだと titles が不完全なまま返り、
+			// 呼び出し側の not.toContain() 系の検証が誤って通過してしまう
+			// （fail-open）。異常時こそ明示的に失敗させる。
+			expect(response?.ok(), `${paged}ページ目の取得に失敗しました`).toBeTruthy();
+		}
+
+		if (forbiddenText) {
+			const bodyText = await page.content();
+			if (bodyText.includes(forbiddenText)) {
+				throw new Error(`一覧の${paged}ページ目に禁止文字列が含まれていました: ${forbiddenText}`);
+			}
+		}
+
+		const pageTitles = await getDocumentTitles(page);
+		titles.push(...pageTitles);
+
+		if (!(await hasNextPage(page))) break;
+
+		paged += 1;
+		if (paged > safetyLimit) {
+			throw new Error(
+				`一覧が${safetyLimit}ページを超えても終端に達しませんでした。` +
+					'想定より大量のテストデータが投入されている可能性があります。'
+			);
+		}
+	}
+
+	return titles;
 }
 
 /**
@@ -136,14 +214,26 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 	}) => {
 		await page.goto('/?post_type[]=estimate&post_type[]=post');
 
-		const bodyText = await page.content();
-		expect(bodyText).not.toContain(ARRAY_WARNING_TEXT);
-
-		const titles = await getDocumentTitles(page);
+		// コードレビュー指摘: 以前は1ページ目の bodyText だけを確認しており、
+		// ページ送りで探索する2ページ目以降の警告混入は見逃していた。
+		// forbiddenText を渡し、探索する全ページで確認する。
+		const titles = await collectDocumentTitlesAcrossPages(page, undefined, ARRAY_WARNING_TEXT);
 		expect(titles.length).toBeGreaterThan(0);
 		// 配列指定は「未指定」と同じ扱いになり、請求書・見積書の両方が既定表示される。
 		expect(titles).toContain(TITLES.invoiceA);
 		expect(titles).toContain(TITLES.estimateA);
+		/*
+		 * issue #322 レビュー指摘（横断点検）: invoiceB（取引先未設定の請求書）は
+		 * このファイル全体で「絞り込みによって除外されるべき対象」としてのみ登場し
+		 * （後続の3テストで not.toContain(TITLES.invoiceB) を検証している）、
+		 * invoiceB 自身が一覧に実在することを確認している箇所が無かった。
+		 * create-test-data-pr-331.php の実行漏れ等で invoiceB が存在しない場合、
+		 * それらの否定アサーションは対象が画面に無いことで空振りのまま成立してしまい、
+		 * 絞り込みロジックが壊れて invoiceB まで表示される回帰を検知できない。
+		 * 絞り込み無しの一覧（＝両方の投稿タイプが既定表示される場面）で invoiceB の
+		 * 実在を保証しておくことで、後続の否定アサーションを意味のある検証にする。
+		 */
+		expect(titles).toContain(TITLES.invoiceB);
 	});
 
 	test('post_type=見積（日本語・sanitize_keyで空文字化）でも請求書だけにならず、既定の一覧になる', async ({
@@ -154,7 +244,7 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		// この PR が対象にした不具合（配列の警告とは別の既存の修正点）。
 		await page.goto(`/?post_type=${encodeURIComponent('見積')}`);
 
-		const titles = await getDocumentTitles(page);
+		const titles = await collectDocumentTitlesAcrossPages(page);
 		expect(titles).toContain(TITLES.invoiceA);
 		expect(titles).toContain(TITLES.estimateA);
 	});
@@ -162,7 +252,7 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 	test('post_type=（空文字）でも既定の一覧になる', async ({ page }) => {
 		await page.goto('/?post_type=');
 
-		const titles = await getDocumentTitles(page);
+		const titles = await collectDocumentTitlesAcrossPages(page);
 		expect(titles).toContain(TITLES.invoiceA);
 		expect(titles).toContain(TITLES.estimateA);
 	});
@@ -173,7 +263,7 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		await page.locator('#post_type').selectOption('estimate');
 		await submitFilters(page);
 
-		const titles = await getDocumentTitles(page);
+		const titles = await collectDocumentTitlesAcrossPages(page);
 		expect(titles).toContain(TITLES.estimateA);
 		expect(titles).not.toContain(TITLES.invoiceA);
 		expect(titles).not.toContain(TITLES.invoiceB);
@@ -191,7 +281,19 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		await submitFilters(page);
 
 		const titles = await getDocumentTitles(page);
-		// invoiceA は指定した取引先、invoiceB は取引先未設定のため除外される。
+		/*
+		 * invoiceA は指定した取引先、invoiceB は取引先未設定のため除外される。
+		 *
+		 * issue #322 再レビュー指摘（安藤の申し送り）: not.toContain(invoiceB) は
+		 * getDocumentTitles() が1ページ目しか見ないため、他スペックのデータが
+		 * 積み重なって母集合が膨らめば invoiceB も1ページ目から押し出されて
+		 * 空振りで成立しうる。ただし絞り込みロジック自体が壊れて母集合が膨らむ
+		 * 場合、invoiceA（2024-05-01 という他スペックより古い固定日付のため、
+		 * 発行日降順の一覧では他スペックのデータより先に押し出される）を先に
+		 * 検知できる直前の toContain(invoiceA) がカナリアとして機能し、この
+		 * テストはそちらで先に落ちる。「invoiceA が他より古い日付である」という
+		 * 暗黙の前提の上に成り立つ防御であることに注意。
+		 */
 		expect(titles).toContain(TITLES.invoiceA);
 		expect(titles).not.toContain(TITLES.invoiceB);
 	});
@@ -208,7 +310,13 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		await submitFilters(page);
 
 		const titles = await getDocumentTitles(page);
-		// invoiceA（05-01）は範囲内、invoiceB（06-01）は範囲外。
+		/*
+		 * invoiceA（05-01）は範囲内、invoiceB（06-01）は範囲外。
+		 * issue #322 再レビュー指摘（安藤の申し送り）: 上の取引先絞り込みテストと
+		 * 同じ理由で、直前の toContain(invoiceA) が「絞り込みが壊れて母集合が
+		 * 膨らむ」事故に対するカナリアとして機能している（invoiceA の日付が
+		 * 他スペックより古いことに依存する防御）。
+		 */
 		expect(titles).toContain(TITLES.invoiceA);
 		expect(titles).not.toContain(TITLES.invoiceB);
 	});
@@ -285,11 +393,12 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		});
 		expect(response && response.status()).toBe(200);
 
-		const bodyText = await page.content();
-		expect(bodyText).not.toContain(ARRAY_WARNING_TEXT);
-
+		// コードレビュー指摘: 以前はここだけ独自に1ページ目の bodyText を確認しており、
+		// 「PHP警告の非存在確認」の流儀が2通り同居していた（他のテストは
+		// collectDocumentTitlesAcrossPages の forbiddenText 引数で全ページ検査する）。
+		// カテゴリーアーカイブもページ送りされうるため、同じ流儀に寄せる。
 		// PR331契約書A・B は既定のカテゴリー（Uncategorized）のまま作成しているため表示される。
-		const titles = await getDocumentTitles(page);
+		const titles = await collectDocumentTitlesAcrossPages(page, undefined, ARRAY_WARNING_TEXT);
 		expect(titles).toContain(TITLES.invoiceA);
 	});
 });

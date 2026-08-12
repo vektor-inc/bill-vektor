@@ -87,6 +87,49 @@ function estimateRow(page, title) {
 }
 
 /**
+ * 見積書一覧から、指定タイトルの行を検索結果ページで取得する。
+ *
+ * issue #322（麗美のフルスイート実測で pr-311 の同種の穴を検出したのを機に横断点検）:
+ * LIST_PATH（絞り込み無しの一覧）は既定20件/ページのため、他スペックのデータが
+ * 積み重なると対象がページ外へ押し出されうる。実測では見積の総数が19件
+ * （既定の20件/ページに迫る水準）まで積み上がっており、他スペックが見積を
+ * 1〜2件増やすだけで超過しうる。件名で絞り込んだ管理画面の検索結果（&s=）を
+ * 使うことで、DB全体の件数に依存せず対象1件だけに絞り込む
+ * （requireTestDataPresent() が使っているのと同じ手法）。
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} title
+ * @param {{ required?: boolean }} [options]
+ *   required（既定 true）: false を指定すると、行が0件でも throw せずそのまま
+ *   ロケーター（0件に解決する）を返す。finally 節のように「見つからなくても
+ *   後続の後片付けを続行したい」文脈のためのエスケープハッチ（issue #322
+ *   レビュー指摘 MEDIUM 1: この保証を finally 内でも無条件に効かせると、
+ *   try 節の本来の失敗理由を finally 内の throw が上書きしてしまう）。
+ * @return {Promise<import('@playwright/test').Locator>}
+ */
+async function gotoEstimateRow(page, title, { required = true } = {}) {
+	await page.goto(`${LIST_PATH}&s=${encodeURIComponent(title)}`);
+	await page.waitForLoadState('networkidle');
+	const row = estimateRow(page, title);
+	/*
+	 * issue #322 レビュー指摘（MEDIUM 3）: これまでは page.goto() した後に
+	 * ロケーターを返すだけで、それが何件に解決するかを一切検査していなかった。
+	 * 0件（検索結果自体のページ送りで対象が2ページ目以降へ落ちた場合や、他スペックの
+	 * 一時投稿削除タイミングと重なった場合）でも、2件以上（他スペックのタイトルが
+	 * 部分文字列として一致した場合）でも黙って返してしまい、呼び出し元で「否定
+	 * アサーションが先に来るテストがたまたま0件を検出する／toHaveText 系が先に来る
+	 * 順序に守られる」という偶然にしか支えられていなかった。gotoPageContaining()
+	 * （list-pagination-helpers.js）と同じ水準に揃え、探索の成否をヘルパー自身で
+	 * 保証する。ただし finally 節など「見つからなくてもよい」呼び出し元は
+	 * required: false でこの保証を明示的に外せるようにする。
+	 */
+	if (required) {
+		await expect(row, `見積書一覧に「${title}」の行が1件だけ見つかること`).toHaveCount(1);
+	}
+	return row;
+}
+
+/**
  * 要素内のテキストが実際に何行で描画されているかを数える。
  *
  * @param {import('@playwright/test').Locator} locator
@@ -190,7 +233,7 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 		];
 
 		for (const [title, client] of cases) {
-			const cell = estimateRow(page, title).locator('.column-bill_client_name');
+			const cell = (await gotoEstimateRow(page, title)).locator('.column-bill_client_name');
 			await expect(cell).toHaveText(client);
 			// 仕様どおり、取引先名にはリンクを付けない。
 			await expect(cell.locator('a')).toHaveCount(0);
@@ -198,12 +241,18 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 
 		// 未設定と無題の登録済取引先は、どちらもダッシュ＋読み上げ文言になること。
 		for (const title of ['取引先未設定の見積', '名称未設定の取引先を選んだ見積']) {
-			const cell = estimateRow(page, title).locator('.column-bill_client_name');
+			const cell = (await gotoEstimateRow(page, title)).locator('.column-bill_client_name');
 			await expect(cell.locator('[aria-hidden="true"]')).toHaveText('—');
 			await expect(cell.locator('.screen-reader-text')).toHaveText('取引先なし');
 			// 書類自身の件名が取引先名として漏れていないこと。
 			expect((await cell.textContent())?.replace('取引先なし', '').trim()).toBe('—');
 		}
+
+		// CSS の列幅・バージョン確認は絞り込みの有無に左右されないが、直前の検索結果
+		// ページのまま計測すると表示件数が変わって見えるため、改めて絞り込み無しの
+		// 一覧を開き直してから計測する。
+		await page.goto(LIST_PATH);
+		await page.waitForLoadState('networkidle');
 
 		// CSS の列幅指定と、テーマバージョン付き URL をブラウザ上の実値で確認する。
 		const width = await page.locator('#bill_client_name').evaluate((element) =>
@@ -240,7 +289,7 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 			expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
 
 			if (width === 1280) {
-				const longJapaneseRow = estimateRow(
+				const longJapaneseRow = await gotoEstimateRow(
 					page,
 					'新規オフィス移転に伴う社内ネットワーク再構築およびセキュリティ強化対応一式のお見積'
 				);
@@ -249,13 +298,13 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 				expect(await renderedLineCount(longJapaneseRow.locator('.column-title .row-title'))).toBe(1);
 
 				// 英字1語の長い取引先名もセル外へはみ出さないこと。
-				const englishCell = estimateRow(page, '英字取引先テスト').locator('.column-bill_client_name');
+				const englishCell = (await gotoEstimateRow(page, '英字取引先テスト')).locator('.column-bill_client_name');
 				const overflow = await englishCell.evaluate((element) => element.scrollWidth - element.clientWidth);
 				expect(overflow).toBeLessThanOrEqual(1);
 			}
 
 			if (width <= 782) {
-				const row = estimateRow(page, 'Webサイト制作見積（登録済取引先）');
+				const row = await gotoEstimateRow(page, 'Webサイト制作見積（登録済取引先）');
 				const toggle = row.locator('.toggle-row');
 				await expect(toggle).toBeVisible();
 				await toggle.click();
@@ -288,7 +337,7 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 		}
 		await expect(page.locator('#bill_client_name')).toBeVisible();
 
-		const row = estimateRow(page, '単発ロゴ制作見積（イレギュラー）');
+		const row = await gotoEstimateRow(page, '単発ロゴ制作見積（イレギュラー）');
 		// WordPress の行アクションは視覚上表示されていても Playwright が画面外と
 		// 判定することがあるため、実際のクリックと同じ click イベントを送る。
 		await row.locator('.editinline').dispatchEvent('click');
@@ -304,7 +353,7 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 
 	test('編集画面で既存の取引先値を保持したまま保存できる', async ({ page }) => {
 		test.setTimeout(60000);
-		const row = estimateRow(page, '単発ロゴ制作見積（イレギュラー）');
+		const row = await gotoEstimateRow(page, '単発ロゴ制作見積（イレギュラー）');
 		await row.locator('.row-title').click();
 		await expect(page.locator('#bill_client_name_manual')).toHaveValue('個人事業主 山田太郎');
 
@@ -332,17 +381,40 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 			await page.locator('#publish').dispatchEvent('click');
 			await expect(page.locator('#message')).toContainText(/公開しました|更新しました|Post published|Post updated/);
 
-			await page.goto(LIST_PATH);
-			const row = estimateRow(page, title);
+			/*
+			 * issue #322 レビュー指摘: LIST_PATH（絞り込み無しの一覧）は既定20件/ページ。
+			 * estimate は実測18件で残り2枠しかなく、このテスト自身が1件作って19件に
+			 * なった上、他スペックが実行中に作る一時投稿でも容易に20件を超える。
+			 * 超えた瞬間に対象が1ページ目から押し出され toHaveCount(1) が0件で落ちる
+			 * ―― 今通っているのは「直前に publish した投稿が発行日降順で1行目に来る」
+			 * という並び順への暗黙依存でしかない。他の呼び出し箇所と同じ
+			 * gotoEstimateRow()（&s= で件名絞り込み）に揃え、件数に依存しない検証にする。
+			 */
+			const row = await gotoEstimateRow(page, title);
 			await expect(row).toHaveCount(1);
 			const cell = row.locator('.column-bill_client_name');
 			await expect(cell).toContainText(payload);
 			await expect(cell.locator('script')).toHaveCount(0);
 			expect(await page.evaluate(() => globalThis.__pr297_xss)).toBeUndefined();
 		} finally {
-			// 作成した検証投稿は UI からゴミ箱へ移し、既存データを汚さない。
-			await page.goto(LIST_PATH);
-			const row = estimateRow(page, title);
+			/*
+			 * issue #322 レビュー指摘: 絞り込み無しの LIST_PATH のままだと、上と同じ理由で
+			 * 対象が押し出された場合に if (await row.count()) が黙ってゴミ箱送りをスキップし、
+			 * 直後の permanentlyDeleteTestPosts() はゴミ箱一覧しか見ないため拾えず、
+			 * このタイトルの投稿が実行のたびに1件ずつ DB に残り続けてしまう
+			 * （estimate の母数が単調増加し、この取りこぼし自体が20件超過を早める自己増殖）。
+			 * gotoEstimateRow() で件数に依存せず対象を確実に見つけてからゴミ箱へ移す。
+			 *
+			 * issue #322 再レビュー指摘（MEDIUM 1）: gotoEstimateRow() の件数保証は
+			 * finally 節では逆効果になる。try 節が投稿作成前（例: 376行の
+			 * permanentlyDeleteTestPosts()）で失敗した場合、対象は元々存在せず0件が
+			 * 正しい状態なのに、既定の required: true だと gotoEstimateRow() 自身が
+			 * throw して try 節の本来の失敗理由を上書きしてしまい、かつ以降の
+			 * 完全削除処理も実行されなくなる。finally は「見つからなくても後片付けを
+			 * 続行したい」文脈なので required: false で保証を明示的に外す
+			 * （&s= によるスコープ絞り込み自体は維持される）。
+			 */
+			const row = await gotoEstimateRow(page, title, { required: false });
 			if (await row.count()) {
 				const trashHref = await row.locator('.submitdelete').getAttribute('href');
 				if (trashHref) await page.goto(trashHref);
