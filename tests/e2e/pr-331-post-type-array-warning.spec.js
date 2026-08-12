@@ -88,7 +88,14 @@ async function getDocumentTitles(page) {
  * @returns {Promise<string[]>}
  */
 async function collectDocumentTitlesAcrossPages(page, safetyLimit = 30, forbiddenText) {
-	const basePath = page.url();
+	// e2e ルール（testing/e2e.md）: page.goto() には絶対URLではなく相対パスを渡す。
+	// ベースURLは playwright.config.js の baseURL / WP_BASE_URL 環境変数に任せる
+	// （CIとローカルでポートが異なるため）。list-pagination-helpers.js の
+	// gotoPageContaining() が basePath を相対パスで受け取る流儀と揃える
+	// （コードレビュー指摘: 以前は page.url() の絶対URLをそのまま組み立て直して
+	// 渡しており、このファイルの他の page.goto() 呼び出しと不統一だった）。
+	const currentUrl = new URL(page.url());
+	const basePath = currentUrl.pathname + currentUrl.search;
 	/** @type {string[]} */
 	const titles = [];
 	let paged = 1;
@@ -96,9 +103,10 @@ async function collectDocumentTitlesAcrossPages(page, safetyLimit = 30, forbidde
 	// eslint-disable-next-line no-constant-condition
 	while (true) {
 		if (paged > 1) {
-			const url = new URL(basePath);
-			url.searchParams.set('paged', String(paged));
-			const response = await page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
+			const separator = basePath.includes('?') ? '&' : '?';
+			const response = await page.goto(`${basePath}${separator}paged=${paged}`, {
+				waitUntil: 'domcontentloaded',
+			});
 			// コードレビュー指摘: hasNextPage() で「次ページへのリンクがある」と
 			// 判定した上で遷移しているため、ここで応答が失敗するのは想定外の異常
 			// （ネットワークエラー・サーバーエラー等）のときだけ。以前はここで

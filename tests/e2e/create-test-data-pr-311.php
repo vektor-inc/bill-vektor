@@ -74,10 +74,17 @@ function bill_e2e_pr311_create_post( $post_type, $title, $meta = array(), $post_
 }
 
 // 前回中断時のデータがあれば、重複作成を避けるため先に個別削除する。
+// 探したい状態を明示する。
+// 'any' は「すべての状態」ではなく、exclude_from_search が true の状態
+// （コアでは trash と auto-draft の2つ）を除くという指定。
+// draft・pending・private・future は 'any' でも拾えるが、trash は拾えない。
+// ゴミ箱に残った投稿を見落とすと孤児として残り、この PR で href の完全一致に
+// 変えたスラッグ照合（pr-311-client-name-fallback.spec.js）が孤児の古いスラッグを
+// 掴んでしまうため、状態を並べて明示している（コードレビュー指摘。PR #335 と同じ対応）。
 $existing_ids = get_posts(
 	array(
 		'post_type'      => array( 'estimate', 'client' ),
-		'post_status'    => 'any',
+		'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'future', 'trash' ),
 		'posts_per_page' => -1,
 		'fields'         => 'ids',
 		'meta_key'       => BILL_E2E_PR311_MARKER_KEY,
