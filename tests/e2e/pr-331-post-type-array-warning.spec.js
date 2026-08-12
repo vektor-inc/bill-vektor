@@ -281,7 +281,19 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		await submitFilters(page);
 
 		const titles = await getDocumentTitles(page);
-		// invoiceA は指定した取引先、invoiceB は取引先未設定のため除外される。
+		/*
+		 * invoiceA は指定した取引先、invoiceB は取引先未設定のため除外される。
+		 *
+		 * issue #322 再レビュー指摘（安藤の申し送り）: not.toContain(invoiceB) は
+		 * getDocumentTitles() が1ページ目しか見ないため、他スペックのデータが
+		 * 積み重なって母集合が膨らめば invoiceB も1ページ目から押し出されて
+		 * 空振りで成立しうる。ただし絞り込みロジック自体が壊れて母集合が膨らむ
+		 * 場合、invoiceA（2024-05-01 という他スペックより古い固定日付のため、
+		 * 発行日降順の一覧では他スペックのデータより先に押し出される）を先に
+		 * 検知できる直前の toContain(invoiceA) がカナリアとして機能し、この
+		 * テストはそちらで先に落ちる。「invoiceA が他より古い日付である」という
+		 * 暗黙の前提の上に成り立つ防御であることに注意。
+		 */
 		expect(titles).toContain(TITLES.invoiceA);
 		expect(titles).not.toContain(TITLES.invoiceB);
 	});
@@ -298,7 +310,13 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		await submitFilters(page);
 
 		const titles = await getDocumentTitles(page);
-		// invoiceA（05-01）は範囲内、invoiceB（06-01）は範囲外。
+		/*
+		 * invoiceA（05-01）は範囲内、invoiceB（06-01）は範囲外。
+		 * issue #322 再レビュー指摘（安藤の申し送り）: 上の取引先絞り込みテストと
+		 * 同じ理由で、直前の toContain(invoiceA) が「絞り込みが壊れて母集合が
+		 * 膨らむ」事故に対するカナリアとして機能している（invoiceA の日付が
+		 * 他スペックより古いことに依存する防御）。
+		 */
 		expect(titles).toContain(TITLES.invoiceA);
 		expect(titles).not.toContain(TITLES.invoiceB);
 	});

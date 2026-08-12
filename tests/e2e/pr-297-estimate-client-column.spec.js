@@ -99,9 +99,15 @@ function estimateRow(page, title) {
  *
  * @param {import('@playwright/test').Page} page
  * @param {string} title
+ * @param {{ required?: boolean }} [options]
+ *   required（既定 true）: false を指定すると、行が0件でも throw せずそのまま
+ *   ロケーター（0件に解決する）を返す。finally 節のように「見つからなくても
+ *   後続の後片付けを続行したい」文脈のためのエスケープハッチ（issue #322
+ *   レビュー指摘 MEDIUM 1: この保証を finally 内でも無条件に効かせると、
+ *   try 節の本来の失敗理由を finally 内の throw が上書きしてしまう）。
  * @return {Promise<import('@playwright/test').Locator>}
  */
-async function gotoEstimateRow(page, title) {
+async function gotoEstimateRow(page, title, { required = true } = {}) {
 	await page.goto(`${LIST_PATH}&s=${encodeURIComponent(title)}`);
 	await page.waitForLoadState('networkidle');
 	const row = estimateRow(page, title);
@@ -114,9 +120,12 @@ async function gotoEstimateRow(page, title) {
 	 * アサーションが先に来るテストがたまたま0件を検出する／toHaveText 系が先に来る
 	 * 順序に守られる」という偶然にしか支えられていなかった。gotoPageContaining()
 	 * （list-pagination-helpers.js）と同じ水準に揃え、探索の成否をヘルパー自身で
-	 * 保証する。
+	 * 保証する。ただし finally 節など「見つからなくてもよい」呼び出し元は
+	 * required: false でこの保証を明示的に外せるようにする。
 	 */
-	await expect(row, `見積書一覧に「${title}」の行が1件だけ見つかること`).toHaveCount(1);
+	if (required) {
+		await expect(row, `見積書一覧に「${title}」の行が1件だけ見つかること`).toHaveCount(1);
+	}
 	return row;
 }
 
@@ -395,8 +404,17 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 			 * このタイトルの投稿が実行のたびに1件ずつ DB に残り続けてしまう
 			 * （estimate の母数が単調増加し、この取りこぼし自体が20件超過を早める自己増殖）。
 			 * gotoEstimateRow() で件数に依存せず対象を確実に見つけてからゴミ箱へ移す。
+			 *
+			 * issue #322 再レビュー指摘（MEDIUM 1）: gotoEstimateRow() の件数保証は
+			 * finally 節では逆効果になる。try 節が投稿作成前（例: 376行の
+			 * permanentlyDeleteTestPosts()）で失敗した場合、対象は元々存在せず0件が
+			 * 正しい状態なのに、既定の required: true だと gotoEstimateRow() 自身が
+			 * throw して try 節の本来の失敗理由を上書きしてしまい、かつ以降の
+			 * 完全削除処理も実行されなくなる。finally は「見つからなくても後片付けを
+			 * 続行したい」文脈なので required: false で保証を明示的に外す
+			 * （&s= によるスコープ絞り込み自体は維持される）。
 			 */
-			const row = await gotoEstimateRow(page, title);
+			const row = await gotoEstimateRow(page, title, { required: false });
 			if (await row.count()) {
 				const trashHref = await row.locator('.submitdelete').getAttribute('href');
 				if (trashHref) await page.goto(trashHref);

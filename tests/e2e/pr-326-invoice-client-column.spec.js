@@ -331,6 +331,20 @@ test.describe('PR #326: 請求書一覧の取引先列', () => {
 				await page.goto(`/?p=${postId}`);
 				await page.waitForLoadState('domcontentloaded');
 
+				/*
+				 * issue #322 再レビュー指摘（LOW）: /?p=${postId} が 404・ログイン
+				 * リダイレクト・空描画のいずれになっても、直後の2つの否定検証は
+				 * 素通りしてしまう。書類本体が実際に描画されたことを先に確認する
+				 * （pr-266 の gotoTestPost()・pr-319 の verifyDocumentVisible() と
+				 * 同じ考え方）。
+				 * 件名（post_title）は template-parts/doc/frame-bill.php /
+				 * frame-estimate.php の body 内には出力されず、functions.php の
+				 * bill_title_custom()（wp_title / pre_get_document_title）が
+				 * document title にのみ合成するため、body ではなく document title
+				 * で対象書類が実際に描画されたことを確認する。
+				 */
+				expect(await page.title(), `${title} の書類本体が描画されていること`).toContain(title);
+
 				// 書類本体に非公開ページのタイトルが出ていないこと
 				await expect(page.locator('body')).not.toContainText(SECRET_PAGE_TITLE);
 				// PDF のファイル名になる document title にも出ていないこと
@@ -353,12 +367,32 @@ test.describe('PR #326: 請求書一覧の取引先列', () => {
 			await expect(page.locator('body')).not.toContainText(SECRET_PAGE_TITLE);
 		}
 
-		// 4. CSV エクスポートにも出ていないこと
+		/*
+		 * 4. CSV エクスポートにも出ていないこと
+		 *
+		 * issue #322 再レビュー指摘（MEDIUM 2）: csv_freee は post_type=post
+		 * （請求書）のみが対象で、かつ品目（bill_items）のある書類しか出力しない
+		 * （class.csv-export.php 参照）。create-test-data-pr-326.php が作る不正値の
+		 * 請求書には品目を入れていないため、これまでの not.toContain(SECRET_PAGE_TITLE)
+		 * は対象書類が一度も CSV に載らないまま常に成立する空振り検証だった
+		 * （このファイル自身がテスト D で ensureInvoiceHasItem() により同じ前提を
+		 * 整えているのに、テスト C だけ整えていなかった）。不正値の請求書1件に
+		 * 品目を入れて CSV への掲載を保証したうえで、実際に対象が CSV に含まれる
+		 * こと（存在保証）を確認してから、非公開ページのタイトルが出ていないことを
+		 * 確認する。
+		 */
+		const csvTargetTitle = 'PR326 不正値マイナス（請求書）';
+		await ensureInvoiceHasItem(page, csvTargetTitle, INVOICE_LIST_PR326);
+
+		await page.goto('/');
+		await page.waitForLoadState('networkidle');
 		const nonce = await page.locator('.export-box input[name="_wpnonce"]').first().inputValue();
 		expect(nonce).toBeTruthy();
 		const response = await page.request.get(`/?action=csv_freee&_wpnonce=${encodeURIComponent(nonce)}`);
 		expect(response.ok()).toBe(true);
 		const csv = await response.text();
+		// 否定検証の前に、対象がこの CSV に実際に載っていることを保証する
+		expect(csv, 'CSV に不正値の請求書自体が載っていること').toContain(csvTargetTitle);
 		expect(csv).not.toContain(SECRET_PAGE_TITLE);
 	});
 
@@ -403,11 +437,17 @@ test.describe('PR #326: 請求書一覧の取引先列', () => {
 	 *
 	 * @param {import('@playwright/test').Page} page
 	 * @param {string} title
+	 * @param {string} listPath
+	 *   対象の請求書を探す一覧の URL。呼び出し元によって対象請求書が属する
+	 *   一覧が異なる（例: 通常表示パターンはカテゴリー「請求書テスト」で
+	 *   絞り込んだ一覧、不正値の書類はカテゴリーを持たないため件名絞り込みの
+	 *   一覧）ため、決め打ちにせず呼び出し元から渡す（issue #322 レビュー指摘
+	 *   MEDIUM 2）。
 	 */
-	async function ensureInvoiceHasItem(page, title) {
-		await page.goto(await invoiceListUrl(page));
+	async function ensureInvoiceHasItem(page, title, listPath) {
+		await page.goto(listPath);
 		const editHref = await listRow(page, title).locator('.row-title').getAttribute('href');
-		expect(editHref).toBeTruthy();
+		expect(editHref, `${title} の編集リンクが一覧（${listPath}）に見つかること`).toBeTruthy();
 		await page.goto(/** @type {string} */ (editHref));
 
 		const itemName = page.locator('input[name="bill_items[0][name]"]');
@@ -425,8 +465,8 @@ test.describe('PR #326: 請求書一覧の取引先列', () => {
 		test.setTimeout(180000);
 
 		// CSV は品目のある書類だけが出力対象になるため、先に品目を入れておく
-		await ensureInvoiceHasItem(page, 'Web制作請求（登録済取引先）');
-		await ensureInvoiceHasItem(page, '単発ロゴ制作請求（イレギュラー）');
+		await ensureInvoiceHasItem(page, 'Web制作請求（登録済取引先）', await invoiceListUrl(page));
+		await ensureInvoiceHasItem(page, '単発ロゴ制作請求（イレギュラー）', await invoiceListUrl(page));
 
 		// 書類本体と PDF のファイル名
 		await page.goto(await invoiceListUrl(page));
