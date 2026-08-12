@@ -113,6 +113,36 @@ table.table {
 }
 
 /*
+ * issue #317: 罫線クラス名の誤記（table-borderd → table-bordered）を修正し、書類一覧
+ * テーブルに Bootstrap の .table-bordered の罫線を効かせるようにした。
+ *
+ * 上の `.table>tbody>tr>td,...{border-top:none}`（詳細度 (0,1,3)）は、bootstrap.css の
+ * `.table-bordered>tbody>tr>td{border:1px solid #ddd}`（同じ詳細度 (0,1,3)）よりも
+ * 後に読み込まれる（bill-css は bill-css-bootstrap に依存指定されて後から読み込まれる。
+ * functions.php の bill_theme_scripts() 参照）ため、同詳細度のソース順後勝ちで
+ * border-top だけを打ち消している。
+ *
+ * （調査当初は bootstrap.min.css 内の `.table-bordered td,.table-bordered th{border:1px
+ * solid #ddd!important}` を根拠に「!important に負けて実質無効」と判断していたが、
+ * このルールは `@media print` の中にあり画面表示には効かない。実際には上記の
+ * border-top:none が画面表示でも有効に効いており、.table-bordered を使う他の
+ * フロント側テーブル（template-parts/doc/table-price.php・frame-bill.php の帳票
+ * テーブル）でも上罫線を消している。border-top:none 自体を削除するとそれらの見た目も
+ * 変わってしまい issue #317 のスコープ（書類一覧テーブル）を超えるため、削除はせず、
+ * 書類一覧テーブル（.table-responsive で囲まれているのはこのテーブルのみ）に限定して
+ * 打ち消す。
+ *
+ * `.table-responsive > .table > tbody > tr > td` は詳細度 (0,2,3) となり、打ち消したい
+ * `.table>tbody>tr>td{border-top:none}`（(0,1,3)）より高いため、ソース順に関わらず勝つ。
+ * border-top の値は Bootstrap の .table-bordered が使う色（#ddd）に合わせている。
+ */
+.table-responsive > .table > tbody > tr > td,
+.table-responsive > .table > tbody > tr > th,
+.table-responsive > .table > thead > tr > th {
+	border-top: 1px solid #ddd;
+}
+
+/*
  * issue #310: index.php の書類一覧テーブルを .table-responsive（Bootstrap 3）で囲んだことで、
  * 767px 以下では bootstrap.min.css の
  * `.table-responsive>.table>tbody>tr>td, .table-responsive>.table>tbody>tr>th { white-space: nowrap; }`
@@ -120,9 +150,12 @@ table.table {
  * だけの意図的な設計で、「件名」「カテゴリー」列は長い文字列を折り返して読めるようにしたい。
  * そのため text-nowrap の付いていないセルだけ white-space を normal に戻す（植草さんの方針）。
  *
- * td だけでなく th も対象にしている。このテーブルは <thead> を持たないため、
- * ブラウザのHTMLパーサーが見出し行（th）も暗黙の <tbody> の中に入れる。そのため
- * Bootstrap の `.table-responsive>.table>tbody>tr>th` も見出しセルに効いたままになる。
+ * td だけでなく th も対象にしている。issue #317 対応で index.php の見出し行を
+ * <thead>、データ行を <tbody> で囲むようになったため、見出しセル（th）は
+ * <thead> 側に入る。bootstrap.min.css の white-space:nowrap 強制ルールは
+ * `.table-responsive>.table>thead>tr>th` のように thead・tbody を明示的に
+ * 分けて定義されているため、tbody 用の打ち消しだけでは見出しセルに効かない。
+ * そのため thead 用のセレクタも別途用意し、tbody・thead の両方を打ち消す。
  * 現在の見出し語（書類／発行日／取引先／件名／カテゴリー）は短く実害が無いが、
  * 将来見出しが長くなったり翻訳されたりしたときに同じ問題が起きるのを避けるため、
  * 先回りして th 側も打ち消しておく。
@@ -132,12 +165,19 @@ table.table {
  * bill-css-bootstrap（bootstrap.min.css）に依存指定されて後から読み込まれる
  * （functions.php の bill_theme_scripts() 参照）。ビルド後の assets/css/style.css に
  * `.table-responsive>.table>tbody>tr>td:where(:not(.text-nowrap)),
- * .table-responsive>.table>tbody>tr>th:where(:not(.text-nowrap)){white-space:normal}` が
+ * .table-responsive>.table>tbody>tr>th:where(:not(.text-nowrap)),
+ * .table-responsive>.table>thead>tr>th:where(:not(.text-nowrap)){white-space:normal}` が
  * そのまま出力され、bootstrap.min.css 側のルールと詳細度が同じであることを確認済み。
  * ブラウザでの実際の描画確認は別途 e2e テストで行う。
+ *
+ * なお `.table-responsive > .table > tbody > tr > th` は、見出し行が <thead> に
+ * 分離された現状のマークアップではどの要素にもマッチしない（tbody 内に th は無い）。
+ * 将来 tbody 側に行見出し用の th（例: 各行の先頭セルを th にする等）が増えたときに
+ * 備えて残している。
  */
 .table-responsive > .table > tbody > tr > td:where(:not(.text-nowrap)),
-.table-responsive > .table > tbody > tr > th:where(:not(.text-nowrap)) {
+.table-responsive > .table > tbody > tr > th:where(:not(.text-nowrap)),
+.table-responsive > .table > thead > tr > th:where(:not(.text-nowrap)) {
 	white-space: normal;
 }
 

@@ -71,7 +71,8 @@ if ( '' !== $single_list_post_type && $aria_label_post_type_object ) {
 }
 ?>
 <div class="table-responsive" tabindex="0" role="region" aria-label="<?php echo esc_attr( $table_aria_label ); ?>">
-<table class="table table-striped table-borderd">
+<table class="table table-striped table-bordered">
+<thead>
 <tr>
 <th scope="col">書類</th>
 		<?php if ( $page_post_type['slug'] != 'client' ) { ?>
@@ -91,6 +92,8 @@ if ( '' !== $single_list_post_type && $aria_label_post_type_object ) {
 	<?php } ?>
 <?php } ?>
 </tr>
+</thead>
+<tbody>
 		<?php
 		while ( have_posts() ) :
 			the_post();
@@ -177,8 +180,9 @@ if ( '' !== $single_list_post_type && $aria_label_post_type_object ) {
 					} else {
 						/*
 						 * 取引先が未設定の場合はダッシュを表示する。
-						 * この一覧は罫線が無く、空セルだと値が無いのか列がずれているのか
-						 * 判別できないため、値が無いことを明示する。
+						 * 空セルのまま何も表示しないと、スクリーンリーダーはセル自体を読み飛ばして
+						 * しまい、値が無いのか読み上げが失敗しているのか利用者には区別できない。
+						 * ダッシュ（可視）と代替テキスト（読み上げ）の両方で、値が無いことを明示する。
 						 * 代替テキストのクラスは、管理画面の取引先カラムと同じ .screen-reader-text に揃える。
 						 * このテーマの .screen-reader-text は assets/_scss/style.scss で
 						 * 視覚的非表示（clip 方式）として定義しており、支援技術からは読み上げられる。
@@ -208,6 +212,7 @@ if ( '' !== $single_list_post_type && $aria_label_post_type_object ) {
 
 </tr>
 <?php endwhile; ?>
+</tbody>
 </table>
 </div>
 		<?php the_posts_pagination(); ?>
