@@ -41,11 +41,15 @@ function bill_e2e_pr311_create_post( $post_type, $title, $meta = array(), $post_
 	$timestamp = $GLOBALS['bill_e2e_pr311_base_time'] - ( $GLOBALS['bill_e2e_pr311_date_offset'] * MINUTE_IN_SECONDS );
 	++$GLOBALS['bill_e2e_pr311_date_offset'];
 
+	// post_date はサイトのローカル時刻を入れる欄で、UTC のままだと wp-env の既定（UTC）
+	// 以外のタイムゾーン設定（日本時間など）では実際の作成時刻より過去にずれ、
+	// 日時を指定していない他スペックのデータより古く並んでしまう（コードレビュー指摘）。
+	// get_date_from_gmt() で UTC → サイトのタイムゾーンへ変換してから設定する。
 	$postarr = array(
 		'post_title'    => $title,
 		'post_type'     => $post_type,
 		'post_status'   => 'publish',
-		'post_date'     => gmdate( 'Y-m-d H:i:s', $timestamp ),
+		'post_date'     => get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $timestamp ) ),
 		'post_date_gmt' => gmdate( 'Y-m-d H:i:s', $timestamp ),
 		'meta_input'    => $meta,
 	);
@@ -95,7 +99,13 @@ $named_client_id = bill_e2e_pr311_create_post(
 // タイトルが空の取引先は他スペック（pr-297 / pr-314 / pr-326 等）も作成するため、
 // 読み上げテキストによる全体件数の検証は他スペックのデータと衝突する（issue #322）。
 // スラッグを固定し、spec 側からこの取引先だけを href で一意に特定できるようにする。
-$untitled_client_id = bill_e2e_pr311_create_post( 'client', '', array(), 'pr311-untitled-client' );
+//
+// コードレビュー指摘: 当初 'pr311-untitled-client' としていたが、これは
+// create-test-data-pr-314.php が使うスラッグ 'untitled-client' を部分文字列として
+// 含んでしまい、pr-314 側の href 部分一致ロケータに誤ってヒットする
+// （この PR が解消しようとしたのと同じ種類の衝突を新たに作ってしまう）。
+// 他スペックのスラッグを部分文字列として含まない名前にする。
+$untitled_client_id = bill_e2e_pr311_create_post( 'client', '', array(), 'pr311-nameless-client' );
 
 // 削除済み ID が残るケース用に一度取引先を作成し、その ID だけ控えて削除する。
 $deleted_client_id = bill_e2e_pr311_create_post( 'client', 'PR311 削除予定の取引先' );

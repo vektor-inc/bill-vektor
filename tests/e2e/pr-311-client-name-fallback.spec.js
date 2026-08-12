@@ -143,14 +143,30 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		// 保存した取引先を作る他スペック（pr-297 / pr-314 / pr-326 等）とも共通のため、
 		// アクセシブルネームだけでは PR311 が作った1件に絞り込めない
 		// （フルスイート実行時に他スペックの無題取引先と衝突し、件数が1件を超えて落ちる）。
-		// create-test-data-pr-311.php が固定したスラッグ（pr311-untitled-client）を
-		// href に含むリンクへ絞り込むことで、他スペックのデータと衝突しないようにする。
+		// create-test-data-pr-311.php が固定したスラッグ（pr311-nameless-client）を
+		// href の末尾（/{スラッグ}/）で厳密に照合することで、他スペックのデータと衝突しない
+		// ようにする。
+		//
+		// コードレビュー指摘:
+		// - href*= の部分一致だと、別スペックのスラッグがこちらのスラッグを部分文字列として
+		//   含む場合（例: 過去に検討した 'pr311-untitled-client' は pr-314 の
+		//   'untitled-client' を含んでいた）に誤ヒットする。href$= で「/スラッグ/」の
+		//   末尾一致にし、テーブル内（table.table td）にスコープすることで、他スペックの
+		//   スラッグを含む・含まれるどちらの衝突も避ける。
+		// - 孤児データ（前回実行の削除漏れ）が残ると WordPress が
+		//   'pr311-nameless-client-2' のようにスラッグを連番で採番するが、これも
+		//   href$= の末尾一致であれば "-2" が付いた時点で一致しなくなるため、
+		//   誤って複数件ヒットする心配がない。
 		const untitledLink = await gotoPageContaining(page, '/?post_type=client', (p) =>
-			p.locator('a[href*="pr311-untitled-client"]')
+			p.locator('table.table td a[href$="/pr311-nameless-client/"]')
 		);
 		await expect(untitledLink).toHaveCount(1);
 		await expect(untitledLink).toHaveAttribute('target', '_blank');
 		await expect(untitledLink).toHaveAttribute('rel', /\bnoopener\b/);
+		// コードレビュー指摘: href によるスラッグ特定だけでは、issue #310 が守ろうとした
+		// 「ブラウザが実際に算出する読み上げ名（アクセシブルネーム）」の検証が抜け落ちる。
+		// toHaveAccessibleName() で退行を確実に検知できるようにする。
+		await expect(untitledLink).toHaveAccessibleName('名称未設定の取引先（新しいタブで開きます）');
 		/*
 		 * issue #310: ダッシュ用のaria-hiddenと新しいタブアイコン用のaria-hiddenの2つが
 		 * この順で並ぶ。個数と順序（1つ目=ダッシュ、2つ目=アイコン）の両方を検証することで、

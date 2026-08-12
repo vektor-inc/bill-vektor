@@ -1,6 +1,8 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { hasNextPage } = require('./list-pagination-helpers');
 
 /**
  * PR #331 / issue #318 の e2e テスト
@@ -63,25 +65,36 @@ async function getDocumentTitles(page) {
 }
 
 /**
- * 現在のページを含め、指定ページ数まで一覧をめくりながら件名を集める。
+ * 現在のページを含め、次ページが無くなるまで一覧をめくりながら件名を集める。
  *
  * issue #322: 絞り込み無し（または投稿タイプのみ等の緩い絞り込み）の一覧は、
  * 他の e2e テストデータ作成スクリプトが作った書類も対象に含む。他スペックの
  * データが積み重なるとページ送りが発生し、このPR用の書類（固定で2024年の
  * 日付を持つため、既定の「発行日の新しい順」では他スペックの当日日付の
- * データより下に来やすい）が1ページ目に無いことがある。指定ページ数分の
+ * データより下に来やすい）が1ページ目に無いことがある。全ページ分の
  * 件名を集約して判定することで、他スペックのデータ量に依存しない検証にする。
  *
+ * 終了条件は固定のページ数ではなく、list-pagination-helpers.js の
+ * hasNextPage() による「次ページへのリンクが無くなったか」で判定する
+ * （コードレビュー指摘: 固定回数で打ち切ると、データが増えて正常にページ数が
+ * 増えただけのケースまで誤判定してしまう。かつ not.toContain 系の検証が
+ * 途中で打ち切られて素通りする恐れもある）。safetyLimit は異常検知用の保険。
+ *
  * @param {import('@playwright/test').Page} page
- * @param {number} [maxPages=5] 探索するページ数の上限。
+ * @param {number} [safetyLimit=30] 探索するページ数の上限（異常検知用）。
+ * @param {string} [forbiddenText] 各ページに含まれていてはいけない文字列（見つかれば例外）。
+ *   コードレビュー指摘: PHP警告の非存在確認が1ページ目でしか行われず、ヘルパーが
+ *   めくった2ページ目以降を検査していなかったため、探索した全ページで検査できるようにする。
  * @returns {Promise<string[]>}
  */
-async function collectDocumentTitlesAcrossPages(page, maxPages = 5) {
+async function collectDocumentTitlesAcrossPages(page, safetyLimit = 30, forbiddenText) {
 	const basePath = page.url();
 	/** @type {string[]} */
 	const titles = [];
+	let paged = 1;
 
-	for (let paged = 1; paged <= maxPages; paged += 1) {
+	// eslint-disable-next-line no-constant-condition
+	while (true) {
 		if (paged > 1) {
 			const url = new URL(basePath);
 			url.searchParams.set('paged', String(paged));
@@ -90,9 +103,25 @@ async function collectDocumentTitlesAcrossPages(page, maxPages = 5) {
 			if (!response || !response.ok()) break;
 		}
 
+		if (forbiddenText) {
+			const bodyText = await page.content();
+			if (bodyText.includes(forbiddenText)) {
+				throw new Error(`一覧の${paged}ページ目に禁止文字列が含まれていました: ${forbiddenText}`);
+			}
+		}
+
 		const pageTitles = await getDocumentTitles(page);
-		if (pageTitles.length === 0) break;
 		titles.push(...pageTitles);
+
+		if (!(await hasNextPage(page))) break;
+
+		paged += 1;
+		if (paged > safetyLimit) {
+			throw new Error(
+				`一覧が${safetyLimit}ページを超えても終端に達しませんでした。` +
+					'想定より大量のテストデータが投入されている可能性があります。'
+			);
+		}
 	}
 
 	return titles;
@@ -172,10 +201,10 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 	}) => {
 		await page.goto('/?post_type[]=estimate&post_type[]=post');
 
-		const bodyText = await page.content();
-		expect(bodyText).not.toContain(ARRAY_WARNING_TEXT);
-
-		const titles = await collectDocumentTitlesAcrossPages(page);
+		// コードレビュー指摘: 以前は1ページ目の bodyText だけを確認しており、
+		// ページ送りで探索する2ページ目以降の警告混入は見逃していた。
+		// forbiddenText を渡し、探索する全ページで確認する。
+		const titles = await collectDocumentTitlesAcrossPages(page, undefined, ARRAY_WARNING_TEXT);
 		expect(titles.length).toBeGreaterThan(0);
 		// 配列指定は「未指定」と同じ扱いになり、請求書・見積書の両方が既定表示される。
 		expect(titles).toContain(TITLES.invoiceA);
