@@ -105,8 +105,41 @@ h3:first-child {
 	dd { display: inline; }
 	dt { margin-right:1em; }
 }
+.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
+	border-top:none;
+}
 table.table {
 	th { font-weight: lighter; }
+}
+
+/*
+ * issue #317: 罫線クラス名の誤記（table-borderd → table-bordered）を修正し、書類一覧
+ * テーブルに Bootstrap の .table-bordered の罫線を効かせるようにした。
+ *
+ * 上の `.table>tbody>tr>td,...{border-top:none}`（詳細度 (0,1,3)）は、bootstrap.css の
+ * `.table-bordered>tbody>tr>td{border:1px solid #ddd}`（同じ詳細度 (0,1,3)）よりも
+ * 後に読み込まれる（bill-css は bill-css-bootstrap に依存指定されて後から読み込まれる。
+ * functions.php の bill_theme_scripts() 参照）ため、同詳細度のソース順後勝ちで
+ * border-top だけを打ち消している。
+ *
+ * （調査当初は bootstrap.min.css 内の `.table-bordered td,.table-bordered th{border:1px
+ * solid #ddd!important}` を根拠に「!important に負けて実質無効」と判断していたが、
+ * このルールは `@media print` の中にあり画面表示には効かない。実際には上記の
+ * border-top:none が画面表示でも有効に効いており、.table-bordered を使う他の
+ * フロント側テーブル（template-parts/doc/table-price.php・frame-bill.php の帳票
+ * テーブル）でも上罫線を消している。border-top:none 自体を削除するとそれらの見た目も
+ * 変わってしまい issue #317 のスコープ（書類一覧テーブル）を超えるため、削除はせず、
+ * 書類一覧テーブル（.table-responsive で囲まれているのはこのテーブルのみ）に限定して
+ * 打ち消す。
+ *
+ * `.table-responsive > .table > tbody > tr > td` は詳細度 (0,2,3) となり、打ち消したい
+ * `.table>tbody>tr>td{border-top:none}`（(0,1,3)）より高いため、ソース順に関わらず勝つ。
+ * border-top の値は Bootstrap の .table-bordered が使う色（#ddd）に合わせている。
+ */
+.table-responsive > .table > tbody > tr > td,
+.table-responsive > .table > tbody > tr > th,
+.table-responsive > .table > thead > tr > th {
+	border-top: 1px solid #ddd;
 }
 
 /*
@@ -136,6 +169,11 @@ table.table {
  * .table-responsive>.table>thead>tr>th:where(:not(.text-nowrap)){white-space:normal}` が
  * そのまま出力され、bootstrap.min.css 側のルールと詳細度が同じであることを確認済み。
  * ブラウザでの実際の描画確認は別途 e2e テストで行う。
+ *
+ * なお `.table-responsive > .table > tbody > tr > th` は、見出し行が <thead> に
+ * 分離された現状のマークアップではどの要素にもマッチしない（tbody 内に th は無い）。
+ * 将来 tbody 側に行見出し用の th（例: 各行の先頭セルを th にする等）が増えたときに
+ * 備えて残している。
  */
 .table-responsive > .table > tbody > tr > td:where(:not(.text-nowrap)),
 .table-responsive > .table > tbody > tr > th:where(:not(.text-nowrap)),
