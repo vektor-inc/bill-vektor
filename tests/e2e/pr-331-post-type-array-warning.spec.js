@@ -99,8 +99,13 @@ async function collectDocumentTitlesAcrossPages(page, safetyLimit = 30, forbidde
 			const url = new URL(basePath);
 			url.searchParams.set('paged', String(paged));
 			const response = await page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
-			// 存在しないページ番号を送るとエラーや空一覧になるため、その時点で打ち切る
-			if (!response || !response.ok()) break;
+			// コードレビュー指摘: hasNextPage() で「次ページへのリンクがある」と
+			// 判定した上で遷移しているため、ここで応答が失敗するのは想定外の異常
+			// （ネットワークエラー・サーバーエラー等）のときだけ。以前はここで
+			// 静かに break していたが、それだと titles が不完全なまま返り、
+			// 呼び出し側の not.toContain() 系の検証が誤って通過してしまう
+			// （fail-open）。異常時こそ明示的に失敗させる。
+			expect(response?.ok(), `${paged}ページ目の取得に失敗しました`).toBeTruthy();
 		}
 
 		if (forbiddenText) {
@@ -350,11 +355,12 @@ test.describe('PR #331: 挙動確認・デグレ確認（ログイン済み）',
 		});
 		expect(response && response.status()).toBe(200);
 
-		const bodyText = await page.content();
-		expect(bodyText).not.toContain(ARRAY_WARNING_TEXT);
-
+		// コードレビュー指摘: 以前はここだけ独自に1ページ目の bodyText を確認しており、
+		// 「PHP警告の非存在確認」の流儀が2通り同居していた（他のテストは
+		// collectDocumentTitlesAcrossPages の forbiddenText 引数で全ページ検査する）。
+		// カテゴリーアーカイブもページ送りされうるため、同じ流儀に寄せる。
 		// PR331契約書A・B は既定のカテゴリー（Uncategorized）のまま作成しているため表示される。
-		const titles = await collectDocumentTitlesAcrossPages(page);
+		const titles = await collectDocumentTitlesAcrossPages(page, undefined, ARRAY_WARNING_TEXT);
 		expect(titles).toContain(TITLES.invoiceA);
 	});
 });

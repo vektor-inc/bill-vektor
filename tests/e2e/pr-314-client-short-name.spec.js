@@ -225,10 +225,19 @@ test.describe('PR #314: 書類一覧・取引先一覧の取引先欄', () => {
 		// コードレビュー指摘: href*= の部分一致だと、他スペックが「untitled-client」を
 		// 部分文字列として含むスラッグ（例: 過去に検討した pr-311 側の
 		// 'pr311-untitled-client'）を使っていた場合に誤ヒットする。href$= で
-		// 「/untitled-client/」の末尾一致にすることで、他スペックのスラッグに
+		// 「/{スラッグ}/」の末尾一致にすることで、他スペックのスラッグに
 		// このスラッグが含まれる・含まれないどちらの衝突も避ける。
+		// スラッグ自体もスペック固有の 'pr314-untitled-client' にしている
+		// （create-test-data-pr-314.php 参照）。
+		//
+		// コードレビュー指摘: 末尾一致（/スラッグ/）はパーマリンク構造が
+		// 末尾スラッシュ付きであることが前提。/%postname% のようにスラッシュ無しの
+		// 構造を持ち込む DB でも一致するよう、末尾スラッシュあり・なしの2パターンを
+		// カンマ区切りで併記する（境界一致は保ったまま、どちらの構造にも対応する）。
 		const untitledLink = await gotoPageContainingLocator(page, CLIENT_LIST_PATH, (p) =>
-			p.locator('table.table td a[href$="/untitled-client/"]')
+			p.locator(
+				'table.table td a[href$="/pr314-untitled-client/"], table.table td a[href$="/pr314-untitled-client"]'
+			)
 		);
 		await expect(untitledLink).toHaveCount(1);
 

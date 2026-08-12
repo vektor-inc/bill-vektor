@@ -153,12 +153,24 @@ test.describe('PR #311: 取引先名フォールバック', () => {
 		//   'untitled-client' を含んでいた）に誤ヒットする。href$= で「/スラッグ/」の
 		//   末尾一致にし、テーブル内（table.table td）にスコープすることで、他スペックの
 		//   スラッグを含む・含まれるどちらの衝突も避ける。
-		// - 孤児データ（前回実行の削除漏れ）が残ると WordPress が
-		//   'pr311-nameless-client-2' のようにスラッグを連番で採番するが、これも
-		//   href$= の末尾一致であれば "-2" が付いた時点で一致しなくなるため、
-		//   誤って複数件ヒットする心配がない。
+		// - 末尾一致（/スラッグ/）はパーマリンク構造が末尾スラッシュ付きであることが前提。
+		//   /%postname% のようにスラッシュ無しの構造を持ち込む DB でも一致するよう、
+		//   末尾スラッシュあり・なしの2パターンをカンマ区切りで併記する
+		//   （境界一致は保ったまま、どちらの構造にも対応する）。
+		// - 孤児データ（前回実行の削除漏れ）が残っていると、WordPress のスラッグ
+		//   重複回避により「今回新しく作った本物」の方が 'pr311-nameless-client-2'
+		//   のように連番付きへずれる（連番なしの元のスラッグは先に存在する孤児が
+		//   持ったまま）。href$= の末尾一致は複数件ヒットこそ防げるが、その代わりに
+		//   本物（連番あり）を取りこぼし、孤児（連番なし）の方を検証対象にしてしまう
+		//   か、孤児がゴミ箱等で一覧に現れない場合は「見つからない」で落ちる。
+		//   つまりこの照合方式は孤児データの存在を前提にしており、
+		//   create-test-data-pr-311.php が実行冒頭でマーカー付き投稿を削除してから
+		//   作り直す設計（孤児を残さない）に依存している。孤児が残る事故が起きたら、
+		//   まずそちらの削除処理を疑うこと。
 		const untitledLink = await gotoPageContaining(page, '/?post_type=client', (p) =>
-			p.locator('table.table td a[href$="/pr311-nameless-client/"]')
+			p.locator(
+				'table.table td a[href$="/pr311-nameless-client/"], table.table td a[href$="/pr311-nameless-client"]'
+			)
 		);
 		await expect(untitledLink).toHaveCount(1);
 		await expect(untitledLink).toHaveAttribute('target', '_blank');

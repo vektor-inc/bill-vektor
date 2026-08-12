@@ -136,7 +136,10 @@ bill_e2e_pr314_create_post(
 $no_short_name_client_id = bill_e2e_pr314_create_post( 'client', 'PR314 合同会社ショートネームなし' );
 
 // 無題の取引先（空アンカーの回帰確認用。リンクを特定できるようスラッグを固定する）。
-bill_e2e_pr314_create_post( 'client', '', array(), 'untitled-client' );
+// コードレビュー指摘（issue #322）: 素の 'untitled-client' のままだと、他スペックが
+// 同じ語を含むスラッグを使った場合にまた衝突しうる。「フィクスチャはスペック固有にする」
+// という本 issue の原則に合わせ、pr-311 と同様にスペック名を含める。
+bill_e2e_pr314_create_post( 'client', '', array(), 'pr314-untitled-client' );
 
 // 取引先（登録済）＋省略名あり。
 bill_e2e_pr314_create_post(
