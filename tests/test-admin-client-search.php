@@ -16,8 +16,7 @@ require_once __DIR__ . '/class-bill-document-list-testcase.php';
  * 管理画面の取引先名検索・並び替えのテストケース
  *
  * inc/functions-admin-client-search.php が登録する posts_join・posts_search・
- * posts_orderby・posts_distinct・posts_fields の各フィルターを、実際に WP_Query を
- * 実行して検証する。
+ * posts_orderby の各フィルターを、実際に WP_Query を実行して検証する。
  *
  * 管理画面のクエリを模擬するため、run_admin_query() で WP_ADMIN 定数を定義したうえで、
  * メインクエリ相当のグローバル（$wp_the_query）を差し替えた WP_Query を直接実行する。
