@@ -64,6 +64,7 @@ require_once dirname( __FILE__ ) . '/inc/setting-page/setting-page.php';
 require_once dirname( __FILE__ ) . '/inc/duplicate-doc/duplicate-doc.php';
 require_once dirname( __FILE__ ) . '/inc/export/class.csv-export.php';
 require_once dirname( __FILE__ ) . '/inc/functions-admin-columns.php';
+require_once dirname( __FILE__ ) . '/inc/functions-admin-client-search.php';
 
 get_template_part( 'inc/template-tags' );
 get_template_part( 'inc/functions-limit-view' );
