@@ -16,44 +16,47 @@ require_once __DIR__ . '/class-bill-document-list-testcase.php';
  * 管理画面の取引先名検索・並び替えのテストケース
  *
  * inc/functions-admin-client-search.php が登録する posts_join・posts_search・
- * posts_orderby・posts_distinct の各フィルターを、実際に WP_Query を実行して検証する。
+ * posts_orderby・posts_distinct・posts_fields の各フィルターを、実際に WP_Query を
+ * 実行して検証する。
  *
- * 管理画面のクエリを模擬するため、$this->go_to() ではなく set_current_screen() で
- * is_admin() を true にした上で、メインクエリ相当のグローバル（$wp_the_query）を
- * 差し替えた WP_Query を直接実行する（run_admin_query() に集約）。
+ * 管理画面のクエリを模擬するため、run_admin_query() で WP_ADMIN 定数を定義したうえで、
+ * メインクエリ相当のグローバル（$wp_the_query）を差し替えた WP_Query を直接実行する。
+ * bill_is_target_admin_document_query()（inc/functions-admin-client-search.php）は
+ * is_admin() ではなく `defined( 'WP_ADMIN' ) && WP_ADMIN` で管理画面かどうかを判定する
+ * （フロント側で set_current_screen() を呼ぶ他のプラグインが同居すると is_admin() が
+ * フロントでも true になり得るため。inc/functions-limit-view.php と同じ守り方）。
+ *
+ * WP_ADMIN はPHP定数のため一度定義すると取り消せず、同一プロセス内の他のテストへ
+ * 漏れてしまう（特に「フロント側には影響しない」ことを検証するテストで問題になる）。
+ * そのため、このクラスには @runTestsInSeparateProcesses を付け、テストメソッドごとに
+ * 独立したPHPプロセスで実行させることで、WP_ADMIN の定義が他のテストへ波及しないようにしている。
+ *
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
  */
 class AdminClientSearchTest extends Bill_Document_List_TestCase {
 
 	/**
-	 * テスト後のクリーンアップ
-	 *
-	 * set_current_screen() で書き換えた is_admin() の状態を次のテストへ
-	 * 持ち越さないよう、管理画面スクリーンの模擬をフロント相当に戻してから、
-	 * 親クラスの後片付け（$_GET のリセット・作成した投稿とユーザーの削除）を行う。
-	 *
-	 * @return void
-	 */
-	public function tear_down() {
-		set_current_screen( 'front' );
-		parent::tear_down();
-	}
-
-	/**
 	 * 管理画面の書類一覧クエリを模擬して実行する
 	 *
-	 * is_admin() が true を返すよう管理画面のスクリーンを模擬したうえで、
+	 * `defined( 'WP_ADMIN' ) && WP_ADMIN` が true を返すよう WP_ADMIN 定数を定義したうえで、
 	 * WP_Posts_List_Table が使う $wp_query と同じ扱い（$wp_the_query との同一性）に
 	 * なるようグローバルを差し替えた WP_Query を実行する。
 	 * bill_is_target_admin_document_query()（inc/functions-admin-client-search.php）の
-	 * 判定基準（is_admin() && $query->is_main_query()）が実際の管理画面と同じ経路で
-	 * true になることを担保するための共通処理。
+	 * 判定基準が実際の管理画面と同じ経路で true になることを担保するための共通処理。
 	 *
-	 * @param array  $args      WP_Query に渡すクエリー引数。
-	 * @param string $screen_id set_current_screen() に渡すスクリーンID（既定は投稿一覧）。
+	 * このメソッドを一度でも呼ぶと、以降そのテストメソッド（プロセス）内では
+	 * ずっと管理画面扱いになる（PHP定数は取り消せないため）。フロント側の挙動を
+	 * 検証したいテストではこのメソッドを呼ばないこと（このクラスに付けた
+	 * @runTestsInSeparateProcesses により、他のテストメソッドへは影響しない）。
+	 *
+	 * @param array $args WP_Query に渡すクエリー引数。
 	 * @return WP_Query 実行済みの WP_Query。
 	 */
-	private function run_admin_query( array $args, $screen_id = 'edit-post' ) {
-		set_current_screen( $screen_id );
+	private function run_admin_query( array $args ) {
+		if ( ! defined( 'WP_ADMIN' ) ) {
+			define( 'WP_ADMIN', true );
+		}
 
 		global $wp_the_query;
 		$query        = new WP_Query();
@@ -254,14 +257,307 @@ class AdminClientSearchTest extends Bill_Document_List_TestCase {
 	}
 
 	/**
-	 * bill_admin_client_search() のスコープ限定テスト
+	 * bill_admin_client_search() の括弧を含む検索語の回帰テスト
 	 *
-	 * 管理画面の対象投稿タイプ（post・estimate）以外や、フロント側のクエリには
-	 * 取引先名検索が及ばないこと（既存の検索・他の投稿タイプのクエリを壊さないこと）を検証する。
+	 * 安藤さんのレビュー指摘（HIGH）の再発防止テスト。以前の実装は WordPress コアが
+	 * 組み立てる $search 文字列（検索語がそのまま LIKE '%検索語%' として埋め込まれた形）を
+	 * 括弧の対応を数えて解析しており、検索語に半角括弧が含まれると
+	 * （日本語の業務データでは「(株)」のような社名表記で普通に起こりうる）、
+	 * 対応する閉じ括弧の位置を取り違えて SQL構文エラー・意味の変わった検索結果を
+	 * 引き起こしていた。修正後は $search の中身を解析しない実装にしている。
 	 *
 	 * @return void
 	 */
-	public function test_bill_admin_client_search__scope() {
+	public function test_bill_admin_client_search__parentheses() {
+
+		// 取引先名に半角括弧を含む（日本語の業務データで実際に起こる表記）
+		$client_id = wp_insert_post(
+			array(
+				'post_title'  => '(株)パーレン商事',
+				'post_status' => 'publish',
+				'post_type'   => 'client',
+			)
+		);
+		$this->post_ids['(株)パーレン商事'] = $client_id;
+
+		$doc_client_paren = wp_insert_post(
+			array(
+				'post_title'  => 'パーレン確認案件1',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['パーレン確認案件1'] = $doc_client_paren;
+		update_post_meta( $doc_client_paren, 'bill_client', $client_id );
+
+		// 件名に閉じ括弧を含む（取引先とは無関係。コア標準の件名検索の回帰確認用）
+		$doc_title_paren = wp_insert_post(
+			array(
+				'post_title'  => '型番8)特価品',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['型番8)特価品'] = $doc_title_paren;
+
+		// 件名に開き括弧付きの語と、通常の語の2語（複数語検索 + 括弧の組み合わせの回帰確認用）
+		$doc_multi_word_paren = wp_insert_post(
+			array(
+				'post_title'  => 'a)特別セール bイベント',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['a)特別セール bイベント'] = $doc_multi_word_paren;
+
+		$test_cases = array(
+			array(
+				'test_condition_name' => '検索語が開き括弧を含む「(株」の場合 => クラッシュせず、括弧を含む取引先名の書類がヒットする',
+				's'                   => '(株',
+				'expected_titles'     => array( 'パーレン確認案件1' ),
+			),
+			array(
+				'test_condition_name' => '検索語が閉じ括弧を含む「8)」の場合 => クラッシュせず、コア標準の件名検索が機能する',
+				's'                   => '8)',
+				'expected_titles'     => array( '型番8)特価品' ),
+			),
+			array(
+				'test_condition_name' => '複数語のうち1語が括弧を含む「a) b」の場合 => クラッシュせず、両語が件名に含まれる書類がヒットする',
+				's'                   => 'a) b',
+				'expected_titles'     => array( 'a)特別セール bイベント' ),
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			$query = $this->run_admin_query(
+				array(
+					'post_type' => 'post',
+					's'         => $case['s'],
+				)
+			);
+
+			$this->assertSame(
+				$case['expected_titles'],
+				wp_list_pluck( $query->posts, 'post_title' ),
+				$case['test_condition_name']
+			);
+		}
+	}
+
+	/**
+	 * bill_admin_client_search() の除外検索（-語）のテスト
+	 *
+	 * WordPress コア標準の除外検索（検索語の先頭が「-」の場合、その語を含まないことを
+	 * AND で要求する）が、取引先名の検索でも同じ意味で機能することを検証する。
+	 * 除外語を含めても取引先名検索そのものが無効化されないこと、
+	 * 取引先名に文字どおり除外語が含まれる書類は除外されることの両方を確認する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_admin_client_search__exclusion() {
+
+		$client_id = wp_insert_post(
+			array(
+				'post_title'  => 'エクスクルード商事',
+				'post_status' => 'publish',
+				'post_type'   => 'client',
+			)
+		);
+		$this->post_ids['エクスクルード商事'] = $client_id;
+
+		// 登録済取引先名にだけ「エクスクルード」を含み、「除外語」は含まない
+		// （除外語を指定しても取引先名検索そのものは無効化されないことの確認用）
+		$doc_keep = wp_insert_post(
+			array(
+				'post_title'  => '除外検索確認案件1',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['除外検索確認案件1'] = $doc_keep;
+		update_post_meta( $doc_keep, 'bill_client', $client_id );
+
+		// 手入力名に「エクスクルード」と「除外語」の両方を含む
+		// （除外語を指定すると、この書類は除外されることの確認用）
+		$doc_excluded = wp_insert_post(
+			array(
+				'post_title'  => '除外検索確認案件2',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['除外検索確認案件2'] = $doc_excluded;
+		update_post_meta( $doc_excluded, 'bill_client_name_manual', 'エクスクルード除外語入り' );
+
+		$test_cases = array(
+			array(
+				'test_condition_name' => '除外語を指定しない場合 => 取引先名に「エクスクルード」を含む書類が両方ヒットする（回帰の前提確認）',
+				's'                   => 'エクスクルード',
+				'expected_titles'     => array( '除外検索確認案件1', '除外検索確認案件2' ),
+			),
+			array(
+				'test_condition_name' => '除外語「-除外語」を併用した場合 => 取引先名検索は無効化されず、除外語を含む書類だけが除外される',
+				's'                   => 'エクスクルード -除外語',
+				'expected_titles'     => array( '除外検索確認案件1' ),
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			$query = $this->run_admin_query(
+				array(
+					'post_type' => 'post',
+					's'         => $case['s'],
+				)
+			);
+
+			$this->assertSame(
+				$case['expected_titles'],
+				wp_list_pluck( $query->posts, 'post_title' ),
+				$case['test_condition_name']
+			);
+		}
+	}
+
+	/**
+	 * bill_admin_client_search() の不正な bill_client（数値混じり文字列）のテスト
+	 *
+	 * 安藤さんのレビュー指摘（MEDIUM）の回帰テスト。MySQL は文字列と数値の比較時、
+	 * 先頭から解釈できる数値部分だけを読み取って暗黙に数値へ変換するため、
+	 * REGEXP による検証が無いと『123abc』『 123'（前後空白）『123.0』のような
+	 * 数値混じり・整形前の文字列が、実在する取引先IDに一致してしまう
+	 * （bill_get_client_id() が弾く値と同じ集合）。
+	 *
+	 * @return void
+	 */
+	public function test_bill_admin_client_search__invalid_client_id_formats() {
+
+		$client_id = wp_insert_post(
+			array(
+				'post_title'  => 'フォーマット確認商事',
+				'post_status' => 'publish',
+				'post_type'   => 'client',
+			)
+		);
+		$this->post_ids['フォーマット確認商事'] = $client_id;
+
+		// 正しい形式（数字のみの文字列）。これだけがヒットする対照群
+		$doc_valid = wp_insert_post(
+			array(
+				'post_title'  => 'フォーマット確認案件_正常',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['フォーマット確認案件_正常'] = $doc_valid;
+		update_post_meta( $doc_valid, 'bill_client', (string) $client_id );
+
+		$invalid_formats = array(
+			'フォーマット確認案件_英字混在' => $client_id . 'abc',
+			'フォーマット確認案件_前方空白' => ' ' . $client_id,
+			'フォーマット確認案件_小数表記' => $client_id . '.0',
+			'フォーマット確認案件_プラス符号' => '+' . $client_id,
+		);
+		foreach ( $invalid_formats as $title => $bill_client_value ) {
+			$post_id = wp_insert_post(
+				array(
+					'post_title'  => $title,
+					'post_status' => 'publish',
+					'post_type'   => 'post',
+				)
+			);
+			$this->post_ids[ $title ] = $post_id;
+			update_post_meta( $post_id, 'bill_client', $bill_client_value );
+		}
+
+		$query = $this->run_admin_query(
+			array(
+				'post_type' => 'post',
+				's'         => 'フォーマット確認商事',
+			)
+		);
+
+		$this->assertSame(
+			array( 'フォーマット確認案件_正常' ),
+			wp_list_pluck( $query->posts, 'post_title' ),
+			'bill_client が数値混じり・整形前の文字列（英字混在・前後空白・小数表記・符号付き）の場合 => 実在する取引先に誤って一致しない'
+		);
+	}
+
+	/**
+	 * 省略名（client_short_name）が検索対象に含まれないことのテスト
+	 *
+	 * 植草さんからの提案。現状は client_short_name を一切参照していないため
+	 * 構造的に混入しえない設計だが、将来 client_short_name を検索対象に
+	 * 追加しようとした変更に気づけるよう、直接アサートしておく
+	 * （司からの確定スコープ: 省略名は検索対象にしない）。
+	 *
+	 * @return void
+	 */
+	public function test_bill_admin_client_search__client_short_name_excluded() {
+
+		$client_id = wp_insert_post(
+			array(
+				'post_title'  => '省略名確認株式会社',
+				'post_status' => 'publish',
+				'post_type'   => 'client',
+			)
+		);
+		$this->post_ids['省略名確認株式会社'] = $client_id;
+		update_post_meta( $client_id, 'client_short_name', '省略名確認商事の短縮表記' );
+
+		$doc_id = wp_insert_post(
+			array(
+				'post_title'  => '省略名確認案件',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['省略名確認案件'] = $doc_id;
+		update_post_meta( $doc_id, 'bill_client', $client_id );
+
+		$test_cases = array(
+			array(
+				'test_condition_name' => '登録済取引先の正式名称で検索した場合 => ヒットする（設定が正しく効いていることの前提確認）',
+				's'                   => '省略名確認株式会社',
+				'expected_titles'     => array( '省略名確認案件' ),
+			),
+			array(
+				'test_condition_name' => '省略名（client_short_name）でしか一致しない語で検索した場合 => ヒットしない（省略名は検索対象外）',
+				's'                   => '省略名確認商事の短縮表記',
+				'expected_titles'     => array(),
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			$query = $this->run_admin_query(
+				array(
+					'post_type' => 'post',
+					's'         => $case['s'],
+				)
+			);
+
+			$this->assertSame(
+				$case['expected_titles'],
+				wp_list_pluck( $query->posts, 'post_title' ),
+				$case['test_condition_name']
+			);
+		}
+	}
+
+	/**
+	 * bill_admin_client_search() のスコープ限定テスト（対象外の投稿タイプ）
+	 *
+	 * 管理画面の対象投稿タイプ（post・estimate）以外のクエリには取引先名検索が
+	 * 及ばないこと（既存の検索・他の投稿タイプのクエリを壊さないこと）を検証する。
+	 *
+	 * フロント側のクエリの検証は test_bill_admin_client_search__front_not_affected() に
+	 * 分けている。run_admin_query() が定義する WP_ADMIN 定数はテストメソッド（プロセス）内で
+	 * 取り消せないため、1つのテストメソッド内で「管理画面扱い」と「フロント扱い」の
+	 * 両方を検証することができないため。
+	 *
+	 * @return void
+	 */
+	public function test_bill_admin_client_search__out_of_scope_post_type() {
 
 		$client_id = wp_insert_post(
 			array(
@@ -300,19 +596,50 @@ class AdminClientSearchTest extends Bill_Document_List_TestCase {
 			array(
 				'post_type' => 'page',
 				's'         => 'スコープ確認',
-			),
-			'edit-page'
+			)
 		);
 		$this->assertSame(
 			array( 'ページ内にスコープ確認を含む固定ページ' ),
 			wp_list_pluck( $page_query->posts, 'post_title' ),
 			'投稿タイプが対象外（page）の場合 => コア標準の件名検索のみが効き、クラッシュしないこと'
 		);
+	}
 
-		// フロント側（is_admin() が false）のクエリでは、取引先名検索が適用されないことを確認する。
-		// set_current_screen( 'front' ) で is_admin() を明示的に false へ戻したうえで、
-		// $wp_the_query との同一性（is_main_query()）だけを満たす WP_Query を実行する。
-		set_current_screen( 'front' );
+	/**
+	 * bill_admin_client_search() のスコープ限定テスト（フロント側）
+	 *
+	 * フロント側（WP_ADMIN 未定義）のクエリには取引先名検索が適用されないことを検証する。
+	 * run_admin_query() を一切呼ばず、WP_ADMIN 定数を定義しないままテストを行うことで、
+	 * 実際のフロントリクエストと同じ「WP_ADMIN 未定義」の状態を再現する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_admin_client_search__front_not_affected() {
+
+		$client_id = wp_insert_post(
+			array(
+				'post_title'  => '株式会社スコープ確認',
+				'post_status' => 'publish',
+				'post_type'   => 'client',
+			)
+		);
+		$this->post_ids['株式会社スコープ確認'] = $client_id;
+
+		$post_id = wp_insert_post(
+			array(
+				'post_title'  => 'スコープ確認案件',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['スコープ確認案件'] = $post_id;
+		update_post_meta( $post_id, 'bill_client', $client_id );
+
+		$this->assertFalse(
+			defined( 'WP_ADMIN' ) && WP_ADMIN,
+			'前提確認: このテストでは WP_ADMIN が定義されていないこと（フロント相当であること）'
+		);
+
 		global $wp_the_query;
 		$front_query  = new WP_Query();
 		$wp_the_query = $front_query;
@@ -327,7 +654,7 @@ class AdminClientSearchTest extends Bill_Document_List_TestCase {
 		$this->assertSame(
 			array(),
 			wp_list_pluck( $front_query->posts, 'post_title' ),
-			'フロント側（is_admin() が false）のクエリでは取引先名検索が適用されないこと'
+			'フロント側（WP_ADMIN 未定義）のクエリでは取引先名検索が適用されないこと'
 		);
 	}
 
