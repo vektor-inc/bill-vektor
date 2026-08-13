@@ -578,4 +578,175 @@ class CsvExportTest extends WP_UnitTestCase {
 			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
 		}
 	}
+
+	/**
+	 * CsvExport::format_csv_cell() のテスト
+	 *
+	 * CSV インジェクション（CSVの値が表計算ソフトで数式として実行される問題）対策として、
+	 * 数式化されうる先頭文字の無害化と、"の二重化・全体の"囲みが行われることを検証する。
+	 * 金額はマイナス表記で - から始まりうるうえ、number_format() を通さない素の数値
+	 * （カンマなし）がそのまま渡る経路もあるため、符号・数字・カンマ・小数点だけで
+	 * できた「純粋な数値」はカンマ・小数点の有無を問わず無害化の対象から外れ、
+	 * 値が壊れないことも合わせて確認する。あわせて、先頭の空白・不可視文字を
+	 * 読み飛ばした位置で判定すること（タブ自体は読み飛ばし対象から除く）、
+	 * 不正な UTF-8 で判定不能な場合は安全側に倒して無害化することも確認する。
+	 *
+	 * @return void
+	 */
+	public function test_format_csv_cell() {
+
+		$test_cases = array(
+			// --- 異常系：数式として実行されうる値は先頭に ' を付けて無害化する ---
+			array(
+				'test_condition_name' => '値が "=1+1"（数式）の場合 => 先頭に \' を付けて無害化する',
+				'conditions'          => array( 'value' => '=1+1' ),
+				'expected'            => '"\'=1+1"',
+			),
+			array(
+				'test_condition_name' => '値が "-1+1" の場合 => 先頭に \' を付けて無害化する',
+				'conditions'          => array( 'value' => '-1+1' ),
+				'expected'            => '"\'-1+1"',
+			),
+			array(
+				'test_condition_name' => '値が "@SUM(A1)" の場合 => 先頭に \' を付けて無害化する',
+				'conditions'          => array( 'value' => '@SUM(A1)' ),
+				'expected'            => '"\'@SUM(A1)"',
+			),
+			array(
+				'test_condition_name' => '値がタブ（0x09）で始まる場合 => 先頭に \' を付けて無害化する',
+				'conditions'          => array( 'value' => "\t危険" ),
+				'expected'            => "\"'\t危険\"",
+			),
+			array(
+				'test_condition_name' => '値が改行（LF）で始まる場合 => 先頭に \' を付けて無害化する',
+				'conditions'          => array( 'value' => "\n危険" ),
+				'expected'            => "\"'\n危険\"",
+			),
+			array(
+				'test_condition_name' => '値が復帰（CR）で始まる場合 => 先頭に \' を付けて無害化する',
+				'conditions'          => array( 'value' => "\r危険" ),
+				'expected'            => "\"'\r危険\"",
+			),
+			array(
+				'test_condition_name' => '値が "-1E2"（指数表記）の場合 => 数値ではないため先頭に \' を付けて無害化する',
+				'conditions'          => array( 'value' => '-1E2' ),
+				'expected'            => '"\'-1E2"',
+			),
+			array(
+				'test_condition_name' => '値が "=1+1\"" のように数式と " が両方含まれる場合 => 先頭に \' を付けたうえで " も二重化する',
+				'conditions'          => array( 'value' => '=1+1"' ),
+				'expected'            => '"\'=1+1"""',
+			),
+			array(
+				'test_condition_name' => '値がフィールド内改行を含み、途中に "=1+1" が現れる場合 => 先頭でなければ無害化せず、" の二重化だけでマス外への脱出を防ぐ',
+				'conditions'          => array( 'value' => "foo\"\r\n=1+1" ),
+				'expected'            => "\"foo\"\"\r\n=1+1\"",
+			),
+			array(
+				'test_condition_name' => '値の先頭が " そのものの場合 => " は無害化の対象文字ではないため \' は付けず、" の二重化のみ行う',
+				'conditions'          => array( 'value' => '"=1+1' ),
+				'expected'            => '"""=1+1"',
+			),
+			array(
+				'test_condition_name' => '値が半角スペースに続けて数式（" =1+1"）の場合 => 空白を読み飛ばした位置で数式と判定し、先頭（元の値の先頭）に \' を付けて無害化する',
+				'conditions'          => array( 'value' => ' =1+1' ),
+				'expected'            => "\"' =1+1\"",
+			),
+			array(
+				'test_condition_name' => '値がゼロ幅スペースに続けて数式の場合 => 不可視文字を読み飛ばした位置で数式と判定し、元の値の先頭に \' を付けて無害化する',
+				'conditions'          => array( 'value' => "\u{200B}=1+1" ),
+				'expected'            => "\"'\u{200B}=1+1\"",
+			),
+			array(
+				'test_condition_name' => '値が半角スペース＋タブ＋数式（" \\t=1+1"）の場合 => 読み飛ばし対象の空白の後にタブが来ても正しく数式と判定し、元の値の先頭に \' を付けて無害化する',
+				'conditions'          => array( 'value' => " \t=1+1" ),
+				'expected'            => "\"' \t=1+1\"",
+			),
+			array(
+				'test_condition_name' => '値の末尾に改行が付いた数値（"-1234\\n"）の場合 => \z アンカーにより「純粋な数値」とは判定されず、先頭に \' を付けて無害化する',
+				'conditions'          => array( 'value' => "-1234\n" ),
+				'expected'            => "\"'-1234\n\"",
+			),
+			array(
+				'test_condition_name' => '値が不正な UTF-8 バイト列を含み先頭文字の判定ができない場合 => 安全側に倒して一律で無害化する',
+				'conditions'          => array( 'value' => "\xFF\xFE=1+1" ),
+				'expected'            => "\"'\xFF\xFE=1+1\"",
+			),
+			// --- 正常系：符号・数字・カンマ・小数点だけでできた「純粋な数値」は無害化しない（金額が壊れないこと） ---
+			array(
+				'test_condition_name' => '値が "-1,234"（マイナスの金額）の場合 => 無害化しない（\' を付けない）',
+				'conditions'          => array( 'value' => '-1,234' ),
+				'expected'            => '"-1,234"',
+			),
+			array(
+				'test_condition_name' => '値が "+1,000.50"（プラスの金額・小数あり）の場合 => 無害化しない（\' を付けない）',
+				'conditions'          => array( 'value' => '+1,000.50' ),
+				'expected'            => '"+1,000.50"',
+			),
+			array(
+				'test_condition_name' => '値が "1,234"（符号なしの金額）の場合 => 無害化しない（\' を付けない）',
+				'conditions'          => array( 'value' => '1,234' ),
+				'expected'            => '"1,234"',
+			),
+			array(
+				'test_condition_name' => '値が "+1"（カンマ・小数点なしのプラスの数値）の場合 => 無害化しない（\' を付けない）',
+				'conditions'          => array( 'value' => '+1' ),
+				'expected'            => '"+1"',
+			),
+			array(
+				'test_condition_name' => '値が "-500"（カンマ・小数点なしのマイナスの金額。number_format() を通さない素の数値経路を想定）の場合 => 無害化しない（\' を付けない）',
+				'conditions'          => array( 'value' => '-500' ),
+				'expected'            => '"-500"',
+			),
+			array(
+				'test_condition_name' => '値が "-500000"（カンマ・小数点なしの大きいマイナスの金額）の場合 => 無害化しない（\' を付けない）',
+				'conditions'          => array( 'value' => '-500000' ),
+				'expected'            => '"-500000"',
+			),
+			array(
+				'test_condition_name' => '値が半角スペースに続けて金額（" -500"）の場合 => 空白を読み飛ばした位置でも「純粋な数値」と判定され無害化しない（\' を付けない）',
+				'conditions'          => array( 'value' => ' -500' ),
+				'expected'            => '" -500"',
+			),
+			// --- 正常系：" のエスケープ（"" への二重化） ---
+			array(
+				'test_condition_name' => '値に " が含まれる場合 => "" に二重化する',
+				'conditions'          => array( 'value' => 'あ"い"う' ),
+				'expected'            => '"あ""い""う"',
+			),
+			// --- 正常系：& はエスケープしない（CSV は HTML ではないため esc_html しない） ---
+			array(
+				'test_condition_name' => '値に & が含まれる場合 => &amp; にせずそのまま & で出す',
+				'conditions'          => array( 'value' => 'A&B' ),
+				'expected'            => '"A&B"',
+			),
+			// --- 正常系：通常の日本語文字列はそのまま ---
+			array(
+				'test_condition_name' => '値が通常の日本語文字列の場合 => そのまま "" で囲んで返す',
+				'conditions'          => array( 'value' => '株式会社ベクトル' ),
+				'expected'            => '"株式会社ベクトル"',
+			),
+			// --- 境界値：空文字・数値・null を渡しても壊れない ---
+			array(
+				'test_condition_name' => '値が空文字の場合 => "" を返す（壊れない）',
+				'conditions'          => array( 'value' => '' ),
+				'expected'            => '""',
+			),
+			array(
+				'test_condition_name' => '値が数値（int）の場合 => 文字列化して "" で囲んで返す（壊れない）',
+				'conditions'          => array( 'value' => 1234 ),
+				'expected'            => '"1234"',
+			),
+			array(
+				'test_condition_name' => '値が null の場合 => "" を返す（壊れない）',
+				'conditions'          => array( 'value' => null ),
+				'expected'            => '""',
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			$actual = CsvExport::format_csv_cell( $case['conditions']['value'] );
+			$this->assertSame( $case['expected'], $actual, $case['test_condition_name'] );
+		}
+	}
 }
