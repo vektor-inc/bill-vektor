@@ -350,7 +350,15 @@ class AdminClientSearchTest extends Bill_Document_List_TestCase {
 	 * WordPress コア標準の除外検索（検索語の先頭が「-」の場合、その語を含まないことを
 	 * AND で要求する）が、取引先名の検索でも同じ意味で機能することを検証する。
 	 * 除外語を含めても取引先名検索そのものが無効化されないこと、
-	 * 取引先名に文字どおり除外語が含まれる書類は除外されることの両方を確認する。
+	 * 取引先名に文字どおり除外語が含まれる書類は（コア側の一致経路によらず）
+	 * 必ず除外されることを確認する（安藤さんのレビュー指摘。取引先名の除外条件を
+	 * 式全体の外側で独立した AND として効かせる実装になっていないと、コア側
+	 * （件名・本文）だけで一致した書類には除外条件が一度も評価されず、取引先名に
+	 * 除外語を含む書類がすり抜けてしまう）。
+	 *
+	 * 一方で、件名に肯定語・除外語の両方を含み、取引先名には肯定語だけを含む書類は
+	 * 除外できない（既知のトレードオフ。bill_admin_client_search() のDocBlock参照）。
+	 * この既知の挙動が意図せず変わっていないかも合わせて確認する。
 	 *
 	 * @return void
 	 */
@@ -364,6 +372,16 @@ class AdminClientSearchTest extends Bill_Document_List_TestCase {
 			)
 		);
 		$this->post_ids['エクスクルード商事'] = $client_id;
+
+		// 除外語だけを含む取引先（登録済）。肯定語「エクスクルード」は含まない
+		$client_with_exclusion_word_id = wp_insert_post(
+			array(
+				'post_title'  => '除外語建設',
+				'post_status' => 'publish',
+				'post_type'   => 'client',
+			)
+		);
+		$this->post_ids['除外語建設'] = $client_with_exclusion_word_id;
 
 		// 登録済取引先名にだけ「エクスクルード」を含み、「除外語」は含まない
 		// （除外語を指定しても取引先名検索そのものは無効化されないことの確認用）
@@ -389,16 +407,44 @@ class AdminClientSearchTest extends Bill_Document_List_TestCase {
 		$this->post_ids['除外検索確認案件2'] = $doc_excluded;
 		update_post_meta( $doc_excluded, 'bill_client_name_manual', 'エクスクルード除外語入り' );
 
+		// 件名だけに「エクスクルード」を含み（＝取引先名検索を介さずコア標準の検索
+		// だけで一致する）、登録済取引先名に「除外語」を含む。
+		// 安藤さんのレビュー指摘の回帰テスト本体: 除外条件が取引先名検索の
+		// ORブロックの中に閉じていた場合、この書類はコア側の一致だけでORが
+		// 真になり除外を素通りしてしまう。除外条件を式全体の外側の独立したAND
+		// にしたことで、コア側の一致経路であっても取引先名の除外語を検知できることを確認する
+		$doc_excluded_via_client_only = wp_insert_post(
+			array(
+				'post_title'  => 'エクスクルード単体案件',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['エクスクルード単体案件'] = $doc_excluded_via_client_only;
+		update_post_meta( $doc_excluded_via_client_only, 'bill_client', $client_with_exclusion_word_id );
+
+		// 【既知のトレードオフ】件名に肯定語・除外語の両方を含み、取引先名（登録済）には
+		// 肯定語だけを含む。$search を分解しない設計上、除外できない
+		$doc_known_limitation = wp_insert_post(
+			array(
+				'post_title'  => 'エクスクルード除外語案件',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['エクスクルード除外語案件'] = $doc_known_limitation;
+		update_post_meta( $doc_known_limitation, 'bill_client', $client_id );
+
 		$test_cases = array(
 			array(
-				'test_condition_name' => '除外語を指定しない場合 => 取引先名に「エクスクルード」を含む書類が両方ヒットする（回帰の前提確認）',
+				'test_condition_name' => '除外語を指定しない場合 => 「エクスクルード」に関連する書類が全てヒットする（回帰の前提確認）',
 				's'                   => 'エクスクルード',
-				'expected_titles'     => array( '除外検索確認案件1', '除外検索確認案件2' ),
+				'expected_titles'     => array( '除外検索確認案件1', '除外検索確認案件2', 'エクスクルード単体案件', 'エクスクルード除外語案件' ),
 			),
 			array(
-				'test_condition_name' => '除外語「-除外語」を併用した場合 => 取引先名検索は無効化されず、除外語を含む書類だけが除外される',
+				'test_condition_name' => '除外語「-除外語」を併用した場合 => 取引先名検索は無効化されず除外語を含む書類だけが除外される。取引先名に除外語を含む書類は、コア標準の検索だけで一致した場合でも除外される（安藤さんの指摘の回帰確認）。既知のトレードオフ（件名に両方・取引先名に肯定語だけの書類）は引き続きヒットする',
 				's'                   => 'エクスクルード -除外語',
-				'expected_titles'     => array( '除外検索確認案件1' ),
+				'expected_titles'     => array( '除外検索確認案件1', 'エクスクルード除外語案件' ),
 			),
 		);
 
@@ -410,12 +456,118 @@ class AdminClientSearchTest extends Bill_Document_List_TestCase {
 				)
 			);
 
+			// この一連のケースは「該当する書類の集合」を検証するのが目的で並び順は
+			// 対象外（orderby を指定していないため、既定の発行日順は同時刻作成の
+			// タイブレークに左右され不安定）。ソートしてから比較する
+			$expected_titles = $case['expected_titles'];
+			sort( $expected_titles );
+			$actual_titles = wp_list_pluck( $query->posts, 'post_title' );
+			sort( $actual_titles );
+
 			$this->assertSame(
-				$case['expected_titles'],
-				wp_list_pluck( $query->posts, 'post_title' ),
+				$expected_titles,
+				$actual_titles,
 				$case['test_condition_name']
 			);
 		}
+	}
+
+	/**
+	 * 除外語の判定が「-」1文字だけの検索語でもコアと一致することのテスト
+	 *
+	 * 安藤さんのレビュー指摘（LOW-4）の回帰テスト。WP_Query::parse_search_terms() は
+	 * "-" だけ・短すぎる除外語を事前に取り除くため、検索語が "-" だけの場合は
+	 * search_terms が空になり、コアは array( $q['s'] )（元の生の文字列 "-"）へ
+	 * フォールバックする。コア自身の後段のループは長さを見ずプレフィックスだけで
+	 * 除外判定するため、この "-" は除外語として扱われ、空文字を除外する
+	 * （＝実質すべて不一致になる）条件になる。
+	 *
+	 * 以前の実装は `strlen( $term ) > 1` という長さの足切りを入れていたため、
+	 * この "-" を除外語ではなく肯定語（リテラルなハイフン検索）として扱ってしまい、
+	 * 取引先名にハイフンを含む書類が誤って検索結果に出ていた。
+	 *
+	 * @return void
+	 */
+	public function test_bill_admin_client_search__lone_hyphen() {
+
+		$client_id = wp_insert_post(
+			array(
+				'post_title'  => 'ハイフンA-B商事',
+				'post_status' => 'publish',
+				'post_type'   => 'client',
+			)
+		);
+		$this->post_ids['ハイフンA-B商事'] = $client_id;
+
+		$doc_id = wp_insert_post(
+			array(
+				'post_title'  => 'ハイフン確認案件',
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+			)
+		);
+		$this->post_ids['ハイフン確認案件'] = $doc_id;
+		update_post_meta( $doc_id, 'bill_client', $client_id );
+
+		$query = $this->run_admin_query(
+			array(
+				'post_type' => 'post',
+				's'         => '-',
+			)
+		);
+
+		$this->assertSame(
+			array(),
+			wp_list_pluck( $query->posts, 'post_title' ),
+			'検索語が「-」1文字だけの場合 => コアと同じく除外語として扱われ、取引先名にハイフンを含む書類も含めて0件になる（肯定語として扱われない）'
+		);
+	}
+
+	/**
+	 * bill_admin_client_search() の fail-closed 動作のテスト
+	 *
+	 * 安藤さんのレビュー指摘（LOW-5）の回帰テスト。$search がコア標準の
+	 * " AND (...)" という形で始まっていない場合（優先度10より前に動く他プラグインが
+	 * posts_search を別の形へ丸ごと差し替えている等の想定外の状況）、取引先名の
+	 * 条件を追加せず $search をそのまま返すことを検証する。
+	 *
+	 * WP_Query の実行を通さず、関数を直接呼び出して検証する
+	 * （コアが実際にこの形以外の $search を組み立てることは無いため、
+	 * WP_Query 経由では意図的にこの分岐を再現できない）。
+	 *
+	 * @return void
+	 */
+	public function test_bill_admin_client_search__fail_closed_on_unexpected_search_format() {
+
+		if ( ! defined( 'WP_ADMIN' ) ) {
+			define( 'WP_ADMIN', true );
+		}
+
+		global $wp_the_query;
+		$query        = new WP_Query();
+		$wp_the_query = $query;
+		// search_terms 等のクエリー変数を実際のコアの処理で組み立てさせるため、
+		// 通常どおりクエリを実行しておく（$search 自体はこの後の直接呼び出しで
+		// 想定外の値に差し替えるため、ここでの実行結果は使わない）。
+		$query->query(
+			array(
+				'post_type'      => 'post',
+				's'              => 'テスト',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+			)
+		);
+
+		// コア標準の " AND (...)" という形になっていない、想定外の $search
+		$malformed_search = ' OR 1=1 -- 想定外の形式';
+
+		$actual = bill_admin_client_search( $malformed_search, $query );
+
+		$this->assertSame(
+			$malformed_search,
+			$actual,
+			'$search が想定する " AND (...)" 形式で始まっていない場合 => 取引先名の条件を追加せず $search をそのまま返す（fail-closed）'
+		);
 	}
 
 	/**

@@ -19,12 +19,6 @@
   取引先名を検索対象へ追加する（既存の $search は温存し、OR で条件を追加する）
 	bill_admin_client_search()
 
-  複数の client 投稿・postmeta 行が偶然重複していても結果行が増殖しないようにする
-	bill_admin_client_search_distinct()
-
-  取引先名の並び替えキーを SELECT 句へ追加する（DISTINCT と ORDER BY の併用エラー対策）
-	bill_admin_client_search_fields()
-
   取引先名で並び替える
 	bill_admin_client_orderby()
 
@@ -41,7 +35,9 @@
  * 2. メインクエリであること（$query->is_main_query()）。管理画面の投稿一覧
  *    （WP_Posts_List_Table）はグローバルの $wp_query（＝ $wp_the_query）を再利用して
  *    クエリを実行するため、この判定で正しく true になる。クイック編集・投稿検索
- *    ウィジェットなど管理画面内の他のサブクエリはメインクエリではないため対象外になる
+ *    ウィジェットなど管理画面内の他のサブクエリはメインクエリではないため対象外になる。
+ *    admin-ajax.php・admin-post.php（未認証の wp_ajax_nopriv_* / admin_post_nopriv_*
+ *    経路を含む）も $wp_the_query を実行するメインクエリを持たないため、この判定で対象外になる
  * 3. 対象の投稿タイプ（post・estimate）であること。bill_get_client_column_post_types()
  *    （inc/functions-admin-columns.php）を再利用し、取引先カラムを表示する投稿タイプと
  *    常に同じ範囲になるようにする
@@ -55,6 +51,13 @@
  * 一切影響しない」という前提が崩れる。WP_ADMIN は wp-admin/admin.php が読み込まれた
  * 時点で定義される定数で、プラグインから後付けで立てられる current_screen と違って
  * 乗っ取られないため、functions-limit-view.php と同じ守り方に揃える。
+ *
+ * ただし WP_ADMIN は「管理画面へのリクエストかどうか」を表すだけで「ログイン済みか」を
+ * 意味しない点に注意（admin-ajax.php・admin-post.php は未認証リクエストでも WP_ADMIN を
+ * true に定義する）。この関数がそれらのリクエストにも影響しないのは WP_ADMIN のおかげではなく、
+ * それらが $wp_the_query を実行しない＝メインクエリを持たないため、上記2の
+ * is_main_query() 判定で弾かれることによる（bill_admin_client_search() のDocBlockの
+ * post_password に関する注記も参照）。
  *
  * post_type クエリー変数が配列（複数投稿タイプの横断表示）の場合は対象外とする。
  * 対象を限定できないうえ、想定していない組み合わせのクエリへ拡張を及ぼさないため。
@@ -130,10 +133,27 @@ function bill_get_client_orderby_key() {
  *      数値へ変換するため、REGEXP を入れないと '123abc'・' 123'（前後空白）・'123.0'・
  *      '+123'・'1e2' のような値が実在する取引先IDに一致してしまう
  *      （bill_get_client_id() が absint() 変換後の文字列と元の値を厳密に
- *      文字列比較して弾いている値と同じ集合。安藤さんのレビュー指摘。
- *      以前のコメントは「意図しない投稿へマッチすることはない」としていたが、
- *      実際には上記の値がすり抜けてマッチしてしまっていたため訂正した）。
- *      先頭0つき（"0123"等）も bill_get_client_id() と同じく無効値として扱う。
+ *      文字列比較して弾いている値と同じ集合）。先頭0つき（"0123"等）も
+ *      bill_get_client_id() と同じく無効値として扱う。
+ *    この REGEXP は検索（bill_admin_client_search()）・並び替え（bill_admin_client_orderby()）
+ *    の両方が同じ bill_client_post エイリアスを参照するため、JOIN 側の1箇所に置くだけで
+ *    両方に自動的に適用される（フックごとに別々にガードを書くと、どちらか片方だけ
+ *    直し忘れる事故が起きやすいため、あえて共有先であるJOINに寄せている）。
+ *
+ * 1・2 は postmeta を「post_id ごとに1行」へ事前に畳んだサブクエリ（MIN(meta_value) で
+ * 決定的に1件選ぶ）にしている。bill_client_name_manual・bill_client の postmeta 行が
+ * 同じ書類に複数保存されていた場合（複製時の重複等。inc/duplicate-doc/
+ * dupricate-doc-functions.php の bill_copy_post() は bill_client を明示的に
+ * add_post_meta() したあと、$duplicate_type === 'full' のときに全メタの再コピーでも
+ * 同じキーを add_post_meta() するため、値は同一のまま行だけが2行になる）、単純な
+ * LEFT JOIN では書類が複数行として返ってきてしまう。
+ * 以前は DISTINCT でこれを防いでいたが、DISTINCT は SELECT リスト全体に効くため、
+ * 取引先名の並び替えキー（COALESCE(...)）を SELECT に含めた状態で postmeta の値が
+ * 行ごとに異なっていると畳めず、SQL_CALC_FOUND_ROWS による総件数も水増しされる
+ * （安藤さんのレビュー指摘。値が完全に同一であれば DISTINCT でも畳めるが、
+ * 「同じでなければならない」という前提を JOIN 側に持たせたくない）。
+ * postmeta 側を事前に「1件」へ畳んでおけば、結合した時点で重複が構造的に起こり得ないため、
+ * DISTINCT 自体が不要になる（このファイルに DISTINCT を指定するフィルターは無い）。
  *
  * すべて LEFT JOIN（INNER JOIN ではない）にしているのは、取引先が未設定の書類が
  * 結合によって結果から除外されないようにするため（並び替え時に書類が消えないことの
@@ -154,8 +174,8 @@ function bill_admin_client_search_join( $join, $query ) {
 
 	global $wpdb;
 
-	$join .= " LEFT JOIN {$wpdb->postmeta} AS bill_client_manual_meta ON ( {$wpdb->posts}.ID = bill_client_manual_meta.post_id AND bill_client_manual_meta.meta_key = 'bill_client_name_manual' )";
-	$join .= " LEFT JOIN {$wpdb->postmeta} AS bill_client_id_meta ON ( {$wpdb->posts}.ID = bill_client_id_meta.post_id AND bill_client_id_meta.meta_key = 'bill_client' )";
+	$join .= " LEFT JOIN ( SELECT post_id, MIN( meta_value ) AS meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'bill_client_name_manual' GROUP BY post_id ) AS bill_client_manual_meta ON ( bill_client_manual_meta.post_id = {$wpdb->posts}.ID )";
+	$join .= " LEFT JOIN ( SELECT post_id, MIN( meta_value ) AS meta_value FROM {$wpdb->postmeta} WHERE meta_key = 'bill_client' GROUP BY post_id ) AS bill_client_id_meta ON ( bill_client_id_meta.post_id = {$wpdb->posts}.ID )";
 	$join .= " LEFT JOIN {$wpdb->posts} AS bill_client_post ON ( bill_client_post.ID = bill_client_id_meta.meta_value AND bill_client_post.post_type = 'client' AND bill_client_id_meta.meta_value REGEXP '^[1-9][0-9]*$' )";
 
 	return $join;
@@ -182,13 +202,25 @@ add_filter( 'posts_join', 'bill_admin_client_search_join', 10, 2 );
  * （安藤さんのレビューで、括弧を含む語2,571パターン中503パターンで再現）。
  *
  * 代わりに、$search を "( 1=1 <$search> )" という形でそのまま入れ子にする。
- * $search は常に " AND (...)" で始まる（WordPress コアの形式）ため、"1=1" の後ろに
- * そのまま連結すれば "1=1 AND (...)" という有効な真偽式になり、$search の中身が
- * 何であっても（括弧を含んでいても）解析せずに1つの塊として扱える。
+ * $search は常に " AND (...)" で始まる（WordPress コアの形式）ことを前提にしているため、
+ * 万一この前提が崩れている場合（優先度10より前に動く他プラグインが posts_search を
+ * 別の形（"AND" で始まらない文字列）へ丸ごと差し替えている等）に備え、先頭が
+ * "AND"（大文字・小文字を問わず、前後の空白は許容）で始まっているかを確認し、
+ * 一致しなければ何もせず $search をそのまま返す（fail-closed。安藤さんは必須ではないと
+ * しているが、想定外の入力で構文エラーを起こさない徹底のため入れている）。
+ * 確認さえ通れば、"1=1" の後ろに $search をそのまま連結するだけで
+ * "1=1 AND (...)" という有効な真偽式になり、$search の中身が何であっても
+ * （括弧を含んでいても）解析せずに1つの塊として扱える。
+ *
  * 副作用として、未ログイン時にコアが付ける post_password の条件（$search の末尾に
  * " AND {$wpdb->posts}.post_password = ''" として続く）も同じ塊（OR の片側）に入るが、
- * この関数は管理画面のメインクエリに限定しており（bill_is_target_admin_document_query()）、
- * 管理画面へ到達している時点で必ずログイン済みのため、この副作用が実際に起こることはない。
+ * 実害はない。この関数は対象クエリをメインクエリに限定しており
+ * （bill_is_target_admin_document_query() の is_main_query() 判定）、admin-ajax.php・
+ * admin-post.php のような未認証でも WP_ADMIN が true になり得るリクエストは
+ * メインクエリを実行しないためそもそも到達しない。到達する経路（管理画面の投稿一覧）は
+ * 認証必須の画面のため、この副作用が実際に起こることはない
+ * （「WP_ADMIN＝ログイン済み」という誤った前提ではなく、is_main_query() の絞り込みが
+ * 実際の担保である点に注意。以前の版はここを誤って記載していた）。
  *
  * 取引先名の一致条件は、既存の検索語（$query->get( 'search_terms' )。コアが
  * 同じ語に分割済みのものをそのまま再利用する）ごとに、手入力名・登録済取引先の
@@ -198,13 +230,29 @@ add_filter( 'posts_join', 'bill_admin_client_search_join', 10, 2 );
  * 除外検索（"-語"）にも対応する。コアは検索語の先頭が "-"（wp_query_search_exclusion_prefix
  * フィルターの既定値。このテーマではフィルターのカスタマイズを想定しないため既定値のみ
  * 対応する）の場合、その語を「含まないこと」（NOT LIKE を AND で結合）として扱う。
- * 取引先名側でも同じ扱いにしないと、除外語を1つ含めるだけで取引先名検索が
- * 黙って無効になったり（肯定条件のままAND結合すると常に不一致になり得る）、
- * 逆に取引先名に文字どおり "-語" が含まれる書類が除外から復活してしまう
- * （肯定のOR条件のままだと除外を無視して一致してしまうため）。
+ * 取引先名側の除外条件（NOT LIKE の集まり）だけは、肯定条件と同じORグループに
+ * 入れず、常に効く独立した AND として式全体の外側に付ける
+ * （" AND ( (コア標準の一致 OR 取引先名の肯定一致) ) AND (取引先名の除外一致) "という形）。
+ * こうしないと、取引先名の肯定一致がORで真になった行では、同じ行の取引先名の
+ * 除外判定が「その行の取引先名自体には除外語が無い」という自分自身の条件でしか
+ * 判定されず一見正しく見えるが、コア側（件名・本文）だけで真になった行に対しては
+ * 取引先名の除外条件がそもそも一度も評価されないため、取引先名に除外語を含む
+ * 書類がすり抜けてしまう。除外条件を式全体の外側へ出し独立した AND にすることで、
+ * 「その行の取引先名に除外語を含む場合は、コア側の一致経路に関わらず必ず除外する」
+ * という一貫した意味になる（安藤さんのレビュー指摘を受けて修正）。
+ *
+ * 【既知のトレードオフ】上記の修正後も、次のケースは除外できない。
+ * 件名に肯定語・除外語の両方を含み、取引先名には肯定語だけを含む書類
+ * （例: 件名「キャンセル分ベクトル案件」・取引先「株式会社ベクトル」に対して
+ * `s=ベクトル -キャンセル` で検索した場合）。コア側の一致条件は $search の中身を
+ * 解析していないため、除外語がコア側（件名・本文）のどの語に対する判定だったかを
+ * 個別に取り出して取引先名側の肯定判定と組み合わせることができない。結果として
+ * コア側は除外語の影響で不一致（false）になるが、取引先名の肯定一致だけでORが
+ * 真になり、この書類は表示され続ける。$search を分解しない設計（安藤さんの
+ * HIGH指摘への対応方針）と表裏一体のトレードオフのため、今回は許容する。
  *
  * 語ごとに「(既存の一致条件) OR (取引先名の一致条件)」という形にせず、
- * 「(既存の一致条件をすべての語でANDしたもの) OR (取引先名の一致条件をすべての
+ * 「(既存の一致条件をすべての語でANDしたもの) OR (取引先名の肯定一致条件をすべての
  * 語でANDしたもの)」という2つの塊の OR にしている（司からの指示どおり）。
  * そのため、複数語のうち一方が件名、もう一方が取引先名だけに含まれるような
  * 混在ケースはヒットしない。既存の $search の構造を変更せずに安全に拡張する
@@ -224,18 +272,33 @@ function bill_admin_client_search( $search, $query ) {
 		return $search;
 	}
 
+	// $search は常にコアが組み立てた " AND (...)" という形で始まる前提で以下を組み立てる。
+	// 万一この前提が崩れている場合（他プラグインが posts_search を丸ごと別形式に
+	// 差し替えている等）は、構文エラーを起こさないよう何もせず $search をそのまま返す
+	if ( ! preg_match( '/^\s*AND\b/i', $search ) ) {
+		return $search;
+	}
+
 	global $wpdb;
 
-	// 語ごとに「手入力名 OR 登録済取引先名」の一致条件（除外語の場合は両方とも
-	// 含まないことを AND で要求する条件）を作り、語をまたいでは AND で結合する
-	// （コア標準の「語ごとにAND、各語内はカラムをOR」という挙動を取引先名にも合わせる）。
-	$client_term_groups = array();
+	// 語ごとに「手入力名 OR 登録済取引先名」の肯定一致条件と、除外語の場合の
+	// 「両方とも含まないこと」の条件を、それぞれ別の配列へ振り分ける
+	// （除外条件を式全体の外側で独立した AND として効かせるため。理由は関数DocBlock参照）。
+	$client_positive_groups  = array();
+	$client_exclusion_groups = array();
 	foreach ( $search_terms as $term ) {
 		$term = (string) $term;
 
-		// コアと同じ判定（parse_search()）。除外語は必ず先頭が "-" になる
-		// （parse_search_terms() が "-" のみ・短すぎる除外語は事前に取り除いている）。
-		$is_exclusion = '' !== $term && '-' === $term[0] && strlen( $term ) > 1;
+		// コアと同じ判定（parse_search()）。長さでの足切りはしない。
+		// parse_search_terms() が短すぎる除外語（"-" のみ等）を事前に除去した結果
+		// search_terms が空になると、コアは array( $q['s'] ) （元の生の検索文字列）へ
+		// フォールバックし、その値がそのままこのループへ渡ってくることがある。
+		// コア自身も後段のループでは長さを見ずプレフィックスだけで除外判定するため、
+		// ここで長さの条件を加えるとコアと判定がずれる（例: 検索語が "-" だけの場合、
+		// コアは「空文字を除外する」＝実質常に不一致という判定になるが、
+		// 長さで足切りすると肯定条件として扱われ、ハイフンを含む取引先名の書類が
+		// ORで出てしまう。安藤さんのレビュー指摘）。
+		$is_exclusion = '' !== $term && '-' === $term[0];
 		if ( $is_exclusion ) {
 			$term = substr( $term, 1 );
 		}
@@ -250,99 +313,46 @@ function bill_admin_client_search( $search, $query ) {
 			// "NULL NOT LIKE '%語%'" は SQL の三値論理で NULL（＝行から除外される）に
 			// なってしまう。COALESCE() で先に空文字へ変換してから NOT LIKE を評価することで、
 			// 「取引先名が無い＝その語を含まない」を正しく true として扱う
-			$client_term_groups[] = $wpdb->prepare(
+			$client_exclusion_groups[] = $wpdb->prepare(
 				'(COALESCE(bill_client_manual_meta.meta_value, \'\') NOT LIKE %s AND COALESCE(bill_client_post.post_title, \'\') NOT LIKE %s)',
 				$like,
 				$like
 			);
 		} else {
-			$client_term_groups[] = $wpdb->prepare(
+			$client_positive_groups[] = $wpdb->prepare(
 				'(bill_client_manual_meta.meta_value LIKE %s OR bill_client_post.post_title LIKE %s)',
 				$like,
 				$like
 			);
 		}
 	}
-	$client_match = implode( ' AND ', $client_term_groups );
 
 	// $search の中身を解析せず、そのまま入れ子にする（理由は関数DocBlock参照）
-	return ' AND ( ( 1=1 ' . $search . ' ) OR ( ' . $client_match . ' ) )';
+	$result = ' AND ( ( 1=1 ' . $search . ' )';
+	if ( $client_positive_groups ) {
+		$result .= ' OR ( ' . implode( ' AND ', $client_positive_groups ) . ' )';
+	}
+	$result .= ' )';
+
+	// 取引先名の除外条件は式全体の外側で独立した AND として効かせる（肯定一致のORとは分離）
+	if ( $client_exclusion_groups ) {
+		$result .= ' AND ( ' . implode( ' AND ', $client_exclusion_groups ) . ' )';
+	}
+
+	return $result;
 }
 add_filter( 'posts_search', 'bill_admin_client_search', 10, 2 );
-
-/**
- * 取引先名の結合による行の重複を防ぐ
- *
- * bill_client・bill_client_name_manual の postmeta 行が何らかの理由（過去の不具合等）で
- * 同じ書類に複数保存されていた場合、LEFT JOIN によって同じ書類が複数行として
- * 返ってきてしまう可能性がある。DISTINCT を指定して防御する。
- *
- * 取引先名で並び替える場合（bill_admin_client_search_fields() が並び替えキーを
- * SELECT句へ追加する場合）も含め、検索・並び替えのどちらでも DISTINCT を維持する。
- * SELECT DISTINCT と、SELECT句に無い式でのORDER BYを併用すると MySQL の
- * sql_mode に ONLY_FULL_GROUP_BY が含まれる環境でエラー3065になり得るが、
- * 並び替えキーを SELECT句（posts_fields）にも追加しているため、DISTINCT と
- * ORDER BY の両方が同じSELECT済みの式を参照する形になり、この問題は起きない。
- *
- * @param string   $distinct 既存の DISTINCT 句。
- * @param WP_Query $query    対象のクエリ。
- * @return string 'DISTINCT'（対象クエリでJOINが必要な場合）または既存の $distinct。
- */
-function bill_admin_client_search_distinct( $distinct, $query ) {
-	if ( ! bill_admin_client_query_needs_client_join( $query ) ) {
-		return $distinct;
-	}
-
-	return 'DISTINCT';
-}
-add_filter( 'posts_distinct', 'bill_admin_client_search_distinct', 10, 2 );
-
-/**
- * 取引先名の並び替えキーを SELECT 句へ追加する
- *
- * bill_admin_client_search_distinct() が付与する DISTINCT と、
- * bill_admin_client_orderby() が組み立てる（JOIN先の列を参照する）ORDER BY を
- * 併用すると、MySQL の sql_mode に ONLY_FULL_GROUP_BY が含まれる環境で
- * エラー3065（Expression of ORDER BY clause is not in SELECT list ...
- * this is incompatible with DISTINCT）になり、一覧そのものが表示できなくなる。
- * WordPress は通常この sql_mode を外す（wpdb::set_sql_mode()）が、
- * ホスティング側の設定で戻されている環境もあるため、この不具合の再発を防ぐ。
- *
- * 対策として、並び替えキーの式をエイリアス付きで SELECT 句へ明示的に追加し、
- * ORDER BY 側はそのエイリアスを参照する形にする（bill_admin_client_orderby() 側も
- * 合わせて変更している）。これにより DISTINCT と ORDER BY が同じ SELECT 済みの
- * 式を参照することになり、エラー3065を回避しつつ、DISTINCT による重複防止
- * （postmeta が重複していても行が増えない）も維持できる。
- *
- * 取引先名での並び替え（orderby=bill_client_name）のときだけ列を追加する。
- * 検索だけを行うリクエストではこの列は不要なため、SELECT句を無駄に太らせない。
- *
- * @param string   $fields 既存の SELECT 句。
- * @param WP_Query $query  対象のクエリ。
- * @return string SELECT句（並び替え対象クエリの場合は並び替えキーを追加、それ以外は $fields をそのまま）。
- */
-function bill_admin_client_search_fields( $fields, $query ) {
-	if ( bill_get_client_orderby_key() !== $query->get( 'orderby' ) || ! bill_is_target_admin_document_query( $query ) ) {
-		return $fields;
-	}
-
-	return $fields . ", COALESCE( NULLIF( bill_client_manual_meta.meta_value, '' ), bill_client_post.post_title ) AS bill_client_sort_key";
-}
-add_filter( 'posts_fields', 'bill_admin_client_search_fields', 10, 2 );
 
 /**
  * 取引先名で並び替える
  *
  * 表示（bill_get_client_name()）と同じ優先順位で、手入力名（bill_client_name_manual）を
  * 優先し、無ければ登録済取引先（bill_client が指す投稿）のタイトルを使う。
- * 実際の式（NULLIF・COALESCE）は bill_admin_client_search_fields() が SELECT 句へ
- * 追加する bill_client_sort_key エイリアスに集約されており、ここではそのエイリアスを
- * 参照するだけにしている（DISTINCT との併用でエラー3065を避けるための対応。
- * bill_admin_client_search_distinct() のDocBlock参照）。
+ * NULLIF() で空文字をNULL扱いにしてから COALESCE() でフォールバックする。
  *
- * 手入力・登録済のどちらも無い書類は、bill_client_sort_key が NULL になる。
- * LEFT JOIN のため結果から除外されることはなく（一覧から消えない）、MySQL の
- * 既定仕様により ASC では先頭、DESC では末尾にまとまる（植草さんからの必須要件）。
+ * 手入力・登録済のどちらも無い書類は、この式全体がNULLになる。bill_admin_client_search_join()
+ * が追加する JOIN はすべて LEFT JOIN のため結果から除外されることはなく（一覧から消えない）、
+ * MySQL の既定仕様により ASC では先頭、DESC では末尾にまとまる（植草さんからの必須要件）。
  *
  * 第2並び替えキーとして発行日（post_date）を同じ並び順方向で追加している。
  * 取引先名が同じ・またはどちらも未設定の書類が複数ある場合に、並び順が
@@ -361,7 +371,7 @@ function bill_admin_client_orderby( $orderby, $query ) {
 
 	$order = 'DESC' === strtoupper( (string) $query->get( 'order' ) ) ? 'DESC' : 'ASC';
 
-	return "bill_client_sort_key {$order}, {$wpdb->posts}.post_date {$order}";
+	return "COALESCE( NULLIF( bill_client_manual_meta.meta_value, '' ), bill_client_post.post_title ) {$order}, {$wpdb->posts}.post_date {$order}";
 }
 add_filter( 'posts_orderby', 'bill_admin_client_orderby', 10, 2 );
 
