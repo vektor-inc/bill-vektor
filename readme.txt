@@ -2,7 +2,7 @@
 Contributors: kurudrive,vektor-inc,rickaddison7634,una9
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.14.0
+Stable tag: 1.15.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,6 +13,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 
 == Changelog ==
 
+1.15.0
 [ 機能追加 ] 請求書・見積書の一覧画面で、取引先名（手入力・登録済）でも検索・並び替えができる機能を追加
 [ 仕様変更 ] 取引先（イレギュラー）を入力している書類のタイトル・PDFのファイル名で、書類本体と同じく敬称（御中など）を付けないように変更
 [ 不具合修正 ] 書類一覧テーブルの見出しセル（th）に scope 属性がなく、スクリーンリーダーで列見出しと値の対応が読み取れない不具合を修正
