@@ -401,4 +401,79 @@ class DuplicateDocTest extends WP_UnitTestCase {
 		$GLOBALS['post'] = null;
 		wp_reset_postdata();
 	}
+
+	/**
+	 * bill_copy_post() の「取引先（イレギュラー）」引き継ぎテスト
+	 *
+	 * 見積書に入力した bill_client_name_manual（取引先（イレギュラー）欄の保存先）が、
+	 * 請求書発行時（duplicate_type を付けない経路）にも複製先へ引き継がれることを検証する（issue #347）。
+	 * あわせて、既に全項目コピーされている duplicate_type=full の経路（見積書・請求書の複製）で
+	 * bill_client_name_manual が二重に add_post_meta されず1件のままであることも確認する
+	 * （個別コピー対象への追加と全項目コピー分岐が重複する回帰を防ぐため）。
+	 *
+	 * @return void
+	 */
+	public function test_bill_copy_post() {
+
+		// テスト用の見積書投稿を作成し、取引先（イレギュラー）の値を保存しておく
+		$estimate_post_id = wp_insert_post(
+			array(
+				'post_title'   => 'テスト用見積書（取引先イレギュラー）',
+				'post_content' => '',
+				'post_status'  => 'publish',
+				'post_type'    => 'estimate',
+			)
+		);
+		update_post_meta( $estimate_post_id, 'bill_client_name_manual', '株式会社イレギュラー商事' );
+
+		$test_cases = array(
+			// --- 正常系：「この内容で請求書を発行」ボタン相当（table_copy_type=all, duplicate_type未指定） ---
+			array(
+				'test_condition_name' => '「この内容で請求書を発行」相当（table_copy_type=all, duplicate_type=""）の場合 => 取引先（イレギュラー）が請求書側に引き継がれる',
+				'table_copy_type'     => 'all',
+				'duplicate_type'      => '',
+				'expected_value'      => '株式会社イレギュラー商事',
+				'expected_count'      => 1,
+			),
+			// --- 正常系：「件名を品目一式にして請求書を発行」ボタン相当（table_copy_type=total, duplicate_type未指定） ---
+			array(
+				'test_condition_name' => '「件名を品目一式にして請求書を発行」相当（table_copy_type=total, duplicate_type=""）の場合 => 取引先（イレギュラー）が請求書側に引き継がれる',
+				'table_copy_type'     => 'total',
+				'duplicate_type'      => '',
+				'expected_value'      => '株式会社イレギュラー商事',
+				'expected_count'      => 1,
+			),
+			// --- 境界値：duplicate_type=full（見積書・請求書の複製ボタン相当）の場合、全項目コピー分岐で
+			//     既に引き継がれているため、個別コピー分岐と二重登録されず1件のままであること ---
+			array(
+				'test_condition_name' => 'duplicate_type=full（複製ボタン相当）の場合 => 取引先（イレギュラー）が二重登録されず1件だけ引き継がれる',
+				'table_copy_type'     => 'all',
+				'duplicate_type'      => 'full',
+				'expected_value'      => '株式会社イレギュラー商事',
+				'expected_count'      => 1,
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			// 複製を実行
+			$new_post_id = bill_copy_post( $estimate_post_id, 'post', $case['table_copy_type'], $case['duplicate_type'] );
+
+			// 複製に成功していること
+			$this->assertNotFalse( $new_post_id, $case['test_condition_name'] . '（複製成功）' );
+
+			// 引き継がれた値が期待通りであること
+			$actual_value = get_post_meta( $new_post_id, 'bill_client_name_manual', true );
+			$this->assertSame( $case['expected_value'], $actual_value, $case['test_condition_name'] . '（値）' );
+
+			// add_post_meta が二重に呼ばれて値が複数登録されていないこと
+			$actual_all = get_post_meta( $new_post_id, 'bill_client_name_manual' );
+			$this->assertCount( $case['expected_count'], $actual_all, $case['test_condition_name'] . '（登録件数）' );
+
+			// 作成した複製投稿を削除
+			wp_delete_post( $new_post_id, true );
+		}
+
+		// 作成した見積書投稿を削除
+		wp_delete_post( $estimate_post_id, true );
+	}
 }

@@ -82,6 +82,13 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 	$bill_client = get_post_meta( $post->ID, 'bill_client', true );
 	add_post_meta( $new_post, 'bill_client', $bill_client );
 
+	// 取引先（イレギュラー）欄。duplicate_type=full の場合は後段の全項目コピーで
+	// 既に引き継がれているため、二重登録を避けるためここではコピーしない
+	if ( $duplicate_type !== 'full' ) {
+		$bill_client_name_manual = get_post_meta( $post->ID, 'bill_client_name_manual', true );
+		add_post_meta( $new_post, 'bill_client_name_manual', $bill_client_name_manual );
+	}
+
 	$bill_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
 	add_post_meta( $new_post, 'bill_tax_rate', $bill_tax_rate );
 
