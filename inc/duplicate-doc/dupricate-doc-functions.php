@@ -14,9 +14,38 @@
 /*
   新規複製 _ 保存する関数
 /*-------------------------------------------*/
+/**
+ * 書類（投稿）を複製する関数
+ *
+ * 複製元の投稿を元に、新しい下書き（draft）の投稿を作成する。
+ * 複製する範囲・カスタムフィールドの扱いは引数の組み合わせで変わる。
+ *
+ * @param int    $post_id         複製元の投稿ID。
+ * @param string $post_type       複製先に作成する投稿タイプ。呼び出し元
+ *                                （bill_copy_redirect()）で作成権限を確認済みの値を渡すこと。
+ * @param string $table_copy_type 品目テーブル（bill_items）の複製方法。
+ *                                'all' の場合はテーブルをそのまま複製する（給与明細の場合は
+ *                                課税・非課税の追加項目も複製する）。'all' 以外（例: 'total'）の
+ *                                場合は品目を1行に合算し、件名を「件名 ( 税率 )」の形にまとめて
+ *                                複製する（見積書から「件名を品目一式にして請求書を発行」した場合など）。
+ * @param string $duplicate_type  'full' の場合、複製元に紐づく全カスタムフィールド
+ *                                （get_post_custom() で取得できるもの。アンダースコア始まりの
+ *                                内部用メタは _wp_page_template・_thumbnail_id のみ対象）を
+ *                                そのまま複製先へコピーする（見積書・請求書の「複製」ボタン）。
+ *                                'full' 以外（空文字など）の場合は、この関数内で個別に列挙した
+ *                                カスタムフィールド（取引先・取引先（イレギュラー）・消費税率・
+ *                                消費税・品目テーブル）だけをコピーする（見積書から請求書を
+ *                                発行するボタンなど、投稿タイプをまたいで複製する場合に使う）。
+ * @return int|false|null 作成した投稿のID。投稿の作成に失敗した場合は false、
+ *                         複製元の投稿が存在しない場合は null を返す。
+ */
 function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all', $duplicate_type = 'full' ) {
 	$post = get_post( $post_id );
 	$tax_array = bill_vektor_tax_array();
+
+	// 'full' かどうかの判定を1度だけ行い、以降はこの変数を参照する
+	// （二重登録防止のガードと全項目コピー分岐とで判定基準がずれないようにするため）
+	$is_full = ( 'full' === $duplicate_type );
 
 	if ( empty( $post ) ) {
 		return null;
@@ -47,7 +76,7 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 	/*
 	  投稿を複製 _ カテゴリー情報
 	/*-------------------------------------------*/
-	if ( $duplicate_type == 'full' ) {
+	if ( $is_full ) {
 
 		$taxonomys = get_object_taxonomies( $post );
 		// var_dump($taxonomys);
@@ -79,8 +108,21 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 	/*
 	  投稿meta情報の保存 _ 顧客名・消費税率・消費税
 	/*-------------------------------------------*/
+	// bill_client・bill_tax_rate・bill_tax_type は duplicate_type=full の場合、
+	// 後段の全項目コピー（get_post_custom() のループ）でも複製されるため、
+	// ここでの add_post_meta と合わせて postmeta の行が2行（同じ値）になる。
+	// inc/functions-admin-client-search.php の JOIN が MIN( meta_value ) で畳んでいるため
+	// 表示・検索上の実害はない。新規追加する bill_client_name_manual は下記のガードで
+	// full の場合に行を増やさないようにしている（既存項目と挙動が非対称になる点に注意）
 	$bill_client = get_post_meta( $post->ID, 'bill_client', true );
 	add_post_meta( $new_post, 'bill_client', $bill_client );
+
+	// 取引先（イレギュラー）欄。duplicate_type=full の場合は後段の全項目コピーで
+	// 既に引き継がれているため、二重登録を避けるためここではコピーしない
+	if ( ! $is_full ) {
+		$bill_client_name_manual = get_post_meta( $post->ID, 'bill_client_name_manual', true );
+		add_post_meta( $new_post, 'bill_client_name_manual', $bill_client_name_manual );
+	}
 
 	$bill_tax_rate = get_post_meta( $post->ID, 'bill_tax_rate', true );
 	add_post_meta( $new_post, 'bill_tax_rate', $bill_tax_rate );
@@ -157,7 +199,7 @@ function bill_copy_post( $post_id, $post_type = 'post', $table_copy_type = 'all'
 	/*
 	  投稿meta情報の保存 _ 同じ投稿タイプで複製
 	/*-------------------------------------------*/
-	if ( $duplicate_type == 'full' ) {
+	if ( $is_full ) {
 
 		// まずは $post_id に紐付いてるカスタムフィールドのデータを全部取得する
 		$metas = get_post_custom( $post_id );
@@ -225,10 +267,25 @@ function bill_copy_redirect() {
 			wp_die( esc_html__( 'この操作を行う権限がありません。', 'bill-vektor' ) );
 		}
 
-		// $post_type: 登録済みの投稿タイプのみ許可（不正な値はからにする）
-		$allowed_post_types = array_keys( get_post_types() );
+		// $post_type: 管理画面 UI を持つ投稿タイプのみ許可（不正な値はからにする）。
+		// get_post_types() の絞り込みは core の wp-admin/post-new.php に揃えている
+		// （show_ui => true を指定しない場合、revision・oembed_cache・user_request など
+		// UI を持たない投稿タイプまで許可リストに含まれてしまうため）
+		$allowed_post_types = array_keys( get_post_types( array( 'show_ui' => true ) ) );
 		$post_type_raw      = sanitize_key( $_GET['post_type'] ?? '' );
 		$post_type          = in_array( $post_type_raw, $allowed_post_types, true ) ? $post_type_raw : '';
+
+		// 権限チェック：複製先の投稿タイプを作成できる権限を確認する。
+		// wp_insert_post() は権限を検証しないため、ここで確認する必要がある。
+		// 判定条件は core の wp-admin/post-new.php に揃えている。
+		// $post_type_object が取得できない場合も同じ扱いで止める（複製先の投稿タイプが
+		// 確定しないまま bill_copy_post() へ渡ると、意図しない投稿タイプで作成されるため）。
+		$post_type_object = get_post_type_object( $post_type );
+		if ( ! $post_type_object
+			|| ! current_user_can( $post_type_object->cap->edit_posts )
+			|| ! current_user_can( $post_type_object->cap->create_posts ) ) {
+			wp_die( esc_html__( 'この操作を行う権限がありません。', 'bill-vektor' ) );
+		}
 
 		// $table_copy_type: sanitize_key でサニタイズ（内部処理用の識別子）
 		$table_copy_type = sanitize_key( $_GET['table_copy_type'] ?? '' );

@@ -36,9 +36,23 @@ class DuplicateDocTest extends WP_UnitTestCase {
 	private $subscriber_user_id;
 
 	/**
+	 * テスト用寄稿者ユーザーIDを保持する
+	 *
+	 * @var int
+	 */
+	private $contributor_user_id;
+
+	/**
+	 * 寄稿者が作成した複製元投稿のIDを保持する
+	 *
+	 * @var int
+	 */
+	private $contributor_post_id;
+
+	/**
 	 * テスト前の共通セットアップ
 	 *
-	 * テスト用投稿・管理者ユーザー・購読者ユーザーを作成する。
+	 * テスト用投稿・管理者ユーザー・購読者ユーザー・寄稿者ユーザーを作成する。
 	 *
 	 * @return void
 	 */
@@ -64,6 +78,24 @@ class DuplicateDocTest extends WP_UnitTestCase {
 		$this->subscriber_user_id = wp_create_user( 'test_subscriber', 'password', 'subscriber@example.com' );
 		$subscriber_user          = new WP_User( $this->subscriber_user_id );
 		$subscriber_user->set_role( 'subscriber' );
+
+		// テスト用寄稿者ユーザーを作成（edit_posts はあるが edit_others_posts・edit_pages は無い）
+		$this->contributor_user_id = wp_create_user( 'test_contributor', 'password', 'contributor@example.com' );
+		$contributor_user          = new WP_User( $this->contributor_user_id );
+		$contributor_user->set_role( 'contributor' );
+
+		// 寄稿者が自分で作成した複製元投稿。draft のままにするのは、
+		// 公開済み投稿だと寄稿者の edit_posts 権限だけでは edit_post 権限チェックが
+		// 通らない（公開済み投稿の編集には edit_published_posts が必要）ため
+		$this->contributor_post_id = wp_insert_post(
+			array(
+				'post_title'   => 'テスト用書類（寄稿者作成）',
+				'post_content' => '',
+				'post_status'  => 'draft',
+				'post_type'    => 'post',
+				'post_author'  => $this->contributor_user_id,
+			)
+		);
 	}
 
 	/**
@@ -82,6 +114,9 @@ class DuplicateDocTest extends WP_UnitTestCase {
 		if ( $this->post_id ) {
 			wp_delete_post( $this->post_id, true );
 		}
+		if ( $this->contributor_post_id ) {
+			wp_delete_post( $this->contributor_post_id, true );
+		}
 
 		// 作成したユーザーを削除
 		if ( $this->admin_user_id ) {
@@ -89,6 +124,9 @@ class DuplicateDocTest extends WP_UnitTestCase {
 		}
 		if ( $this->subscriber_user_id ) {
 			wp_delete_user( $this->subscriber_user_id );
+		}
+		if ( $this->contributor_user_id ) {
+			wp_delete_user( $this->contributor_user_id );
 		}
 
 		parent::tear_down();
@@ -280,6 +318,155 @@ class DuplicateDocTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * bill_copy_redirect() の複製先投稿タイプに対する作成権限チェックのテスト
+	 *
+	 * master_id の書類自体を編集できるユーザーでも、URL の post_type を差し替えれば
+	 * 作成権限のない投稿タイプの下書きを作れてしまう不具合への対応を検証する。
+	 * 寄稿者ロール（edit_posts はあるが edit_others_posts・edit_pages は無い）で、
+	 * 作成権限のある投稿タイプ（post・estimate・client）は従来どおり複製でき、
+	 * 作成権限のない投稿タイプ（page）は権限エラーで止まることを確認する。
+	 * あわせて、未登録・不正な post_type（存在しない投稿タイプ名）を指定した場合も
+	 * 権限エラーで止まり、bill_copy_post() 側の既定値（'post'）にフォールバックして
+	 * 作成されてしまわないことを、権限の強い管理者ユーザーでも確認する。
+	 *
+	 * @return void
+	 */
+	public function test_bill_copy_redirect__post_type_capability() {
+
+		$test_cases = array(
+			// --- 正常系：寄稿者が作成権限のある投稿タイプ（post）へ複製する場合 ---
+			array(
+				'test_condition_name' => '寄稿者が作成権限のある投稿タイプ（post）へ複製する場合 => 従来どおり複製できる',
+				'user_id_property'    => 'contributor_user_id',
+				'master_id_property'  => 'contributor_post_id',
+				'post_type'           => 'post',
+				'expected_exception'  => false,
+			),
+			// --- 正常系：寄稿者が作成権限のある投稿タイプ（estimate・見積書）へ複製する場合 ---
+			array(
+				'test_condition_name' => '寄稿者が作成権限のある投稿タイプ（estimate）へ複製する場合 => 従来どおり複製できる',
+				'user_id_property'    => 'contributor_user_id',
+				'master_id_property'  => 'contributor_post_id',
+				'post_type'           => 'estimate',
+				'expected_exception'  => false,
+			),
+			// --- 正常系：寄稿者が作成権限のある投稿タイプ（client・取引先）へ複製する場合 ---
+			array(
+				'test_condition_name' => '寄稿者が作成権限のある投稿タイプ（client）へ複製する場合 => 従来どおり複製できる',
+				'user_id_property'    => 'contributor_user_id',
+				'master_id_property'  => 'contributor_post_id',
+				'post_type'           => 'client',
+				'expected_exception'  => false,
+			),
+			// --- 異常系：寄稿者が作成権限のない投稿タイプ（page）を指定した場合 ---
+			array(
+				'test_condition_name' => '寄稿者が作成権限のない投稿タイプ（page）を指定した場合 => 権限エラーで複製されない',
+				'user_id_property'    => 'contributor_user_id',
+				'master_id_property'  => 'contributor_post_id',
+				'post_type'           => 'page',
+				'expected_exception'  => true,
+			),
+			// --- 境界値：管理者でも、未登録・不正な post_type を指定した場合は複製されない ---
+			array(
+				'test_condition_name' => '管理者が未登録・不正な post_type（not-a-real-type）を指定した場合 => 権限エラーで複製されない',
+				'user_id_property'    => 'admin_user_id',
+				'master_id_property'  => 'post_id',
+				'post_type'           => 'not-a-real-type',
+				'expected_exception'  => true,
+			),
+		);
+
+		// 対象投稿タイプごとの投稿件数を確認するため $wpdb を使う
+		// （'not-a-real-type' のような未登録タイプは get_post_types() や wp_count_posts() の
+		// 対象にならないため、posts テーブルを直接数えて「作られていないこと」を確認する）
+		global $wpdb;
+
+		foreach ( $test_cases as $case ) {
+			$user_id   = $this->{ $case['user_id_property'] };
+			$master_id = $this->{ $case['master_id_property'] };
+
+			// 異常系（権限エラーで止まるはず）のケースだけ、実行前の対象投稿タイプの件数を控えておく
+			$post_count_before = null;
+			if ( $case['expected_exception'] ) {
+				$post_count_before = (int) $wpdb->get_var(
+					$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s", $case['post_type'] )
+				);
+			}
+
+			// ログインし、有効な nonce を付与したリクエストを組み立てる
+			wp_set_current_user( $user_id );
+			$nonce = wp_create_nonce( 'bill_copy_' . $master_id );
+			$_GET  = array(
+				'master_id'       => $master_id,
+				'post_type'       => $case['post_type'],
+				'table_copy_type' => 'all',
+				'duplicate_type'  => 'full',
+				'_wpnonce'        => $nonce,
+			);
+			// check_admin_referer() は $_REQUEST['_wpnonce'] を参照するため合わせて設定する
+			$_REQUEST['_wpnonce'] = $nonce;
+
+			$exception_thrown = false;
+			$redirect_called  = false;
+			$redirect_location = '';
+
+			// クロージャを変数に保存し、フレームワーク側のフィルターを除去しないよう個別に外す
+			$die_handler = function () {
+				return function ( $message ) {
+					throw new \Exception( 'wp_die called: ' . ( is_string( $message ) ? $message : '' ) );
+				};
+			};
+			add_filter( 'wp_die_handler', $die_handler );
+
+			// wp_safe_redirect はヘッダー送信を試みるため、テスト環境では例外化して処理を止める
+			$redirect_handler = function ( $location ) use ( &$redirect_called, &$redirect_location ) {
+				$redirect_called   = true;
+				$redirect_location = $location;
+				throw new \Exception( 'wp_redirect called: ' . $location );
+			};
+			add_filter( 'wp_redirect', $redirect_handler );
+
+			try {
+				bill_copy_redirect();
+			} catch ( \Exception $e ) {
+				$message          = $e->getMessage();
+				$exception_thrown = strpos( $message, 'wp_die called:' ) === 0;
+			} finally {
+				remove_filter( 'wp_die_handler', $die_handler );
+				remove_filter( 'wp_redirect', $redirect_handler );
+				$_GET     = array();
+				$_REQUEST = array();
+			}
+
+			if ( $case['expected_exception'] ) {
+				$this->assertTrue( $exception_thrown, $case['test_condition_name'] );
+
+				// wp_die が呼ばれたことだけでなく、対象投稿タイプの投稿が
+				// 実際に増えていない（複製されていない）ことも確認する。
+				// wp_die の呼び出し位置だけを見るテストだと、チェックの位置が
+				// 動いても素通りしてしまうため
+				$post_count_after = (int) $wpdb->get_var(
+					$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s", $case['post_type'] )
+				);
+				$this->assertSame(
+					$post_count_before,
+					$post_count_after,
+					$case['test_condition_name'] . '（投稿が作成されていないこと）'
+				);
+			} else {
+				// 正常系：wp_die が呼ばれず、かつ wp_redirect に到達したことを確認する
+				$this->assertFalse( $exception_thrown, $case['test_condition_name'] );
+				$this->assertTrue( $redirect_called, $case['test_condition_name'] . ' (wp_redirect が呼ばれること)' );
+
+				// 複製された投稿を後始末する（リダイレクト先URLの post= から ID を取り出す）
+				if ( preg_match( '/post=(\d+)/', $redirect_location, $matches ) ) {
+					wp_delete_post( (int) $matches[1], true );
+				}
+			}
+		}
+	}
+
+	/**
 	 * bill_duplicate() のリンク生成に対する nonce 付与テスト
 	 *
 	 * サブミットボックスに出力される複製・発行リンクに、有効な nonce（_wpnonce）が
@@ -400,5 +587,81 @@ class DuplicateDocTest extends WP_UnitTestCase {
 		// global $post の汚染（削除済み投稿を指したまま残る）を防ぐため明示的にリセットする
 		$GLOBALS['post'] = null;
 		wp_reset_postdata();
+	}
+
+	/**
+	 * bill_copy_post() の「取引先（イレギュラー）」引き継ぎテスト
+	 *
+	 * 見積書に入力した bill_client_name_manual（取引先（イレギュラー）欄の保存先）が、
+	 * 請求書発行時（duplicate_type を付けない経路）にも複製先へ引き継がれることを検証する（issue #347）。
+	 * あわせて、既に全項目コピーされている duplicate_type=full の経路（見積書・請求書の複製）で
+	 * bill_client_name_manual が二重に add_post_meta されず1件のままであることも確認する
+	 * （個別コピー対象への追加と全項目コピー分岐が重複する回帰を防ぐため）。
+	 *
+	 * @return void
+	 */
+	public function test_bill_copy_post() {
+
+		// テスト用の見積書投稿を作成し、取引先（イレギュラー）の値を保存しておく
+		$estimate_post_id = wp_insert_post(
+			array(
+				'post_title'   => 'テスト用見積書（取引先イレギュラー）',
+				'post_content' => '',
+				'post_status'  => 'publish',
+				'post_type'    => 'estimate',
+			)
+		);
+		update_post_meta( $estimate_post_id, 'bill_client_name_manual', '株式会社イレギュラー商事' );
+
+		$test_cases = array(
+			// --- 正常系：「この内容で請求書を発行」ボタン相当（table_copy_type=all, duplicate_type未指定） ---
+			array(
+				'test_condition_name' => '「この内容で請求書を発行」相当（table_copy_type=all, duplicate_type=""）の場合 => 取引先（イレギュラー）が請求書側に引き継がれる',
+				'table_copy_type'     => 'all',
+				'duplicate_type'      => '',
+				'expected_value'      => '株式会社イレギュラー商事',
+				'expected_count'      => 1,
+			),
+			// --- 正常系：「件名を品目一式にして請求書を発行」ボタン相当（table_copy_type=total, duplicate_type未指定） ---
+			array(
+				'test_condition_name' => '「件名を品目一式にして請求書を発行」相当（table_copy_type=total, duplicate_type=""）の場合 => 取引先（イレギュラー）が請求書側に引き継がれる',
+				'table_copy_type'     => 'total',
+				'duplicate_type'      => '',
+				'expected_value'      => '株式会社イレギュラー商事',
+				'expected_count'      => 1,
+			),
+			// --- 境界値：duplicate_type=full（見積書・請求書の複製ボタン相当）の場合、全項目コピー分岐で
+			//     既に引き継がれているため、個別コピー分岐と二重登録されず1件のままであること ---
+			array(
+				'test_condition_name' => 'duplicate_type=full（複製ボタン相当）の場合 => 取引先（イレギュラー）が二重登録されず1件だけ引き継がれる',
+				'table_copy_type'     => 'all',
+				'duplicate_type'      => 'full',
+				'expected_value'      => '株式会社イレギュラー商事',
+				'expected_count'      => 1,
+			),
+		);
+
+		foreach ( $test_cases as $case ) {
+			// 複製を実行
+			$new_post_id = bill_copy_post( $estimate_post_id, 'post', $case['table_copy_type'], $case['duplicate_type'] );
+
+			// 複製に成功していること（false・null どちらも失敗として弾く）
+			$this->assertIsInt( $new_post_id, $case['test_condition_name'] . '（複製成功）' );
+			$this->assertGreaterThan( 0, $new_post_id, $case['test_condition_name'] . '（複製成功）' );
+
+			// 引き継がれた値が期待通りであること
+			$actual_value = get_post_meta( $new_post_id, 'bill_client_name_manual', true );
+			$this->assertSame( $case['expected_value'], $actual_value, $case['test_condition_name'] . '（値）' );
+
+			// add_post_meta が二重に呼ばれて値が複数登録されていないこと
+			$actual_all = get_post_meta( $new_post_id, 'bill_client_name_manual' );
+			$this->assertCount( $case['expected_count'], $actual_all, $case['test_condition_name'] . '（登録件数）' );
+
+			// 作成した複製投稿を削除
+			wp_delete_post( $new_post_id, true );
+		}
+
+		// 作成した見積書投稿を削除
+		wp_delete_post( $estimate_post_id, true );
 	}
 }
