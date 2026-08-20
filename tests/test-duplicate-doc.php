@@ -376,9 +376,22 @@ class DuplicateDocTest extends WP_UnitTestCase {
 			),
 		);
 
+		// 対象投稿タイプごとの投稿件数を確認するため $wpdb を使う
+		// （'not-a-real-type' のような未登録タイプは get_post_types() や wp_count_posts() の
+		// 対象にならないため、posts テーブルを直接数えて「作られていないこと」を確認する）
+		global $wpdb;
+
 		foreach ( $test_cases as $case ) {
 			$user_id   = $this->{ $case['user_id_property'] };
 			$master_id = $this->{ $case['master_id_property'] };
+
+			// 異常系（権限エラーで止まるはず）のケースだけ、実行前の対象投稿タイプの件数を控えておく
+			$post_count_before = null;
+			if ( $case['expected_exception'] ) {
+				$post_count_before = (int) $wpdb->get_var(
+					$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s", $case['post_type'] )
+				);
+			}
 
 			// ログインし、有効な nonce を付与したリクエストを組み立てる
 			wp_set_current_user( $user_id );
@@ -427,6 +440,19 @@ class DuplicateDocTest extends WP_UnitTestCase {
 
 			if ( $case['expected_exception'] ) {
 				$this->assertTrue( $exception_thrown, $case['test_condition_name'] );
+
+				// wp_die が呼ばれたことだけでなく、対象投稿タイプの投稿が
+				// 実際に増えていない（複製されていない）ことも確認する。
+				// wp_die の呼び出し位置だけを見るテストだと、チェックの位置が
+				// 動いても素通りしてしまうため
+				$post_count_after = (int) $wpdb->get_var(
+					$wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s", $case['post_type'] )
+				);
+				$this->assertSame(
+					$post_count_before,
+					$post_count_after,
+					$case['test_condition_name'] . '（投稿が作成されていないこと）'
+				);
 			} else {
 				// 正常系：wp_die が呼ばれず、かつ wp_redirect に到達したことを確認する
 				$this->assertFalse( $exception_thrown, $case['test_condition_name'] );

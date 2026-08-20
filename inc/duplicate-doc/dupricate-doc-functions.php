@@ -267,21 +267,23 @@ function bill_copy_redirect() {
 			wp_die( esc_html__( 'この操作を行う権限がありません。', 'bill-vektor' ) );
 		}
 
-		// $post_type: 登録済みの投稿タイプのみ許可（不正な値はからにする）
-		$allowed_post_types = array_keys( get_post_types() );
+		// $post_type: 管理画面 UI を持つ投稿タイプのみ許可（不正な値はからにする）。
+		// get_post_types() の絞り込みは core の wp-admin/post-new.php に揃えている
+		// （show_ui => true を指定しない場合、revision・oembed_cache・user_request など
+		// UI を持たない投稿タイプまで許可リストに含まれてしまうため）
+		$allowed_post_types = array_keys( get_post_types( array( 'show_ui' => true ) ) );
 		$post_type_raw      = sanitize_key( $_GET['post_type'] ?? '' );
 		$post_type          = in_array( $post_type_raw, $allowed_post_types, true ) ? $post_type_raw : '';
 
-		// 権限チェック：複製先の投稿タイプを作成できる権限がないユーザーは操作不可。
-		// 上記の $master_id に対する edit_post 権限チェックだけでは、書類を1件でも
-		// 編集できる利用者が URL の post_type を差し替えて、本来作成権限のない
-		// 投稿タイプの下書きを作れてしまう（wp_insert_post() 自体は権限を見ないため）。
-		// post_type が不正・欠落で $post_type_object が取得できない場合も同じ扱いで止める。
-		// 正規のリンク（編集画面のボタン・一覧の複製リンク）は必ず有効な post_type を渡すため、
-		// ここを空文字のまま通すと bill_copy_post() へ渡り、wp_insert_post() の既定で
-		// 意図しない投稿タイプ（post）として作成されてしまう
+		// 権限チェック：複製先の投稿タイプを作成できる権限を確認する。
+		// wp_insert_post() は権限を検証しないため、ここで確認する必要がある。
+		// 判定条件は core の wp-admin/post-new.php に揃えている。
+		// $post_type_object が取得できない場合も同じ扱いで止める（複製先の投稿タイプが
+		// 確定しないまま bill_copy_post() へ渡ると、意図しない投稿タイプで作成されるため）。
 		$post_type_object = get_post_type_object( $post_type );
-		if ( ! $post_type_object || ! current_user_can( $post_type_object->cap->create_posts ) ) {
+		if ( ! $post_type_object
+			|| ! current_user_can( $post_type_object->cap->edit_posts )
+			|| ! current_user_can( $post_type_object->cap->create_posts ) ) {
 			wp_die( esc_html__( 'この操作を行う権限がありません。', 'bill-vektor' ) );
 		}
 
