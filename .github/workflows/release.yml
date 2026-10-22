@@ -28,7 +28,7 @@ jobs:
         steps:
             - uses: actions/checkout@v3
             - name: Read .node-version
-              run: echo "{NODEVERSION}={$(cat .node-version)}" >> $GITHUB_OUTPUT
+              run: echo "NODEVERSION=$(cat .node-version)" >> $GITHUB_OUTPUT
               id: nodenv
             - name: Setup Node.js (.node-version)
               uses: actions/setup-node@v3
@@ -70,7 +70,7 @@ jobs:
         steps:
             - uses: actions/checkout@v3
             - name: Read .node-version
-              run: echo "{NODEVERSION}={$(cat .node-version)}" >> $GITHUB_OUTPUT
+              run: echo "NODEVERSION=$(cat .node-version)" >> $GITHUB_OUTPUT
               id: nodenv
             - name: Setup Node.js (.node-version)
               uses: actions/setup-node@v3
