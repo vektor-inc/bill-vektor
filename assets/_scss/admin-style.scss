@@ -116,3 +116,14 @@ td[class*="bill-cell-"] {
 body.post-type-estimate .column-bill_client_name {
 	width: 28%;
 }
+
+/* 取引先カラムの行頭禁則（見積書・請求書の一覧）
+   ========================================================================== */
+
+/* 取引先名は長く、列が狭いと途中で折り返される。auto のままだと
+   「ソリ／ューションズ」のように小書き文字・長音・句読点が行頭に来る位置で
+   折り返されることがあるため、strict で行頭禁則をブラウザに任せる。 */
+body.post-type-estimate .column-bill_client_name,
+body.post-type-post .column-bill_client_name {
+	line-break: strict;
+}
