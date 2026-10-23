@@ -239,6 +239,12 @@ test.describe('PR #348 見積書の取引先（イレギュラー）引き継ぎ
 	/** @type {string} */
 	let clientEditUrl;
 
+	// 管理画面のアバター画像は外部ホスト（Gravatar）から読み込まれる。本テストの確認対象では
+	// ないため外部への通信を遮断し、ネットワークの状況で各画面の読み込み時間がぶれないようにする。
+	test.beforeEach(async ({ page }) => {
+		await page.route(/gravatar\.com/, (route) => route.abort());
+	});
+
 	test.beforeAll(async ({ browser }, testInfo) => {
 		// beforeAll で書類を5件（見積書3件・請求書1件・取引先1件）作成するため、既定の30秒では
 		// タイムアウトすることがある。作成件数に余裕を持たせて120秒にする
@@ -336,12 +342,20 @@ test.describe('PR #348 見積書の取引先（イレギュラー）引き継ぎ
 		await page.goto(duplicatedUrl);
 		await expect(page.locator('#bill_client_name_manual')).toHaveValue(IRREGULAR_CLIENT_NAME);
 
-		// この画面は同じ page で3回目のフルアクション（複製 → 下書き保存 → 再訪問）となり、
-		// スクリーンショットの「安定待ち」がハングしやすい傾向があったため、
-		// 撮影直前に1回リロードして状態をリセットしてから撮る
-		await page.reload();
-		await expect(page.locator('#bill_client_name_manual')).toHaveValue(IRREGULAR_CLIENT_NAME);
-		await safeScreenshot(page, 'pr-348-step4b-duplicate-estimate-resaved.png');
+		// 撮影は新しいタブで行う。
+		// このヘッドレス Chromium では、フォーム送信（POST）による画面遷移を1回行うと、
+		// そのタブは描画が止まったままになる（requestAnimationFrame が呼ばれなくなり、
+		// goto・reload しても戻らない。WordPress の設定画面の保存でも再現し、本テーマ固有ではない）。
+		// screenshot() は描画を待つため、この状態のタブでは撮影が止まり続ける。
+		// 新しいタブでは描画が正常なので、保存後の画面はそちらで開き直して撮る（issue #360）。
+		const shotPage = await page.context().newPage();
+		try {
+			await shotPage.goto(duplicatedUrl);
+			await expect(shotPage.locator('#bill_client_name_manual')).toHaveValue(IRREGULAR_CLIENT_NAME);
+			await safeScreenshot(shotPage, 'pr-348-step4b-duplicate-estimate-resaved.png');
+		} finally {
+			await shotPage.close();
+		}
 	});
 
 	test('手順5: 取引先（登録済）を選んだ見積書は、登録済が引き継がれイレギュラー欄は空のまま', async ({
