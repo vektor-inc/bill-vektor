@@ -14,6 +14,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 == Changelog ==
 
 [ 開発環境 ] 開発環境・CI で使う Node.js を 24.22.1 に更新
+[ 開発環境 ] Node.js のバージョン指定を .node-version に一本化し、package.json から Volta の指定を削除
 
 1.15.0
 [ 機能追加 ] 請求書・見積書の一覧画面で、取引先名（手入力・登録済）でも検索・並び替えができる機能を追加
