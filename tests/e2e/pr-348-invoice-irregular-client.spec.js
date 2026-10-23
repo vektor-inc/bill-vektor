@@ -348,6 +348,8 @@ test.describe('PR #348 見積書の取引先（イレギュラー）引き継ぎ
 		// goto・reload しても戻らない。WordPress の設定画面の保存でも再現し、本テーマ固有ではない）。
 		// screenshot() は描画を待つため、この状態のタブでは撮影が止まり続ける。
 		// 新しいタブでは描画が正常なので、保存後の画面はそちらで開き直して撮る（issue #360）。
+		// 根本の対処は playwright.config.js の launchOptions（Paint Holding の無効化）で行っており、
+		// ここは念のための二重の備え。
 		const shotPage = await page.context().newPage();
 		try {
 			await shotPage.goto(duplicatedUrl);
