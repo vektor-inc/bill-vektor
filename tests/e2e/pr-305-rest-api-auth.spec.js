@@ -321,12 +321,25 @@ test.describe('PR #305 B: ログイン済み管理画面の回帰確認', () => 
 		const restNonce = await (
 			await page.request.get('/wp-admin/admin-ajax.php?action=rest-nonce')
 		).text();
+		// 既存のユーザー設定を取得し、案内の設定だけを混ぜて保存する
+		// （丸ごと置き換えると、普段使いのサイトで他の設定を消してしまうため）。
+		const currentResponse = await page.request.get(
+			'/wp-json/wp/v2/users/me?context=edit',
+			{ headers: { 'X-WP-Nonce': restNonce } }
+		);
+		expect(currentResponse.ok()).toBe(true);
+		const current =
+			(await currentResponse.json()).meta?.persisted_preferences || {};
 		const saveResponse = await page.request.post('/wp-json/wp/v2/users/me', {
 			headers: { 'X-WP-Nonce': restNonce },
 			data: {
 				meta: {
 					persisted_preferences: {
-						'core/edit-post': { welcomeGuide: false },
+						...current,
+						'core/edit-post': {
+							...current['core/edit-post'],
+							welcomeGuide: false,
+						},
 						_modified: new Date().toISOString(),
 					},
 				},

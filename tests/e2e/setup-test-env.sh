@@ -29,7 +29,7 @@ ENV_CWD="wp-content/themes/${THEME_DIR}"
 echo "==> テーマ ${THEME_DIR} を有効化します"
 npx wp-env run cli wp theme activate "${THEME_DIR}"
 
-# glob はアルファベット順に展開されるため、実行順は常に同じになる
+# 各スクリプトは互いに独立しているため、実行順に依存しない
 for script in tests/e2e/create-test-data*.php; do
 	echo "==> テストデータ投入: ${script}"
 	npx wp-env run cli --env-cwd="${ENV_CWD}" wp eval-file "${script}"
