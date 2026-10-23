@@ -322,16 +322,17 @@ test.describe('PR #305 B: ログイン済み管理画面の回帰確認', () => 
 		// 保存され、2回目以降は表示されない）。表示を最大5秒待ってから閉じる。
 		// 表示されない環境では待ち切って次へ進む（issue #360）。
 		const welcomeModal = page.locator('.components-modal__frame');
-		const welcomeShown = await welcomeModal
-			.waitFor({ state: 'visible', timeout: 5000 })
-			.then(() => true)
-			.catch(() => false);
-		if (welcomeShown) {
-			await welcomeModal
-				.getByRole('button', { name: /Close|閉じる/ })
-				.click();
-			await expect(welcomeModal).toBeHidden();
-		}
+		await page.waitForFunction(
+			() => window.wp && window.wp.data && window.wp.data.dispatch('core/preferences')
+		);
+		// 案内の表示タイミングに依存しないよう、案内を「表示しない」設定にする。
+		// すでに表示されている場合も、設定の変更で閉じる。
+		await page.evaluate(() => {
+			window.wp.data
+				.dispatch('core/preferences')
+				.set('core/edit-post', 'welcomeGuide', false);
+		});
+		await expect(welcomeModal).toBeHidden();
 
 		// WordPress の現行ブロックエディターは編集キャンバスを iframe 内に描画する。
 		// iframe の中まで辿り、実際のタイトル・本文ブロックを操作する。

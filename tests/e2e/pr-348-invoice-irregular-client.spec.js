@@ -59,15 +59,30 @@ const SCREENSHOT_DIR = 'tests/e2e/screenshots';
  * @param {string} filename
  */
 async function safeScreenshot(page, filename) {
+	// screenshot() の timeout オプション（8秒）が効かないまま止まり続けることがあり、
+	// その間テスト本体の制限時間（30秒）を使い切って、確認自体は済んでいるテストが
+	// 失敗扱いになっていた（issue #360。pr-348 の手順6c）。
+	// 補助資料の撮影が合否に影響しないよう、10秒経ったら撮影の完了を待たずに先へ進む。
+	let timer;
+	const giveUp = new Promise((_, reject) => {
+		timer = setTimeout(() => reject(new Error('10秒以内に撮影が終わらなかったため先へ進みます')), 10000);
+	});
 	try {
 		// 直前のクリック操作でボタン上にマウスカーソルが残っていると、管理画面のホバー系
 		// アニメーションの影響でスクリーンショットが不安定になり長時間ハングすることがあるため、
 		// 撮影前にカーソルを何もない場所へ逃がしておく
-		await page.mouse.move(0, 0);
-		await page.screenshot({ path: `${SCREENSHOT_DIR}/${filename}`, fullPage: false, timeout: 8000 });
+		const capture = (async () => {
+			await page.mouse.move(0, 0);
+			await page.screenshot({ path: `${SCREENSHOT_DIR}/${filename}`, fullPage: false, timeout: 8000 });
+		})();
+		// 先に諦めた場合に capture 側の遅れて起きるエラーが未処理にならないよう握りつぶす
+		capture.catch(() => {});
+		await Promise.race([capture, giveUp]);
 	} catch (e) {
 		// eslint-disable-next-line no-console
 		console.warn(`PR348スクリーンショット: ${filename} の撮影に失敗しました（テスト結果には影響しません）: ${e}`);
+	} finally {
+		clearTimeout(timer);
 	}
 }
 
