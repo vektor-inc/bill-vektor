@@ -311,28 +311,33 @@ test.describe('PR #305 B: ログイン済み管理画面の回帰確認', () => 
 		});
 		page.on('pageerror', (error) => pageErrors.push(error.message));
 
+		// 初回表示の案内モーダル（Welcome to the editor）は、エディターを開いた後に
+		// サーバー保存のユーザー設定の読み込みが終わってから出ることがあり、画面上の
+		// 操作で閉じても後から上書きされて再表示される（初めてエディターを開く
+		// 「まっさらな環境」でだけ起きる。モーダルが出ている間は背後の公開ボタンが
+		// アクセシビリティツリーから外れ、公開ボタンを探し続けて止まる。issue #360）。
+		// 表示のタイミングに左右されないよう、エディターを開く前にサーバー側の
+		// ユーザー設定へ「案内を表示しない」を保存して、初回状態を揃える。
+		const restNonce = await (
+			await page.request.get('/wp-admin/admin-ajax.php?action=rest-nonce')
+		).text();
+		const saveResponse = await page.request.post('/wp-json/wp/v2/users/me', {
+			headers: { 'X-WP-Nonce': restNonce },
+			data: {
+				meta: {
+					persisted_preferences: {
+						'core/edit-post': { welcomeGuide: false },
+						_modified: new Date().toISOString(),
+					},
+				},
+			},
+		});
+		expect(saveResponse.ok()).toBe(true);
+
 		await page.goto('/wp-admin/post-new.php?post_type=page', {
 			waitUntil: 'domcontentloaded',
 		});
-
-		// 初回表示の案内モーダルがあれば閉じ、編集キャンバスを操作可能にする。
-		// 案内モーダルはエディターの読み込み完了後に遅れて表示されるため、
-		// 表示済みかどうかを即座に判定すると見逃す（初めてエディターを開く
-		// 「まっさらな環境」でだけ起きる。案内を閉じるとユーザー設定として
-		// 保存され、2回目以降は表示されない）。表示を最大5秒待ってから閉じる。
-		// 表示されない環境では待ち切って次へ進む（issue #360）。
 		const welcomeModal = page.locator('.components-modal__frame');
-		await page.waitForFunction(
-			() => window.wp && window.wp.data && window.wp.data.dispatch('core/preferences')
-		);
-		// 案内の表示タイミングに依存しないよう、案内を「表示しない」設定にする。
-		// すでに表示されている場合も、設定の変更で閉じる。
-		await page.evaluate(() => {
-			window.wp.data
-				.dispatch('core/preferences')
-				.set('core/edit-post', 'welcomeGuide', false);
-		});
-		await expect(welcomeModal).toBeHidden();
 
 		// WordPress の現行ブロックエディターは編集キャンバスを iframe 内に描画する。
 		// iframe の中まで辿り、実際のタイトル・本文ブロックを操作する。
@@ -350,24 +355,8 @@ test.describe('PR #305 B: ログイン済み管理画面の回帰確認', () => 
 			})
 		).toBeVisible();
 
-		// 案内モーダルは、サーバーに保存されたユーザー設定の読み込みが終わった後に
-		// 表示されることがあり、上の「表示しない」設定を後から上書きされる場合がある
-		// （まっさらな環境の初回だけ。モーダルが出ている間は背後の公開ボタンが
-		// アクセシビリティツリーから外れ、ボタンを探し続けて止まる）。
-		// 公開操作の直前にも、閉じていることを確認し、出ていれば閉じる。
-		await expect(async () => {
-			await page.evaluate(() => {
-				window.wp.data
-					.dispatch('core/preferences')
-					.set('core/edit-post', 'welcomeGuide', false);
-			});
-			if (await welcomeModal.isVisible()) {
-				await welcomeModal
-					.getByRole('button', { name: /Close|閉じる/ })
-					.click({ timeout: 2000 });
-			}
-			await expect(welcomeModal).toBeHidden({ timeout: 1000 });
-		}).toPass({ timeout: 15000 });
+		// 案内モーダルが出ていないこと（出ていると背後の公開ボタンを操作できない）。
+		await expect(welcomeModal).toBeHidden();
 
 		// 公開操作を2段階ともクリックし、REST API 経由の保存完了通知を確認する。
 		const publishButton = page.getByRole('button', {
