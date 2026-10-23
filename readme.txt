@@ -14,7 +14,7 @@ GitHub : https://github.com/vektor-inc/BillVektor
 == Changelog ==
 
 [ デザイン不具合修正 ] 見積書一覧の取引先列の幅が狭く、長い取引先名が3行に折り返される場合がある不具合を修正
-[ 開発環境 ] e2e テストの失敗を修正し、テーマの有効化とテストデータ投入を npm run e2e:setup にまとめた
+[ 開発環境 ] e2e テストの失敗を修正し、テーマの有効化とテストデータ投入を npm run e2e:setup に集約
 [ 開発環境 ] 開発環境・CI で使う Node.js を 24.22.1 に更新
 [ 開発環境 ] Node.js のバージョン指定を .node-version に一本化し、package.json から Volta の指定を削除
 
