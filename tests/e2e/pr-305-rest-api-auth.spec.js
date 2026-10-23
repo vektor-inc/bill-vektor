@@ -350,6 +350,25 @@ test.describe('PR #305 B: ログイン済み管理画面の回帰確認', () => 
 			})
 		).toBeVisible();
 
+		// 案内モーダルは、サーバーに保存されたユーザー設定の読み込みが終わった後に
+		// 表示されることがあり、上の「表示しない」設定を後から上書きされる場合がある
+		// （まっさらな環境の初回だけ。モーダルが出ている間は背後の公開ボタンが
+		// アクセシビリティツリーから外れ、ボタンを探し続けて止まる）。
+		// 公開操作の直前にも、閉じていることを確認し、出ていれば閉じる。
+		await expect(async () => {
+			await page.evaluate(() => {
+				window.wp.data
+					.dispatch('core/preferences')
+					.set('core/edit-post', 'welcomeGuide', false);
+			});
+			if (await welcomeModal.isVisible()) {
+				await welcomeModal
+					.getByRole('button', { name: /Close|閉じる/ })
+					.click({ timeout: 2000 });
+			}
+			await expect(welcomeModal).toBeHidden({ timeout: 1000 });
+		}).toPass({ timeout: 15000 });
+
 		// 公開操作を2段階ともクリックし、REST API 経由の保存完了通知を確認する。
 		const publishButton = page.getByRole('button', {
 			name: /^(Publish|公開)$/,
