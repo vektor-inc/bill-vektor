@@ -19,8 +19,5 @@
     "gulp": "^5.0.1",
     "npm-check-updates": "^20.0.0",
     "run-sequence": "^2.2.1"
-  },
-  "volta": {
-    "node": "24.22.1"
   }
 }
