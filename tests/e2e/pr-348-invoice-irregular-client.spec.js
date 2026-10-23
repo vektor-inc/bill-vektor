@@ -191,6 +191,9 @@ async function duplicateFromList(page, listPath, title) {
 }
 
 test.afterAll(async ({ browser }) => {
+	// 後片付け対象は十数件あり、1件ごとに編集画面を開くため、既定の 30 秒では足りない
+	// （afterAll 全体のタイムアウトがテスト失敗として報告される。issue #360）。
+	test.setTimeout(180000);
 	// 作成した投稿をゴミ箱へ移動する（ベストエフォート。失敗してもテスト結果には影響させない）
 	const context = await browser.newContext({ storageState: AUTH_STATE_PATH });
 	const page = await context.newPage();

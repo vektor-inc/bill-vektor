@@ -178,7 +178,10 @@ test.describe('PR #326: 請求書一覧の取引先列', () => {
 		expect(headers.slice(titleIndex, titleIndex + 3)).toEqual(['title', 'bill_client_name', 'author']);
 
 		// ヘッダーのラベルが「取引先」であること
-		await expect(page.locator('#bill_client_name')).toHaveText('取引先');
+		// 取引先列は 1.15.0（issue #295）で並び替え可能になり、見出しのリンク内に
+		// 並び替えの読み上げ文字（「Sort ascending.」等）が加わったため、
+		// th 全体ではなく、見出しのラベル部分（リンク直下の最初の span）で確認する。
+		await expect(page.locator('#bill_client_name a > span').first()).toHaveText('取引先');
 
 		// 取引先（登録済）・取引先（イレギュラー）・両方入力の表示
 		const cases = [

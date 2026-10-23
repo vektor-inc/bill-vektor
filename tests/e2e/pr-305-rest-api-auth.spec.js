@@ -316,14 +316,21 @@ test.describe('PR #305 B: ログイン済み管理画面の回帰確認', () => 
 		});
 
 		// 初回表示の案内モーダルがあれば閉じ、編集キャンバスを操作可能にする。
+		// 案内モーダルはエディターの読み込み完了後に遅れて表示されるため、
+		// 表示済みかどうかを即座に判定すると見逃す（初めてエディターを開く
+		// 「まっさらな環境」でだけ起きる。案内を閉じるとユーザー設定として
+		// 保存され、2回目以降は表示されない）。表示を最大5秒待ってから閉じる。
+		// 表示されない環境では待ち切って次へ進む（issue #360）。
 		const welcomeModal = page.locator('.components-modal__frame');
-		if (await welcomeModal.isVisible()) {
-			const closeButton = welcomeModal.getByRole('button', {
-				name: /Close|閉じる/,
-			});
-			if (await closeButton.count()) {
-				await closeButton.click();
-			}
+		const welcomeShown = await welcomeModal
+			.waitFor({ state: 'visible', timeout: 5000 })
+			.then(() => true)
+			.catch(() => false);
+		if (welcomeShown) {
+			await welcomeModal
+				.getByRole('button', { name: /Close|閉じる/ })
+				.click();
+			await expect(welcomeModal).toBeHidden();
 		}
 
 		// WordPress の現行ブロックエディターは編集キャンバスを iframe 内に描画する。

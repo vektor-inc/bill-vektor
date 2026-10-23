@@ -213,7 +213,13 @@ async function deleteUsersByPrefix(adminPage, prefix) {
 		await Promise.all([
 			adminPage.waitForNavigation({ waitUntil: 'domcontentloaded' }),
 			adminPage.evaluate(() => {
-				const radio = document.getElementById('delete_option0');
+				// 「すべてのコンテンツを削除」のラジオは、WordPress のバージョンで
+				// id が変わる（旧: delete_option0 / 新: delete_option_<ユーザーID>）。
+				// 新しい版では required 属性付きで未選択だとフォームが送信されないため、
+				// id ではなく name と value で特定する（issue #360）。
+				const radio = document.querySelector(
+					'input[type="radio"][name^="delete_option"][value="delete"]'
+				);
 				if (radio instanceof HTMLInputElement) {
 					// click() ならネイティブに change イベントも発火する
 					radio.click();
