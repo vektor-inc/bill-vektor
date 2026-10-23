@@ -2,7 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
 const { TEST_DATA, verifyDocumentVisible } = require('./test-data-319.js');
-const { withAuthenticatedPage } = require('./auth-helpers');
+const { withAuthenticatedPage, loginAs } = require('./auth-helpers');
 
 /**
  * PR #319 フロント側の書類閲覧権限に関する e2e テスト。
@@ -78,27 +78,6 @@ test.use({ storageState: { cookies: [], origins: [] } });
  */
 function escapeRegExp(value) {
 	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * 指定ユーザーでログインする。
- *
- * @param {import('@playwright/test').Page} page
- * @param {{ login: string, password: string }} user
- */
-async function loginAs(page, user) {
-	await page.context().clearCookies();
-	await page.goto('/wp-login.php', { waitUntil: 'domcontentloaded' });
-	await page.locator('#user_login').fill(user.login);
-	await page.locator('#user_pass').fill(user.password);
-
-	await Promise.all([
-		page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
-		page.locator('#wp-submit').click(),
-	]);
-
-	// 認証エラーでログインフォームに留まっていないことを先に確認する。
-	await expect(page.locator('#login_error')).toHaveCount(0);
 }
 
 /**

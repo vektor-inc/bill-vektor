@@ -1,6 +1,7 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+const { loginAs: sharedLoginAs } = require('./auth-helpers');
 
 /**
  * issue #299 CSV エクスポートの認証・CSRF ガードの e2e テスト。
@@ -95,13 +96,7 @@ async function clickNative(locator) {
  * @param {string} password
  */
 async function loginAs(page, login, password) {
-	// 前のユーザーのセッションを完全に捨ててからログインする
-	await page.context().clearCookies();
-	await page.goto('/wp-login.php', { waitUntil: 'domcontentloaded' });
-	await page.locator('#user_login').fill(login);
-	await page.locator('#user_pass').fill(password);
-	await clickNative(page.locator('#wp-submit'));
-	await page.waitForURL('**/wp-admin/**');
+	await sharedLoginAs(page, { login, password });
 }
 
 /**
