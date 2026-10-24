@@ -59,15 +59,30 @@ const SCREENSHOT_DIR = 'tests/e2e/screenshots';
  * @param {string} filename
  */
 async function safeScreenshot(page, filename) {
+	// screenshot() の timeout オプション（8秒）が効かないまま止まり続けることがあり、
+	// その間テスト本体の制限時間（30秒）を使い切って、確認自体は済んでいるテストが
+	// 失敗扱いになっていた（issue #360。pr-348 の手順6c）。
+	// 補助資料の撮影が合否に影響しないよう、10秒経ったら撮影の完了を待たずに先へ進む。
+	let timer;
+	const giveUp = new Promise((_, reject) => {
+		timer = setTimeout(() => reject(new Error('10秒以内に撮影が終わらなかったため先へ進みます')), 10000);
+	});
 	try {
 		// 直前のクリック操作でボタン上にマウスカーソルが残っていると、管理画面のホバー系
 		// アニメーションの影響でスクリーンショットが不安定になり長時間ハングすることがあるため、
 		// 撮影前にカーソルを何もない場所へ逃がしておく
-		await page.mouse.move(0, 0);
-		await page.screenshot({ path: `${SCREENSHOT_DIR}/${filename}`, fullPage: false, timeout: 8000 });
+		const capture = (async () => {
+			await page.mouse.move(0, 0);
+			await page.screenshot({ path: `${SCREENSHOT_DIR}/${filename}`, fullPage: false, timeout: 8000 });
+		})();
+		// 先に諦めた場合に capture 側の遅れて起きるエラーが未処理にならないよう握りつぶす
+		capture.catch(() => {});
+		await Promise.race([capture, giveUp]);
 	} catch (e) {
 		// eslint-disable-next-line no-console
 		console.warn(`PR348スクリーンショット: ${filename} の撮影に失敗しました（テスト結果には影響しません）: ${e}`);
+	} finally {
+		clearTimeout(timer);
 	}
 }
 
@@ -191,6 +206,9 @@ async function duplicateFromList(page, listPath, title) {
 }
 
 test.afterAll(async ({ browser }) => {
+	// 後片付け対象は十数件あり、1件ごとに編集画面を開くため、既定の 30 秒では足りない
+	// （afterAll 全体のタイムアウトがテスト失敗として報告される。issue #360）。
+	test.setTimeout(180000);
 	// 作成した投稿をゴミ箱へ移動する（ベストエフォート。失敗してもテスト結果には影響させない）
 	const context = await browser.newContext({ storageState: AUTH_STATE_PATH });
 	const page = await context.newPage();
@@ -220,6 +238,12 @@ test.describe('PR #348 見積書の取引先（イレギュラー）引き継ぎ
 	let registeredEstimateEditUrl;
 	/** @type {string} */
 	let clientEditUrl;
+
+	// 管理画面のアバター画像は外部ホスト（Gravatar）から読み込まれる。本テストの確認対象では
+	// ないため外部への通信を遮断し、ネットワークの状況で各画面の読み込み時間がぶれないようにする。
+	test.beforeEach(async ({ page }) => {
+		await page.route(/gravatar\.com/, (route) => route.abort());
+	});
 
 	test.beforeAll(async ({ browser }, testInfo) => {
 		// beforeAll で書類を5件（見積書3件・請求書1件・取引先1件）作成するため、既定の30秒では
@@ -318,12 +342,22 @@ test.describe('PR #348 見積書の取引先（イレギュラー）引き継ぎ
 		await page.goto(duplicatedUrl);
 		await expect(page.locator('#bill_client_name_manual')).toHaveValue(IRREGULAR_CLIENT_NAME);
 
-		// この画面は同じ page で3回目のフルアクション（複製 → 下書き保存 → 再訪問）となり、
-		// スクリーンショットの「安定待ち」がハングしやすい傾向があったため、
-		// 撮影直前に1回リロードして状態をリセットしてから撮る
-		await page.reload();
-		await expect(page.locator('#bill_client_name_manual')).toHaveValue(IRREGULAR_CLIENT_NAME);
-		await safeScreenshot(page, 'pr-348-step4b-duplicate-estimate-resaved.png');
+		// 撮影は新しいタブで行う。
+		// このヘッドレス Chromium では、フォーム送信（POST）による画面遷移を1回行うと、
+		// そのタブは描画が止まったままになる（requestAnimationFrame が呼ばれなくなり、
+		// goto・reload しても戻らない。WordPress の設定画面の保存でも再現し、本テーマ固有ではない）。
+		// screenshot() は描画を待つため、この状態のタブでは撮影が止まり続ける。
+		// 新しいタブでは描画が正常なので、保存後の画面はそちらで開き直して撮る（issue #360）。
+		// 根本の対処は playwright.config.js の launchOptions（Paint Holding の無効化）で行っており、
+		// ここは念のための二重の備え。
+		const shotPage = await page.context().newPage();
+		try {
+			await shotPage.goto(duplicatedUrl);
+			await expect(shotPage.locator('#bill_client_name_manual')).toHaveValue(IRREGULAR_CLIENT_NAME);
+			await safeScreenshot(shotPage, 'pr-348-step4b-duplicate-estimate-resaved.png');
+		} finally {
+			await shotPage.close();
+		}
 	});
 
 	test('手順5: 取引先（登録済）を選んだ見積書は、登録済が引き継がれイレギュラー欄は空のまま', async ({

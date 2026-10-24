@@ -66,12 +66,12 @@ test.beforeAll(async ({ browser }) => {
 const MAX_CLEANUP_ITERATIONS = 20;
 
 /**
- * 取引先列に指定している幅（assets/_scss/admin-style.scss の 26%）。
+ * 取引先列に指定している幅（assets/_scss/admin-style.scss の 28%）。
  *
  * ブラウザの丸めや管理画面側の余白で厳密に一致しないため、前後に許容幅を取る。
  * SCSS の値を変えたときは、この基準値も合わせて更新する。
  */
-const CLIENT_COLUMN_WIDTH_RATIO = 0.26;
+const CLIENT_COLUMN_WIDTH_RATIO = 0.28;
 const CLIENT_COLUMN_WIDTH_TOLERANCE = 0.02;
 
 /**
@@ -81,8 +81,13 @@ const CLIENT_COLUMN_WIDTH_TOLERANCE = 0.02;
  * @param {string} title
  */
 function estimateRow(page, title) {
+	// hasText に文字列を渡すと部分一致になり、別スペックのテストデータ
+	// （例: create-test-data-295.php の「issue295取引先未設定の見積書」は
+	// 「取引先未設定の見積」を部分文字列として含む）まで拾って2件に解決してしまう。
+	// タイトル全体との完全一致で行を特定する（issue #360）。
+	const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 	return page.locator('#the-list tr').filter({
-		has: page.locator('.column-title .row-title', { hasText: title }),
+		has: page.locator('.column-title .row-title', { hasText: new RegExp(`^\\s*${escaped}\\s*$`) }),
 	});
 }
 
@@ -260,7 +265,7 @@ test.describe('PR #297: 見積書一覧の取引先列', () => {
 		);
 		expect(parseFloat(width)).toBeGreaterThan(0);
 		const tableWidth = await page.locator('.wp-list-table').evaluate((element) => element.getBoundingClientRect().width);
-		// SCSS の指定（26%）どおりの比率になっていること。前後 2 ポイントを許容する。
+		// SCSS の指定（28%）どおりの比率になっていること。前後 2 ポイントを許容する。
 		expect(parseFloat(width) / tableWidth).toBeGreaterThan(CLIENT_COLUMN_WIDTH_RATIO - CLIENT_COLUMN_WIDTH_TOLERANCE);
 		expect(parseFloat(width) / tableWidth).toBeLessThan(CLIENT_COLUMN_WIDTH_RATIO + CLIENT_COLUMN_WIDTH_TOLERANCE);
 

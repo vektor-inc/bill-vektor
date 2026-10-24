@@ -1,6 +1,7 @@
 // @ts-check
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { test, expect } = require('@playwright/test');
+const { loginAs } = require('./auth-helpers');
 
 /**
  * PR #330 REST API の閲覧制限を「ログイン必須」から「書類の閲覧権限（寄稿者以上）必須」へ
@@ -68,27 +69,6 @@ const TEST_INVOICE_TITLE = `${TEST_INVOICE_PREFIX}${Date.now()}-${Math.random()
  * 削除できない投稿が残った場合に、無限ループではなく原因が分かるエラーで止める。
  */
 const MAX_CLEANUP_ITERATIONS = 20;
-
-/**
- * 指定ユーザーでログインする。
- *
- * @param {import('@playwright/test').Page} page
- * @param {{ login: string, password: string }} user
- */
-async function loginAs(page, user) {
-	await page.context().clearCookies();
-	await page.goto('/wp-login.php', { waitUntil: 'domcontentloaded' });
-	await page.locator('#user_login').fill(user.login);
-	await page.locator('#user_pass').fill(user.password);
-
-	await Promise.all([
-		page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
-		page.locator('#wp-submit').click(),
-	]);
-
-	// 認証エラーでログインフォームに留まっていないことを先に確認する。
-	await expect(page.locator('#login_error')).toHaveCount(0);
-}
 
 /**
  * 要素をページ内でネイティブにクリックする。

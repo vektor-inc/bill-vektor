@@ -25,3 +25,23 @@ BillVektorは請求書の管理をWordPressのテーマとして実装したオ�
 * ウェブサーバーでの運用の場合激しくセキュリティーやバックアップを厳重にする必要がある
 * そもそもインストールが面倒
 * 郵送機能は流石にない
+
+## e2e テスト（Playwright）の実行手順
+
+e2e テストは `tests/e2e` にあり、wp-env（Docker 上のローカル WordPress）に対して Playwright で実行します。
+**テストデータはテーマ（BillVektor）が有効な状態で投入する必要があります。** テストデータ作成スクリプトがテーマの関数や投稿タイプに依存するためです（標準テーマのまま投入すると、スクリプトが途中で止まります）。この順番は `npm run e2e:setup` が守るので、次の手順をそのまま実行してください。
+
+```bash
+# 1. 依存パッケージのインストールと wp-env の起動（ポートを変える場合は .wp-env.override.json に port / testsPort を書く）
+npm install
+npx wp-env start
+
+# 2. テーマの有効化 → テストデータの投入（tests/e2e/create-test-data*.php を全て実行）
+npm run e2e:setup
+
+# 3. e2e の実行（WP_BASE_URL は wp-env の port に合わせる。既定は http://localhost:8895）
+WP_BASE_URL=http://localhost:8888 npm run e2e
+```
+
+* `npm run e2e:setup` は何度実行しても同じ状態になります（各データ作成スクリプトが冪等なため）。
+* 管理者のログイン情報を変えている場合は、環境変数 `WP_TEST_USERNAME` / `WP_TEST_PASSWORD` で指定します（既定は admin / password）。

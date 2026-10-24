@@ -311,20 +311,46 @@ test.describe('PR #305 B: ログイン済み管理画面の回帰確認', () => 
 		});
 		page.on('pageerror', (error) => pageErrors.push(error.message));
 
+		// 初回表示の案内モーダル（Welcome to the editor）は、エディターを開いた後に
+		// サーバー保存のユーザー設定の読み込みが終わってから出ることがあり、画面上の
+		// 操作で閉じても後から上書きされて再表示される（初めてエディターを開く
+		// 「まっさらな環境」でだけ起きる。モーダルが出ている間は背後の公開ボタンが
+		// アクセシビリティツリーから外れ、公開ボタンを探し続けて止まる。issue #360）。
+		// 表示のタイミングに左右されないよう、エディターを開く前にサーバー側の
+		// ユーザー設定へ「案内を表示しない」を保存して、初回状態を揃える。
+		const restNonce = await (
+			await page.request.get('/wp-admin/admin-ajax.php?action=rest-nonce')
+		).text();
+		// 既存のユーザー設定を取得し、案内の設定だけを混ぜて保存する
+		// （丸ごと置き換えると、普段使いのサイトで他の設定を消してしまうため）。
+		const currentResponse = await page.request.get(
+			'/wp-json/wp/v2/users/me?context=edit',
+			{ headers: { 'X-WP-Nonce': restNonce } }
+		);
+		expect(currentResponse.ok()).toBe(true);
+		const current =
+			(await currentResponse.json()).meta?.persisted_preferences || {};
+		const saveResponse = await page.request.post('/wp-json/wp/v2/users/me', {
+			headers: { 'X-WP-Nonce': restNonce },
+			data: {
+				meta: {
+					persisted_preferences: {
+						...current,
+						'core/edit-post': {
+							...current['core/edit-post'],
+							welcomeGuide: false,
+						},
+						_modified: new Date().toISOString(),
+					},
+				},
+			},
+		});
+		expect(saveResponse.ok()).toBe(true);
+
 		await page.goto('/wp-admin/post-new.php?post_type=page', {
 			waitUntil: 'domcontentloaded',
 		});
-
-		// 初回表示の案内モーダルがあれば閉じ、編集キャンバスを操作可能にする。
 		const welcomeModal = page.locator('.components-modal__frame');
-		if (await welcomeModal.isVisible()) {
-			const closeButton = welcomeModal.getByRole('button', {
-				name: /Close|閉じる/,
-			});
-			if (await closeButton.count()) {
-				await closeButton.click();
-			}
-		}
 
 		// WordPress の現行ブロックエディターは編集キャンバスを iframe 内に描画する。
 		// iframe の中まで辿り、実際のタイトル・本文ブロックを操作する。
@@ -341,6 +367,9 @@ test.describe('PR #305 B: ログイン済み管理画面の回帰確認', () => 
 				hasText: 'PR305 REST 回帰確認ブロック',
 			})
 		).toBeVisible();
+
+		// 案内モーダルが出ていないこと（出ていると背後の公開ボタンを操作できない）。
+		await expect(welcomeModal).toBeHidden();
 
 		// 公開操作を2段階ともクリックし、REST API 経由の保存完了通知を確認する。
 		const publishButton = page.getByRole('button', {

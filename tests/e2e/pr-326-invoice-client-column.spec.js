@@ -27,6 +27,15 @@ test.use({ storageState: 'tests/e2e/.auth-state.json' });
 
 const ESTIMATE_LIST = '/wp-admin/edit.php?post_type=estimate';
 
+/**
+ * 見積書一覧の取引先列に指定している幅（assets/_scss/admin-style.scss の 28%）。
+ *
+ * pr-297-estimate-client-column.spec.js の CLIENT_COLUMN_WIDTH_RATIO と同じ値。
+ * SCSS の値を変えたときは、両方の基準値を合わせて更新する。
+ */
+const ESTIMATE_CLIENT_COLUMN_WIDTH_RATIO = 0.28;
+const ESTIMATE_CLIENT_COLUMN_WIDTH_TOLERANCE = 0.02;
+
 /*
  * 不正値の確認用データだけを対象にした一覧。
  * 他の e2e テストのデータも同じ DB に入るためページ送りで対象行が落ちうる。
@@ -178,7 +187,10 @@ test.describe('PR #326: 請求書一覧の取引先列', () => {
 		expect(headers.slice(titleIndex, titleIndex + 3)).toEqual(['title', 'bill_client_name', 'author']);
 
 		// ヘッダーのラベルが「取引先」であること
-		await expect(page.locator('#bill_client_name')).toHaveText('取引先');
+		// 取引先列は 1.15.0（issue #295）で並び替え可能になり、見出しのリンク内に
+		// 並び替えの読み上げ文字（「Sort ascending.」等）が加わったため、
+		// th 全体ではなく、見出しのラベル部分（リンク直下の最初の span）で確認する。
+		await expect(page.locator('#bill_client_name a > span').first()).toHaveText('取引先');
 
 		// 取引先（登録済）・取引先（イレギュラー）・両方入力の表示
 		const cases = [
@@ -221,11 +233,11 @@ test.describe('PR #326: 請求書一覧の取引先列', () => {
 		const titleIndex = headers.indexOf('title');
 		expect(headers.slice(titleIndex, titleIndex + 2)).toEqual(['title', 'bill_client_name']);
 
-		// 見積書側の取引先列は SCSS の 26% 指定が効いたままであること
+		// 見積書側の取引先列は SCSS の 28% 指定が効いたままであること。前後 2 ポイントを許容する。
 		const width = await page.locator('#bill_client_name').evaluate((element) => element.getBoundingClientRect().width);
 		const tableWidth = await page.locator('.wp-list-table').evaluate((element) => element.getBoundingClientRect().width);
-		expect(width / tableWidth).toBeGreaterThan(0.24);
-		expect(width / tableWidth).toBeLessThan(0.28);
+		expect(width / tableWidth).toBeGreaterThan(ESTIMATE_CLIENT_COLUMN_WIDTH_RATIO - ESTIMATE_CLIENT_COLUMN_WIDTH_TOLERANCE);
+		expect(width / tableWidth).toBeLessThan(ESTIMATE_CLIENT_COLUMN_WIDTH_RATIO + ESTIMATE_CLIENT_COLUMN_WIDTH_TOLERANCE);
 	});
 
 	test('B. 1024〜1920px のいずれでも件名と取引先が読める', async ({ page }) => {
