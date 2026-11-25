@@ -44,7 +44,7 @@ jobs:
               with:
                   php-version: ${{ matrix.php-versions }}
             - name: install npm scripts
-              run: npm install
+              run: npm ci
             - name: Install Composer Packages
               run: composer install
             - name: Install WP-CLI
@@ -81,7 +81,7 @@ jobs:
               with:
                   php-version: 7.4
             - name: Install NPM Scripts
-              run: npm install
+              run: npm ci
             - name: Install Composer Packages
               run: composer install
             - name: Install WP-CLI
