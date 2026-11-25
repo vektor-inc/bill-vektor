@@ -895,3 +895,36 @@ function bill_get_search_keyword() {
 function bill_get_search_columns() {
 	return array( 'post_title' );
 }
+
+/**
+ * パンくずの最後の項目（今表示しているページ）の li に aria-current="page" を付ける
+ *
+ * 最後に来る項目は表示中のページの種類で変わるため、組み立て後の HTML を走査して最後の li を探す。
+ * すでに aria-current が付いている場合は、値を page に置き換える（重ねて付かない）。
+ *
+ * WP_HTML_Tag_Processor（WordPress 6.2 以降）を使う。テーマは対応する WordPress の下限を
+ * 宣言していないため、6.2 より前のバージョンでは致命的エラーにせず、受け取った HTML をそのまま返す。
+ *
+ * @param string $html パンくずの HTML
+ * @return string 最後の li に aria-current="page" を付けた HTML。li が無い場合・空文字・
+ *                文字列以外の場合・WP_HTML_Tag_Processor が無い場合は、受け取った値をそのまま返す
+ */
+function bill_breadcrumb_add_aria_current( $html ) {
+	if ( ! is_string( $html ) || '' === $html || ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
+		return $html;
+	}
+
+	// 最後の li の位置を覚えておき、走査し終えてからその li に戻って属性を付ける。
+	// has_bookmark() は WordPress 6.3 以降にしか無いため、li を見つけたかどうかは変数で持つ
+	$tag_processor = new WP_HTML_Tag_Processor( $html );
+	$has_list_item = false;
+	while ( $tag_processor->next_tag( 'li' ) ) {
+		$tag_processor->set_bookmark( 'last_list_item' );
+		$has_list_item = true;
+	}
+	if ( $has_list_item && $tag_processor->seek( 'last_list_item' ) ) {
+		$tag_processor->set_attribute( 'aria-current', 'page' );
+	}
+
+	return $tag_processor->get_updated_html();
+}

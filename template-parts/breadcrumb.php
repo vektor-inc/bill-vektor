@@ -7,6 +7,16 @@
  * Fatal error になる。
  */
 if ( ! function_exists( 'bill_bread_crumb' ) ) :
+	/**
+	 * パンくずの HTML を組み立てて返す
+	 *
+	 * 表示中のページの種類に応じて項目を並べ、リスト全体を nav で囲む。
+	 * 最後の項目（今表示しているページ）の li には、bill_breadcrumb_add_aria_current() で
+	 * aria-current="page" を付ける。
+	 * 戻り値は、このファイルの末尾で bill_panListHtml フィルターを通してから出力する。
+	 *
+	 * @return string パンくずの HTML
+	 */
 	function bill_bread_crumb() {
 		/*
 			BreadCrumb
@@ -25,8 +35,11 @@ if ( ! function_exists( 'bill_bread_crumb' ) ) :
 		$microdata_li_a      = ' itemprop="item"';
 		$microdata_li_a_span = ' itemprop="name"';
 
+		// 読み上げソフトでナビゲーション領域として扱えるよう、リストを nav で囲む。
+		// nav は .breadcrumb-section の内側に置く。外側に置くと、パンくずを隠したときに中身のない nav だけが残るため
 		$panListHtml = '<!-- [ .breadSection ] -->
 <div class="container breadcrumb-section">
+<nav aria-label="' . esc_attr__( 'パンくずリスト', 'bill-vektor' ) . '">
 <ol class="breadcrumb" itemtype="http://schema.org/BreadcrumbList">';
 
 		$panListHtml .= '<li id="panHome"' . $microdata_li . '><a' . $microdata_li_a . ' href="' . home_url( '/' ) . '"><span' . $microdata_li_a_span . '><span class="glyphicon glyphicon-home" aria-hidden="true"></span> HOME</span></a></li>';
@@ -239,8 +252,14 @@ if ( ! function_exists( 'bill_bread_crumb' ) ) :
 
 		}
 		$panListHtml .= '</ol>
+</nav>
 </div>
 <!-- [ /.breadSection ] -->';
+
+		// 最後の項目（今表示しているページ）の li に aria-current="page" を付ける。
+		// bill_panListHtml フィルターより前で付けること。後で付けると、フィルターで HTML 全体を
+		// 作り直しているサイトの出力まで書き換えてしまうため
+		$panListHtml = bill_breadcrumb_add_aria_current( $panListHtml );
 		return $panListHtml;
 	}
 endif;
